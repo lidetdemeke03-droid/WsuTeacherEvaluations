@@ -5,8 +5,8 @@ import { motion, useAnimation, Variants } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { GraduationCap, Users, FileText, BarChart2, ShieldCheck, TrendingUp, Zap, ArrowRight } from 'lucide-react';
 
-// Mock URLs for images - in a real app, these would be in an assets folder.
-const WSU_LOGO_URL = 'https://www.wsu.edu.et/images/logo.png';
+
+import WSU_LOGO_URL = './Wolaita_Sodo_University_Logo-removebg-preview.png';
 const HERO_BG_URL = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop';
 
 // FIX: Add explicit Variants type to the cardVariants object.

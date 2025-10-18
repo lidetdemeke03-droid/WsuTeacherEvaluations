@@ -4,15 +4,15 @@ import { User, UserRole, Evaluation, Criterion, EvaluationSubmission } from '../
 // --- MOCK DATABASE ---
 const mockUsers: User[] = [
     { id: 'admin-1', name: 'Admin User', email: 'admin@wsu.edu', role: UserRole.Admin },
-    { id: 'dept-1', name: 'Dr. Jane Smith', email: 'jane.smith@wsu.edu', role: UserRole.DepartmentHead, departmentId: 'cs-1', departmentName: 'Computer Science' },
-    { id: 'inst-1', name: 'Prof. John Doe', email: 'john.doe@wsu.edu', role: UserRole.Instructor, departmentId: 'cs-1', departmentName: 'Computer Science' },
-    { id: 'stud-1', name: 'Alice Johnson', email: 'alice.j@wsu.edu', role: UserRole.Student },
+    { id: 'dept-1', name: 'Dr. Ananiya', email: 'drananiya@wsu.edu', role: UserRole.DepartmentHead, departmentId: 'cs-1', departmentName: 'Computer Science' },
+    { id: 'inst-1', name: 'Prof. Chala', email: 'profchala@wsu.edu', role: UserRole.Instructor, departmentId: 'cs-1', departmentName: 'Computer Science' },
+    { id: 'stud-1', name: 'Mahilet Wazema', email: 'mahiletwazema@wsu.edu', role: UserRole.Student },
 ];
 
 const mockEvaluations: Evaluation[] = [
-    { id: 'eval-1', instructorName: 'Prof. John Doe', courseName: 'Introduction to Programming', periodName: 'Fall 2024', status: 'Pending' },
-    { id: 'eval-2', instructorName: 'Dr. Emily White', courseName: 'Data Structures', periodName: 'Fall 2024', status: 'Pending' },
-    { id: 'eval-3', instructorName: 'Prof. Michael Brown', courseName: 'Calculus I', periodName: 'Fall 2024', status: 'Completed' },
+    { id: 'eval-1', instructorName: 'Prof. Tariku', courseName: 'Introduction to Programming', periodName: 'Fall 2024', status: 'Pending' },
+    { id: 'eval-2', instructorName: 'Dr. Bezabih', courseName: 'Data Structures', periodName: 'Fall 2024', status: 'Pending' },
+    { id: 'eval-3', instructorName: 'Prof. Absir😎', courseName: 'Calculus I', periodName: 'Fall 2024', status: 'Completed' },
 ];
 
 const mockCriteria: Criterion[] = [
