@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { GraduationCap, Users, FileText, BarChart2, ShieldCheck, TrendingUp, Zap, ArrowRight } from 'lucide-react';
 
 // Mock URLs for images - in a real app, these would be in an assets folder.
-const WSU_LOGO_URL = 'https://www.wsu.edu.et/images/logo.png';
+const WSU_LOGO_URL = 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjNvluAA6Fu_c5rQ4yo-CT4tUk1S2avU3slBpMlBFpKN9UNoJo32ajl6mCx2efDTB69bP82A1irbma0Sj8kDk3zKHftKRMZ7Rtqy0DxZSiAD20qzhM_chlXOXZTvzdYAoker-taYy2ZNIIwMdgyIgr_r1EIWtiOxDkImjTr3nTYfAPh9NA2SsKfc3_M2g/w1200-h630-p-k-no-nu/logo.png';
 const HERO_BG_URL = 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop';
 
 // FIX: Add explicit Variants type to the cardVariants object.
