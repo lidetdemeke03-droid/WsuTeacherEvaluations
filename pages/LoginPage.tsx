@@ -36,13 +36,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl"
-      >
-        <div className="flex items-center justify-between">
+       <div className="flex items-center justify-between">
           <button
             type="button"
             onClick={goBack}
@@ -51,7 +45,13 @@ const LoginPage: React.FC = () => {
           >
             <ArrowLeft className="h-6 w-6 text-gray-700 dark:text-gray-200" />
           </button>
-          <div />
+        <div />
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl"
+      >
         </div>
         <div className="text-center">
           <GraduationCap className="mx-auto h-12 w-auto text-blue-600 dark:text-blue-400" />
