@@ -1,15 +1,22 @@
 
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, Bell, LogOut } from 'lucide-react';
+import { User, Bell, LogOut, Menu } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const Header: React.FC = () => {
+type HeaderProps = {
+  onToggleSidebar?: () => void;
+};
+
+const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { user, logout } = useAuth();
 
   return (
     <header className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
       <div className="flex items-center">
+        <button onClick={onToggleSidebar} className="mr-3 md:hidden p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Toggle sidebar">
+          <Menu size={20} className="text-gray-700 dark:text-gray-200" />
+        </button>
         <h1 className="text-xl font-semibold text-gray-800 dark:text-white">WSU Evaluation System</h1>
       </div>
       <div className="flex items-center space-x-4">
