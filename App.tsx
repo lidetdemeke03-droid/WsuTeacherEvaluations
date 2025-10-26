@@ -15,6 +15,9 @@ import { UserRole } from './types';
 import ManageCriteriaPage from './pages/admin/ManageCriteriaPage';
 import InstructorDashboard from './pages/instructor/InstructorDashboard';
 import HomePage from './pages/HomePage';
+import Profile from './pages/profile/Profile';
+import NewEvaluation from './pages/evaluation/NewEvaluation';
+import InstructorResults from './pages/instructor/InstructorResults';
 
 const ProtectedLayout: React.FC = () => {
     const { user } = useAuth();
@@ -78,6 +81,10 @@ const AppContent: React.FC = () => {
 
                 <Route path="/complaints" element={<RoleProtectedRoute roles={[UserRole.Admin, UserRole.DepartmentHead, UserRole.Instructor, UserRole.Student]}><ComplaintsPage /></RoleProtectedRoute>} />
                 <Route path="/reports" element={<RoleProtectedRoute roles={[UserRole.Admin, UserRole.DepartmentHead]}><ReportsPage /></RoleProtectedRoute>} />
+
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/evaluation/new" element={<RoleProtectedRoute roles={[UserRole.Instructor, UserRole.DepartmentHead]}><NewEvaluation /></RoleProtectedRoute>} />
+                <Route path="/instructor/results" element={<RoleProtectedRoute roles={[UserRole.DepartmentHead]}><InstructorResults /></RoleProtectedRoute>} />
             </Route>
             
             <Route path="*" element={<Navigate to="/" />} />
