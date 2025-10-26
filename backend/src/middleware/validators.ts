@@ -26,15 +26,3 @@ export const courseValidation = [
     body('department').isMongoId().withMessage('Valid department ID is required'),
     body('instructor').isMongoId().withMessage('Valid instructor ID is required'),
 ];
-
-export const evaluationValidation = [
-    body('courseId').isMongoId().withMessage('Valid course ID is required'),
-    body('scores').isArray({ min: 1 }).withMessage('At least one score is required'),
-    body('scores.*.criterionId').isMongoId().withMessage('Valid criterion ID is required'),
-    body('scores.*.score').isNumeric().withMessage('Score must be a number'),
-];
-
-export const complaintValidation = [
-    body('subject').notEmpty().withMessage('Subject is required').trim().escape(),
-    body('message').notEmpty().withMessage('Message is required').trim().escape(),
-];
