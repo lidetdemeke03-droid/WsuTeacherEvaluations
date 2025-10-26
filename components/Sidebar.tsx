@@ -3,7 +3,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
-import { LayoutDashboard, Users, Building, Calendar, FileText, BarChart2, MessageSquare, FileDown, GraduationCap, ClipboardList, Home, X } from 'lucide-react';
+import { LayoutDashboard, Users, Building, Calendar, FileText, BarChart2, MessageSquare, FileDown, GraduationCap, ClipboardList, Home, X, UserCircle, FilePlus2, BarChart3 } from 'lucide-react';
 
 type SidebarProps = {
   isOpen?: boolean;
@@ -32,21 +32,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
       case UserRole.DepartmentHead:
         return [
           { to: "/dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
-          { to: "/admin/criteria", icon: <ClipboardList size={20} />, label: "Manage Criteria" },
-          { to: "/complaints", icon: <MessageSquare size={20} />, label: "Complaints" },
+          { to: "/instructor/results", icon: <BarChart3 size={20} />, label: "Instructors Result" },
+          { to: "/evaluation/new", icon: <FilePlus2 size={20} />, label: "Make Evaluation" },
           { to: "/reports", icon: <FileDown size={20} />, label: "Reports" },
         ];
       case UserRole.Instructor:
         return [
           { to: "/dashboard", icon: <Home size={20} />, label: "Home" },
+          { to: "/evaluation/new", icon: <FilePlus2 size={20} />, label: "Make Evaluation" },
+          { to: "/profile", icon: <UserCircle size={20} />, label: "Manage Profile" },
           { to: "/instructor/performance", icon: <BarChart2 size={20} />, label: "My Performance" },
-          { to: "/complaints", icon: <MessageSquare size={20} />, label: "Complaints" },
         ];
       case UserRole.Student:
         return [
           { to: "/dashboard", icon: <Home size={20} />, label: "Home" },
           { to: "/student/evaluations", icon: <FileText size={20} />, label: "My Evaluations" },
-          { to: "/complaints", icon: <MessageSquare size={20} />, label: "Complaints" },
+          { to: "/profile", icon: <UserCircle size={20} />, label: "Manage Profile" },
         ];
       default:
         return [];
