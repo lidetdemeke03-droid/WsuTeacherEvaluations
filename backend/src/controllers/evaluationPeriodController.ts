@@ -1,0 +1,73 @@
+import { Request, Response } from 'express';
+import EvaluationPeriod from '../models/EvaluationPeriod';
+
+export const getEvaluationPeriods = async (req: Request, res: Response) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const skip = (page - 1) * limit;
+
+        const periods = await EvaluationPeriod.find().skip(skip).limit(limit);
+        const total = await EvaluationPeriod.countDocuments();
+
+        res.status(200).json({
+            success: true,
+            data: periods,
+            pagination: {
+                total,
+                page,
+                limit
+            }
+        });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+export const getEvaluationPeriod = async (req: Request, res: Response) => {
+    try {
+        const period = await EvaluationPeriod.findById(req.params.id);
+        if (!period) {
+            return res.status(404).json({ success: false, error: 'Evaluation period not found' });
+        }
+        res.status(200).json({ success: true, data: period });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+export const createEvaluationPeriod = async (req: Request, res: Response) => {
+    try {
+        const { name, startDate, endDate, status } = req.body;
+        const period = new EvaluationPeriod({ name, startDate, endDate, status });
+        await period.save();
+        res.status(201).json({ success: true, data: period });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+export const updateEvaluationPeriod = async (req: Request, res: Response) => {
+    try {
+        const { name, startDate, endDate, status } = req.body;
+        const period = await EvaluationPeriod.findByIdAndUpdate(req.params.id, { name, startDate, endDate, status }, { new: true, runValidators: true });
+        if (!period) {
+            return res.status(404).json({ success: false, error: 'Evaluation period not found' });
+        }
+        res.status(200).json({ success: true, data: period });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+export const deleteEvaluationPeriod = async (req: Request, res: Response) => {
+    try {
+        const period = await EvaluationPeriod.findByIdAndDelete(req.params.id);
+        if (!period) {
+            return res.status(404).json({ success: false, error: 'Evaluation period not found' });
+        }
+        res.status(200).json({ success: true, data: {} });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};

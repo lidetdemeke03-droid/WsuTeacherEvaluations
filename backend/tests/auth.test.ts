@@ -1,16 +1,15 @@
 import request from 'supertest';
 import { app, server } from '../src/index';
-import { connectDB, disconnectDB } from '../src/config/db';
 import User from '../src/models/User';
 
-beforeAll(async () => {
-    await connectDB();
+jest.setTimeout(30000);
+
+afterAll(() => {
+    server.close();
 });
 
-afterAll(async () => {
+afterEach(async () => {
     await User.deleteMany({});
-    await disconnectDB();
-    server.close();
 });
 
 describe('Auth API', () => {
