@@ -1,6 +1,8 @@
 import { Schema, model } from 'mongoose';
 import { ICourse } from '../types';
 
+export { ICourse };
+
 const courseSchema = new Schema<ICourse>({
   title: { type: String, required: true },
   code: { type: String, required: true, unique: true },

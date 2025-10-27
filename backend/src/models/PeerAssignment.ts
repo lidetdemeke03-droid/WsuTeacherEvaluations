@@ -8,6 +8,6 @@ const peerAssignmentSchema = new Schema<IPeerAssignment>({
   period: { type: String, required: true },
 }, { timestamps: true });
 
-const PeerAssignment = model<IPerAssignment>('PeerAssignment', peerAssignmentSchema);
+const PeerAssignment = model<IPeerAssignment>('PeerAssignment', peerAssignmentSchema);
 
 export default PeerAssignment;

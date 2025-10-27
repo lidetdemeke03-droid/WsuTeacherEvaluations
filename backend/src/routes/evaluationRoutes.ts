@@ -1,14 +1,29 @@
 import { Router } from 'express';
-import { submitEvaluation } from '../controllers/evaluationController';
+import rateLimit from 'express-rate-limit';
+import { submitEvaluation, getAssignedForms, createEvaluationAssignment } from '../controllers/evaluationController';
 import { protect } from '../middleware/auth';
 import { audit } from '../middleware/audit';
+import { authorize } from '../middleware/role';
+import { UserRole } from '../types';
 
 const router = Router();
+
+const evaluationLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 10, // Limit each IP to 10 requests per windowMs
+    message: 'Too many submissions, please wait a moment',
+});
 
 // All routes in this file are protected
 router.use(protect);
 
-// POST /api/evaluations - Submit an evaluation response
-router.post('/', audit('EVALUATION_SUBMIT'), submitEvaluation);
+// GET /api/evaluations/assigned - Get assigned evaluation forms for a student
+router.get('/assigned', authorize(UserRole.Student), getAssignedForms);
+
+// POST /api/evaluations/student - Submit a student evaluation response
+router.post('/student', evaluationLimiter, authorize(UserRole.Student), audit('EVALUATION_SUBMIT'), submitEvaluation);
+
+// POST /api/evaluations/assign - Create an evaluation assignment
+router.post('/assign', authorize(UserRole.Admin), createEvaluationAssignment);
 
 export default router;

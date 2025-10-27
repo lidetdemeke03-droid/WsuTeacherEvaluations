@@ -2,18 +2,23 @@ import { Schema, model } from 'mongoose';
 import { IEvaluationResponse } from '../types';
 
 const evaluationResponseSchema = new Schema<IEvaluationResponse>({
-  form: { type: Schema.Types.ObjectId, ref: 'EvaluationForm', required: true },
-  evaluator: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  subject: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  course: { type: Schema.Types.ObjectId, ref: 'Course' },
+  anonymousToken: { type: String, required: true, unique: true },
+  course: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
+  teacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   period: { type: String, required: true },
   answers: [
-    {
-      question: { type: Schema.Types.ObjectId, ref: 'Question', required: true },
-      value: { type: Schema.Types.Mixed, required: true },
-    },
+      {
+          questionId: { type: Schema.Types.ObjectId, required: true },
+          response: { type: String },
+          score: { type: Number },
+      },
   ],
-  totalScore: { type: Number, default: 0 },
+  totalScore: { type: Number, required: true },
+  submittedAt: { type: Date, default: Date.now },
+  meta: {
+      ip: { type: String },
+      ua: { type: String },
+  },
 }, { timestamps: true });
 
 const EvaluationResponse = model<IEvaluationResponse>('EvaluationResponse', evaluationResponseSchema);

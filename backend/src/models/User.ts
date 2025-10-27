@@ -2,6 +2,8 @@ import { Schema, model } from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { IUser, UserRole } from '../types';
 
+export { IUser };
+
 const userSchema = new Schema<IUser>({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },

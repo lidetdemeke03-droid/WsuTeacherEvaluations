@@ -5,6 +5,8 @@ const statsCacheSchema = new Schema<IStatsCache>({
   teacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   course: { type: Schema.Types.ObjectId, ref: 'Course' },
   period: { type: String, required: true },
+  studentSubmissionCount: { type: Number, default: 0 },
+  studentScoreSum: { type: Number, default: 0 },
   studentAvg: { type: Number, default: 0 },
   peerAvg: { type: Number, default: 0 },
   deptAvg: { type: Number, default: 0 },

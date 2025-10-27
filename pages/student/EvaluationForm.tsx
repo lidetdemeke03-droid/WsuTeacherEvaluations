@@ -1,9 +1,9 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Evaluation, Criterion } from '../../types';
 import { apiGetCriteria, apiSubmitEvaluation } from '../../services/api';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Send } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 interface EvaluationFormProps {
     evaluation: Evaluation;
@@ -11,65 +11,88 @@ interface EvaluationFormProps {
     onComplete: (id: string) => void;
 }
 
-interface Score {
-    criterionId: string;
-    score: number;
-    comment: string;
+interface Answer {
+    questionId: string;
+    score?: number;
+    response?: string;
 }
 
 const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onComplete }) => {
     const [criteria, setCriteria] = useState<Criterion[]>([]);
-    const [scores, setScores] = useState<Record<string, Score>>({});
+    const [answers, setAnswers] = useState<Record<string, Answer>>({});
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+
+    const draftKey = `evaluation_draft_${evaluation.id}`;
 
     useEffect(() => {
         const fetchCriteria = async () => {
             try {
                 const data = await apiGetCriteria();
                 setCriteria(data);
-                const initialScores: Record<string, Score> = {};
-                data.forEach(c => {
-                    initialScores[c.id] = { criterionId: c.id, score: 0, comment: '' };
-                });
-                setScores(initialScores);
+                const initialAnswers: Record<string, Answer> = {};
+                const savedDraft = localStorage.getItem(draftKey);
+                if (savedDraft) {
+                    setAnswers(JSON.parse(savedDraft));
+                } else {
+                    data.forEach(c => {
+                        initialAnswers[c.id] = { questionId: c.id };
+                    });
+                    setAnswers(initialAnswers);
+                }
             } catch (error) {
                 console.error("Failed to fetch criteria", error);
+                toast.error("Failed to load evaluation form.");
             } finally {
                 setLoading(false);
             }
         };
         fetchCriteria();
-    }, []);
+    }, [evaluation.id, draftKey]);
 
-    const handleScoreChange = (criterionId: string, score: number) => {
-        setScores(prev => ({ ...prev, [criterionId]: { ...prev[criterionId], score } }));
-    };
+    const saveDraft = useCallback(() => {
+        localStorage.setItem(draftKey, JSON.stringify(answers));
+    }, [answers, draftKey]);
 
-    const handleCommentChange = (criterionId: string, comment: string) => {
-        setScores(prev => ({ ...prev, [criterionId]: { ...prev[criterionId], comment } }));
+    useEffect(() => {
+        const timer = setInterval(saveDraft, 5000);
+        return () => clearInterval(timer);
+    }, [saveDraft]);
+
+    const handleAnswerChange = (criterionId: string, score?: number, response?: string) => {
+        setAnswers(prev => {
+            const newAnswers = { ...prev };
+            newAnswers[criterionId] = {
+                ...newAnswers[criterionId],
+                ...(score !== undefined && { score }),
+                ...(response !== undefined && { response }),
+            };
+            return newAnswers;
+        });
+        saveDraft();
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const allScored = Object.values(scores).every(s => s.score > 0);
+        const allScored = criteria.every(c => answers[c.id]?.score);
         if(!allScored){
-            alert("Please provide a score for every criterion.");
+            toast.error("Please provide a score for every criterion.");
             return;
         }
         setSubmitting(true);
         try {
             await apiSubmitEvaluation({
-                // These would come from the evaluation object or user context
-                studentId: 'student-1',
-                instructorId: 'instructor-1',
-                periodId: 'period-1',
-                scores: Object.values(scores)
+                courseId: evaluation.course._id,
+                teacherId: evaluation.teacher._id,
+                period: evaluation.period,
+                answers: Object.values(answers),
             });
+            toast.success("Evaluation submitted successfully.");
+            localStorage.removeItem(draftKey);
             onComplete(evaluation.id);
         } catch (error) {
             console.error("Failed to submit evaluation", error);
-            alert("Submission failed. Please try again.");
+            toast.error("Submission failed. Please try again.");
         } finally {
             setSubmitting(false);
         }
@@ -98,7 +121,7 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
                     >
                         <p className="font-semibold text-gray-700 dark:text-white">{index + 1}. {criterion.text}</p>
                         <div className="flex items-center space-x-4 mt-4">
-                            {[...Array(criterion.maxScore)].map((_, i) => {
+                            {[...Array(5)].map((_, i) => {
                                 const scoreValue = i + 1;
                                 return (
                                     <label key={scoreValue} className="flex flex-col items-center space-y-1 cursor-pointer">
@@ -106,11 +129,11 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
                                             type="radio"
                                             name={`score-${criterion.id}`}
                                             value={scoreValue}
-                                            checked={scores[criterion.id]?.score === scoreValue}
-                                            onChange={() => handleScoreChange(criterion.id, scoreValue)}
+                                            checked={answers[criterion.id]?.score === scoreValue}
+                                            onChange={() => handleAnswerChange(criterion.id, scoreValue)}
                                             className="sr-only"
                                         />
-                                        <span className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${scores[criterion.id]?.score === scoreValue ? 'bg-blue-500 text-white border-blue-600' : 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-blue-400'}`}>
+                                        <span className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${answers[criterion.id]?.score === scoreValue ? 'bg-blue-500 text-white border-blue-600' : 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-blue-400'}`}>
                                             {scoreValue}
                                         </span>
                                     </label>
@@ -119,8 +142,8 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
                         </div>
                         <textarea
                             placeholder="Optional comments..."
-                            value={scores[criterion.id]?.comment}
-                            onChange={(e) => handleCommentChange(criterion.id, e.target.value)}
+                            value={answers[criterion.id]?.response || ''}
+                            onChange={(e) => handleAnswerChange(criterion.id, undefined, e.target.value)}
                             className="mt-4 w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:ring-blue-500 focus:border-blue-500"
                             rows={2}
                         />

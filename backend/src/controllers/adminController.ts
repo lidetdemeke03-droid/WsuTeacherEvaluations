@@ -141,7 +141,7 @@ export const createScheduleWindow = async (req: Request, res: Response) => {
     });
 
     res.status(201).json({ success: true, data: window });
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
     if (error.code === 11000) {
       return res.status(400).json({ success: false, error: 'A schedule window for this period already exists.' });
