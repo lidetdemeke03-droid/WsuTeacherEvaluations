@@ -60,16 +60,21 @@ export interface IEvaluationForm extends Document {
 }
 
 export interface IEvaluationResponse extends Document {
-  form: Types.ObjectId;
-  evaluator: Types.ObjectId;
-  subject: Types.ObjectId; // Teacher being evaluated
-  course?: Types.ObjectId;
+  anonymousToken: string;
+  course: Types.ObjectId;
+  teacher: Types.ObjectId;
   period: string;
   answers: {
-    question: Types.ObjectId;
-    value: any;
+      questionId: Types.ObjectId;
+      response?: string;
+      score?: number;
   }[];
   totalScore: number;
+  submittedAt: Date;
+  meta?: {
+      ip?: string;
+      ua?: string;
+  };
 }
 
 export interface IPeerAssignment extends Document {
@@ -90,6 +95,8 @@ export interface IStatsCache extends Document {
   teacher: Types.ObjectId;
   course?: Types.ObjectId;
   period: string;
+  studentSubmissionCount: number;
+  studentScoreSum: number;
   studentAvg: number;
   peerAvg: number;
   deptAvg: number;

@@ -1,6 +1,8 @@
 import { Schema, model } from 'mongoose';
 import { IEvaluationForm } from '../types';
 
+export { IEvaluationForm };
+
 const evaluationFormSchema = new Schema<IEvaluationForm>({
   formCode: { type: String, required: true, unique: true },
   title: { type: String, required: true },

@@ -1,45 +1,112 @@
 import { Request, Response } from 'express';
+import asyncHandler from 'express-async-handler';
 import EvaluationResponse from '../models/EvaluationResponse';
 import ScheduleWindow from '../models/ScheduleWindow';
 import { IRequest } from '../middleware/auth';
+import User from '../models/userModel';
+import Evaluation from '../models/evaluationModel';
 
-// @desc    Submit an evaluation response
-// @route   POST /api/evaluations
-// @access  Authenticated users (students, teachers, etc.)
-export const submitEvaluation = async (req: IRequest, res: Response) => {
-  const { form, subject, course, period, answers } = req.body;
-  const evaluator = req.user!._id;
 
-  try {
-    // Check if there is an active schedule window for the given period
-    const now = new Date();
-    const activeWindow = await ScheduleWindow.findOne({
-      period,
-      startDate: { $lte: now },
-      endDate: { $gte: now },
+// @desc    Get assigned evaluation forms for a student
+// @route   GET /api/evaluations/assigned
+// @access  Private (Student)
+export const getAssignedForms = asyncHandler(async (req: Request, res: Response) => {
+    const studentId = req.query.studentId as string;
+
+    // Find all evaluations assigned to the student that are not yet completed
+    const assignedEvaluations = await Evaluation.find({
+        student: studentId,
+        status: 'Pending',
+    }).populate('course teacher form');
+
+    res.json({
+        success: true,
+        data: assignedEvaluations,
     });
+});
 
-    if (!activeWindow) {
-      return res.status(400).json({ success: false, error: 'The evaluation window for this period is not active.' });
+import { createHash } from 'crypto';
+import StatsCache from '../models/StatsCache';
+
+// @desc    Submit a student evaluation response
+// @route   POST /api/evaluations/student
+// @access  Private (Student)
+export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response) => {
+    const { courseId, teacherId, period, answers } = req.body;
+    const studentObjectId = req.user!._id;
+
+    // Generate anonymous token
+    const hash = createHash('sha256');
+    hash.update(`${courseId}:${teacherId}:${period}:${studentObjectId}`);
+    const anonymousToken = hash.digest('hex');
+
+    // Check for duplicate submission
+    const existingResponse = await EvaluationResponse.findOne({ anonymousToken });
+    if (existingResponse) {
+        res.status(400);
+        throw new Error('You have already submitted an evaluation for this course and period.');
     }
 
-    // A more robust implementation would also check:
-    // 1. If the user has already submitted an evaluation for this subject/course/period.
-    // 2. If the user is actually assigned to evaluate the subject (e.g., enrolled in the course).
+    // Calculate total score
+    const ratedAnswers = answers.filter((a: any) => typeof a.score === 'number' && a.score >= 1 && a.score <= 5);
+    const totalScore = ratedAnswers.length > 0 ? ratedAnswers.reduce((sum: number, a: any) => sum + a.score, 0) / ratedAnswers.length : 0;
 
+    // Create new evaluation response
     const response = await EvaluationResponse.create({
-      form,
-      evaluator,
-      subject,
-      course,
-      period,
-      answers,
-      // totalScore would be calculated here or in a pre-save hook based on answers
+        anonymousToken,
+        course: courseId,
+        teacher: teacherId,
+        period,
+        answers,
+        totalScore,
     });
 
+    // Update StatsCache atomically
+    await StatsCache.findOneAndUpdate(
+        { teacher: teacherId, course: courseId, period },
+        [
+            {
+                $set: {
+                    studentSubmissionCount: { $add: ["$studentSubmissionCount", 1] },
+                    studentScoreSum: { $add: ["$studentScoreSum", totalScore] },
+                }
+            },
+            {
+                $set: {
+                    studentAvg: { $divide: ["$studentScoreSum", "$studentSubmissionCount"] },
+                }
+            },
+            {
+                $set: {
+                    finalScore: {
+                        $add: [
+                            { $multiply: ["$studentAvg", 0.5] },
+                            { $multiply: ["$peerAvg", 0.35] },
+                            { $multiply: ["$deptAvg", 0.15] }
+                        ]
+                    }
+                }
+            }
+        ],
+        { upsert: true, new: true }
+    );
+
+
     res.status(201).json({ success: true, data: response });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, error: 'Server Error' });
-  }
-};
+});
+
+// @desc    Create an evaluation assignment
+// @route   POST /api/evaluations/assign
+// @access  Private (Admin)
+export const createEvaluationAssignment = asyncHandler(async (req: Request, res: Response) => {
+    const { studentId, courseId, teacherId, formId } = req.body;
+
+    const assignment = await Evaluation.create({
+        student: studentId,
+        course: courseId,
+        teacher: teacherId,
+        form: formId,
+    });
+
+    res.status(201).json({ success: true, data: assignment });
+});
