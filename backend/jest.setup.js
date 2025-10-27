@@ -1,5 +1,7 @@
-const { connectDB, disconnectDB } = require('./src/config/db');
+// This file is executed before all tests.
+// We can use it to set up a global test environment.
 
-module.exports = async () => {
-    await connectDB();
-};
+// Prevent the application from trying to connect to a real database during tests
+jest.mock('./src/config/db', () => ({
+  connectDB: jest.fn(),
+}));

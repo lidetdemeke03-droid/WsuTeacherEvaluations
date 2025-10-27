@@ -1,40 +1,33 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import { UserRole } from '../../../types';
-
-export interface IUser extends Document {
-  name: string;
-  email: string;
-  password: string; // Not optional
-  role: UserRole;
-  department: Schema.Types.ObjectId;
-  deleted: boolean;
-  comparePassword(password: string): Promise<boolean>;
-}
+import { IUser, UserRole } from '../types';
 
 const userSchema = new Schema<IUser>({
-  name: { type: String, required: true },
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true, select: false },
+  password: { type: String, select: false },
   role: { type: String, enum: Object.values(UserRole), required: true },
   department: { type: Schema.Types.ObjectId, ref: 'Department' },
-  deleted: { type: Boolean, default: false, select: false },
+  employeeId: { type: String },
+  studentId: { type: String },
+  isDeptHead: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: true },
+  passwordResetToken: { type: String },
+  passwordResetExpires: { type: Date },
 }, { timestamps: true });
 
-// Use async pre-hook WITHOUT `next` parameter.
-userSchema.pre<IUser>('save', async function (this: IUser) {
-  // If password not modified, do nothing
-  if (!this.isModified('password')) return;
-
-  const saltRounds = 10;
-  // Use an explicit local variable with typed string
-  const hashed: string = await bcrypt.hash(this.password, saltRounds);
-  this.password = hashed;
+userSchema.pre<IUser>('save', async function (next) {
+  if (!this.isModified('password') || !this.password) {
+    return next();
+  }
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
 });
 
-// Compare passwords
-userSchema.methods.comparePassword = function (this: IUser, candidatePassword: string): Promise<boolean> {
-  return bcrypt.compare(candidatePassword, this.password);
+userSchema.methods.comparePassword = function (password: string): Promise<boolean> {
+  return bcrypt.compare(password, this.password);
 };
 
 const User = model<IUser>('User', userSchema);

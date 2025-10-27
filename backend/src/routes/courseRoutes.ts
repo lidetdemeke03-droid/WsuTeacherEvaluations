@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { getCourses, getCourse, createCourse, updateCourse, deleteCourse } from '../controllers/courseController';
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/role';
-import { UserRole } from '../../../types';
+import { UserRole } from '../types';
 import { courseValidation, validate } from '../middleware/validators';
 
 const router = Router();

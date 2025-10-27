@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { getDepartments, getDepartment, createDepartment, updateDepartment, deleteDepartment } from '../controllers/departmentController';
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/role';
-import { UserRole } from '../../../types';
+import { UserRole } from '../types';
 import { body } from 'express-validator';
 import { validate } from '../middleware/validators';
 

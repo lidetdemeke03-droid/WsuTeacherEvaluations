@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { connectDB } from './config/db';
 import routes from './routes';
+import { scheduleNightlyAggregation } from './jobs/scheduler';
 
 dotenv.config();
 
@@ -32,6 +33,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api', routes);
+
+// Start the cron job for nightly aggregations
+scheduleNightlyAggregation();
 
 app.get('/', (req, res) => {
   res.send('Teacher Evaluation System API is running!');

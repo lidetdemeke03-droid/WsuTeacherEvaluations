@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { getEvaluationPeriods, getEvaluationPeriod, createEvaluationPeriod, updateEvaluationPeriod, deleteEvaluationPeriod } from '../controllers/evaluationPeriodController';
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/role';
-import { UserRole } from '../../../types';
+import { UserRole } from '../types';
 import { body } from 'express-validator';
 import { validate } from '../middleware/validators';
 
