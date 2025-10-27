@@ -9,6 +9,8 @@ import { scheduleNightlyAggregation } from './jobs/scheduler';
 
 dotenv.config();
 
+console.log(`NODE_ENV is set to: ${process.env.NODE_ENV}`);
+
 // Connect to DB only if not in test environment
 if (process.env.NODE_ENV !== 'test') {
     connectDB();
@@ -35,7 +37,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api', routes);
 
 // Start the cron job for nightly aggregations
-scheduleNightlyAggregation();
+if (process.env.NODE_ENV !== 'test') {
+    scheduleNightlyAggregation();
+}
 
 app.get('/', (req, res) => {
   res.send('Teacher Evaluation System API is running!');

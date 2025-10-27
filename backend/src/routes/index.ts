@@ -19,7 +19,10 @@ router.use('/complaints', complaintRoutes);
 import adminRoutes from './adminRoutes';
 router.use('/admin', adminRoutes);
 import evaluationRoutes from './evaluationRoutes';
+import studentRoutes from './studentRoutes';
+
 router.use('/evaluations', evaluationRoutes);
+router.use('/students', studentRoutes);
 
 
 export default router;
