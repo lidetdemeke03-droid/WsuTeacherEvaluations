@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { getCriteria, getCriterion, createCriterion, updateCriterion, deleteCriterion } from '../controllers/criterionController';
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/role';
-import { UserRole } from '../../../types';
+import { UserRole } from '../types';
 import { body } from 'express-validator';
 import { validate } from '../middleware/validators';
 

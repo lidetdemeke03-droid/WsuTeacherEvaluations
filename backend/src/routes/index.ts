@@ -16,5 +16,10 @@ router.use('/departments', departmentRoutes);
 router.use('/criteria', criterionRoutes);
 router.use('/periods', evaluationPeriodRoutes);
 router.use('/complaints', complaintRoutes);
+import adminRoutes from './adminRoutes';
+router.use('/admin', adminRoutes);
+import evaluationRoutes from './evaluationRoutes';
+router.use('/evaluations', evaluationRoutes);
+
 
 export default router;

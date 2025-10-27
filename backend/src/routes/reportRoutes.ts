@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { getInstructorReport, getDepartmentReport, getInstructorRatingDistribution } from '../controllers/reportsController';
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/role';
-import { UserRole } from '../../../types';
+import { UserRole } from '../types';
 
 const router = Router();
 
