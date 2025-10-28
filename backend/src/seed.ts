@@ -10,7 +10,14 @@ import EvaluationForm from './models/EvaluationForm';
 import Question from './models/Question';
 import { UserRole } from './types';
 
-const studentEvaluationForm = {
+interface FormDataType {
+    formCode: string;
+    title: string;
+    anonymous: boolean;
+    questions: { code: string, text: string, type: string, weight?: number }[];
+}
+
+const studentEvaluationForm: FormDataType = {
   formCode: "STU-2025-DEFAULT",
   title: "Student Teaching Evaluation - Computer Science",
   anonymous: true,
@@ -39,7 +46,7 @@ const studentEvaluationForm = {
   ]
 };
 
-const peerEvaluationForm = {
+const peerEvaluationForm: FormDataType = {
     formCode: "PEER-2025-DEFAULT",
     title: "Peer Teaching Evaluation - General",
     anonymous: true,
@@ -57,11 +64,11 @@ const peerEvaluationForm = {
     ]
 };
 
-const departmentHeadEvaluationForm = {
-  formCode:"DEPT-2025-DEFAULT",
-  title:"Department Head Evaluation (Short)",
-  anonymous": false,
-  questions:[
+const departmentHeadEvaluationForm: FormDataType = {
+  formCode: "DEPT-2025-DEFAULT",
+  title: "Department Head Evaluation (Short)",
+  anonymous: false,
+  questions: [
     {"code":"D1","text":"Overall teaching effectiveness (clarity, preparation)","type":"rating"},
     {"code":"D2","text":"Contribution to curriculum and course planning","type":"rating"},
     {"code":"D3","text":"Mentoring and student advising effectiveness","type":"rating"},
@@ -91,7 +98,7 @@ const seedDB = async () => {
         const mathDept = await Department.create({ name: 'Mathematics', code: 'MATH' });
 
         // Create Questions and Forms
-        const createFormWithQuestions = async (formData) => {
+        const createFormWithQuestions = async (formData: FormDataType) => {
             const questionIds = await Question.insertMany(formData.questions).then(docs => docs.map(d => d._id));
             return EvaluationForm.create({ ...formData, questions: questionIds });
         };

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getInstructorReportData, getDepartmentReportData, getInstructorRatingDistribution } from '../utils/aggregation';
+import { getInstructorReportData, getDepartmentReportData, getInstructorRatingDistribution as getDistributionData } from '../utils/aggregation';
 import mongoose from 'mongoose';
 
 export const getInstructorReport = async (req: Request, res: Response) => {
@@ -36,7 +36,7 @@ export const getInstructorRatingDistribution = async (req: Request, res: Respons
     try {
         const instructorId = new mongoose.Types.ObjectId(req.params.id);
 
-        const reportData = await getInstructorRatingDistribution(instructorId);
+        const reportData = await getDistributionData(instructorId);
 
         res.status(200).json({ success: true, data: reportData });
     } catch (error: any) {
