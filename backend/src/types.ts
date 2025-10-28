@@ -17,8 +17,10 @@ export interface IUser extends Document {
   department: Types.ObjectId;
   employeeId?: string;
   studentId?: string;
+  courses: Types.ObjectId[];
   isDeptHead: boolean;
   isActive: boolean;
+  deleted?: boolean;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
   comparePassword(password: string): Promise<boolean>;
@@ -60,6 +62,7 @@ export interface IEvaluationForm extends Document {
 }
 
 export interface IEvaluationResponse extends Document {
+  evaluator: Types.ObjectId;
   anonymousToken: string;
   course: Types.ObjectId;
   teacher: Types.ObjectId;

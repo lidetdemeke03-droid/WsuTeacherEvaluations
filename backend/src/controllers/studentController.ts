@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
-import Course from '../models/courseModel';
-import User from '../models/userModel';
+import Course from '../models/Course';
+import User from '../models/User';
 
 // @desc    Get courses for a student
 // @route   GET /api/students/:id/courses
