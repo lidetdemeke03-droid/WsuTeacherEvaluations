@@ -27,7 +27,7 @@ const worker = new Worker<AggregationJobData>('aggregationQueue', async (job: Jo
         details: {
           teacherId,
           period,
-          error: error.message,
+          error: (error as Error).message,
         },
       });
       // Here you would also send an email to the admin

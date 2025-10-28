@@ -4,3 +4,4 @@ dist
 .env.test
 error.log
 combined.log
+*.js

@@ -1,4 +1,4 @@
-import Evaluation from '../models/Evaluation';
+import Evaluation from '../models/EvaluationResponse';
 import mongoose from 'mongoose';
 
 export const getInstructorReportData = async (instructorId: mongoose.Types.ObjectId, from?: Date, to?: Date, groupBy?: 'week' | 'month') => {

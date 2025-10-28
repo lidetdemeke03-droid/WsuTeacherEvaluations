@@ -3,7 +3,7 @@ import asyncHandler from 'express-async-handler';
 import EvaluationResponse from '../models/EvaluationResponse';
 import ScheduleWindow from '../models/ScheduleWindow';
 import { IRequest } from '../middleware/auth';
-import User from '../models/userModel';
+import User from '../models/User';
 import Evaluation from '../models/evaluationModel';
 
 
