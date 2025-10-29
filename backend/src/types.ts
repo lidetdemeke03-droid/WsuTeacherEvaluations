@@ -116,6 +116,8 @@ export interface IStatsCache extends Document {
   studentSubmissionCount: number;
   studentScoreSum: number;
   studentAvg: number;
+  peerSubmissionCount: number;
+  peerScoreSum: number;
   peerAvg: number;
   deptAvg: number;
   finalScore: number;
