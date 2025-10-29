@@ -39,16 +39,36 @@ export const apiLogout = (): Promise<void> => {
     return Promise.resolve();
 };
 
-
 // Users
 export const apiGetUsers = (): Promise<User[]> => apiRequest<User[]>('/users');
 export const apiUpdateUser = (userId: string, userData: Partial<User>): Promise<User> => apiRequest<User>(`/users/${userId}`, { method: 'PUT', body: JSON.stringify(userData) });
 export const apiDeleteUser = (userId: string): Promise<void> => apiRequest<void>(`/users/${userId}`, { method: 'DELETE' });
+export const apiCreateUser = (userData: Partial<User>): Promise<User> => apiRequest<User>('/admin/users', { method: 'POST', body: JSON.stringify(userData) });
+
+export const apiBulkImportUsers = async (file: File): Promise<{ success: boolean, message: string }> => {
+    const token = sessionStorage.getItem('authToken');
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/admin/users/import`, {
+        method: 'POST',
+        headers: {
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+        },
+        body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || 'Bulk import failed');
+    }
+    return data;
+};
 
 // Evaluations
 export const apiGetStudentCourses = (studentId: string): Promise<Course[]> => apiRequest<Course[]>(`/students/${studentId}/courses`);
 export const apiGetStudentEvaluations = (studentId: string): Promise<Evaluation[]> => apiRequest<Evaluation[]>(`/evaluations/assigned?studentId=${studentId}`);
 export const apiSubmitEvaluation = (submission: EvaluationSubmission): Promise<any> => apiRequest<any>('/evaluations/student', { method: 'POST', body: JSON.stringify(submission) });
+export const apiAssignEvaluation = (assignData: { studentId: string, courseId: string, teacherId: string }): Promise<any> => apiRequest<any>('/evaluations/assign', { method: 'POST', body: JSON.stringify(assignData) });
 
 // Criteria
 export const apiGetCriteria = (): Promise<Criterion[]> => apiRequest<Criterion[]>('/criteria');
@@ -75,6 +95,9 @@ export const apiGetEvaluationPeriods = (): Promise<EvaluationPeriod[]> => apiReq
 export const apiCreateEvaluationPeriod = (periodData: Partial<EvaluationPeriod>): Promise<EvaluationPeriod> => apiRequest<EvaluationPeriod>('/periods', { method: 'POST', body: JSON.stringify(periodData) });
 export const apiUpdateEvaluationPeriod = (periodId: string, periodData: Partial<EvaluationPeriod>): Promise<EvaluationPeriod> => apiRequest<EvaluationPeriod>(`/periods/${periodId}`, { method: 'PUT', body: JSON.stringify(periodData) });
 export const apiDeleteEvaluationPeriod = (periodId: string): Promise<void> => apiRequest<void>(`/periods/${periodId}`, { method: 'DELETE' });
+
+// Reports
+export const apiGetMyPerformance = (): Promise<any[]> => apiRequest<any[]>('/reports/my-performance');
 
 export const api = {
     get: <T>(url: string) => apiRequest<T>(url, { method: 'GET' }),

@@ -2,19 +2,22 @@
 import React, { useState, useEffect } from 'react';
 import { apiGetStudentEvaluations } from '../../services/api';
 import { Evaluation } from '../../types';
+import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, CheckCircle } from 'lucide-react';
 import EvaluationForm from './EvaluationForm';
 
 const StudentEvaluationsPage: React.FC = () => {
+    const { user } = useAuth();
     const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedEvaluation, setSelectedEvaluation] = useState<Evaluation | null>(null);
 
     useEffect(() => {
         const fetchEvaluations = async () => {
+            if (!user) return;
             try {
-                const data = await apiGetStudentEvaluations('student-1');
+                const data = await apiGetStudentEvaluations(user._id);
                 setEvaluations(data);
             } catch (error) {
                 console.error("Failed to fetch evaluations", error);
