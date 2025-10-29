@@ -75,3 +75,10 @@ export const apiGetEvaluationPeriods = (): Promise<EvaluationPeriod[]> => apiReq
 export const apiCreateEvaluationPeriod = (periodData: Partial<EvaluationPeriod>): Promise<EvaluationPeriod> => apiRequest<EvaluationPeriod>('/periods', { method: 'POST', body: JSON.stringify(periodData) });
 export const apiUpdateEvaluationPeriod = (periodId: string, periodData: Partial<EvaluationPeriod>): Promise<EvaluationPeriod> => apiRequest<EvaluationPeriod>(`/periods/${periodId}`, { method: 'PUT', body: JSON.stringify(periodData) });
 export const apiDeleteEvaluationPeriod = (periodId: string): Promise<void> => apiRequest<void>(`/periods/${periodId}`, { method: 'DELETE' });
+
+export const api = {
+    get: <T>(url: string) => apiRequest<T>(url, { method: 'GET' }),
+    post: <T>(url: string, body: any) => apiRequest<T>(url, { method: 'POST', body: JSON.stringify(body) }),
+    put: <T>(url: string, body: any) => apiRequest<T>(url, { method: 'PUT', body: JSON.stringify(body) }),
+    delete: <T>(url: string) => apiRequest<T>(url, { method: 'DELETE' })
+};
