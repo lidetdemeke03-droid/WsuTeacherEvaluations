@@ -97,7 +97,7 @@ const CreateCourseModal: React.FC<CreateCourseModalProps> = ({ isOpen, onClose, 
 
     useEffect(() => {
         if (isOpen) {
-            apiGetUsers().then(users => setTeachers(users.filter(u => u.role === UserRole.Instructor)));
+            apiGetUsers().then(users => setTeachers(users.filter(u => u.role === UserRole.Teacher)));
             apiGetDepartments().then(setDepartments);
         }
     }, [isOpen]);
