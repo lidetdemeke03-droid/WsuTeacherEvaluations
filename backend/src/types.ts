@@ -29,6 +29,7 @@ export interface IUser extends Document {
 export interface IDepartment extends Document {
   name: string;
   code: string;
+  head: Types.ObjectId[];
 }
 
 export interface ICourse extends Document {
@@ -61,16 +62,26 @@ export interface IEvaluationForm extends Document {
   questions: IQuestion[];
 }
 
+export enum EvaluationType {
+  Student = 'student',
+  Peer = 'peer',
+  DepartmentHead = 'dept'
+}
+
 export interface IEvaluationResponse extends Document {
-  evaluator: Types.ObjectId;
-  anonymousToken: string;
+  type: EvaluationType;
+  evaluator: Types.ObjectId; // User who submitted the evaluation
+  targetTeacher: Types.ObjectId; // Teacher being evaluated
+  anonymousToken?: string; // Should be optional now
   course: Types.ObjectId;
-  teacher: Types.ObjectId;
   period: string;
   answers: {
       questionId: Types.ObjectId;
       response?: string;
       score?: number;
+      conflict?: boolean;
+      reason?: string;
+      evidence?: string;
   }[];
   totalScore: number;
   submittedAt: Date;
@@ -81,10 +92,14 @@ export interface IEvaluationResponse extends Document {
 }
 
 export interface IPeerAssignment extends Document {
-  evaluator: Types.ObjectId; // Student
-  evaluatee: Types.ObjectId; // Student
+  evaluator: Types.ObjectId; // Teacher
+  targetTeacher: Types.ObjectId; // Teacher
   course: Types.ObjectId;
-  period: string;
+  active: boolean;
+  window: {
+    start: Date;
+    end: Date;
+  };
 }
 
 export interface IScheduleWindow extends Document {

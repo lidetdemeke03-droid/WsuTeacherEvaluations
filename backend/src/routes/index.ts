@@ -6,6 +6,10 @@ import departmentRoutes from './departmentRoutes';
 import criterionRoutes from './criterionRoutes';
 import evaluationPeriodRoutes from './evaluationPeriodRoutes';
 import complaintRoutes from './complaintRoutes';
+import adminRoutes from './adminRoutes';
+import evaluationRoutes from './evaluationRoutes';
+import studentRoutes from './studentRoutes';
+import peerRoutes from './peerRoutes';
 
 const router = Router();
 
@@ -16,13 +20,9 @@ router.use('/departments', departmentRoutes);
 router.use('/criteria', criterionRoutes);
 router.use('/periods', evaluationPeriodRoutes);
 router.use('/complaints', complaintRoutes);
-import adminRoutes from './adminRoutes';
 router.use('/admin', adminRoutes);
-import evaluationRoutes from './evaluationRoutes';
-import studentRoutes from './studentRoutes';
-
 router.use('/evaluations', evaluationRoutes);
 router.use('/students', studentRoutes);
-
+router.use('/peers', peerRoutes);
 
 export default router;

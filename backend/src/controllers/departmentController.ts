@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import Department from '../models/Department';
+import User from '../models/User';
+import { UserRole } from '../types';
 
 export const getDepartments = async (req: Request, res: Response) => {
     try {
@@ -67,6 +69,15 @@ export const deleteDepartment = async (req: Request, res: Response) => {
             return res.status(404).json({ success: false, error: 'Department not found' });
         }
         res.status(200).json({ success: true, data: {} });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+export const getDepartmentTeachers = async (req: Request, res: Response) => {
+    try {
+        const teachers = await User.find({ department: req.params.id, role: UserRole.Teacher });
+        res.status(200).json({ success: true, data: teachers });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
     }
