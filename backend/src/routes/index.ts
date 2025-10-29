@@ -10,6 +10,7 @@ import adminRoutes from './adminRoutes';
 import evaluationRoutes from './evaluationRoutes';
 import studentRoutes from './studentRoutes';
 import peerRoutes from './peerRoutes';
+import reportRoutes from './reportRoutes';
 
 const router = Router();
 
@@ -24,5 +25,6 @@ router.use('/admin', adminRoutes);
 router.use('/evaluations', evaluationRoutes);
 router.use('/students', studentRoutes);
 router.use('/peers', peerRoutes);
+router.use('/reports', reportRoutes);
 
 export default router;

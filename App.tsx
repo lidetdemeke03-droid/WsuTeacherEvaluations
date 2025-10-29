@@ -14,6 +14,7 @@ import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import { UserRole } from './types';
 import ManageCriteriaPage from './pages/admin/ManageCriteriaPage';
+import ManageCoursesPage from './pages/admin/ManageCoursesPage';
 import InstructorDashboard from './pages/instructor/InstructorDashboard';
 import HomePage from './pages/HomePage';
 import Profile from './pages/profile/Profile';
@@ -72,6 +73,7 @@ const AppContent: React.FC = () => {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 
                 <Route path="/admin/users" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageUsersPage /></RoleProtectedRoute>} />
+                <Route path="/admin/courses" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageCoursesPage /></RoleProtectedRoute>} />
                 <Route path="/admin/departments" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageDepartmentsPage /></RoleProtectedRoute>} />
                 <Route path="/admin/periods" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageEvaluationPeriodsPage /></RoleProtectedRoute>} />
                 <Route path="/admin/criteria" element={<RoleProtectedRoute roles={[UserRole.Admin, UserRole.DepartmentHead]}><ManageCriteriaPage /></RoleProtectedRoute>} />
