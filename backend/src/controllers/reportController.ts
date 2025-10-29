@@ -2,6 +2,7 @@ import { Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import { IRequest } from '../middleware/auth';
 import StatsCache from '../models/StatsCache';
+import { Request } from 'express';
 
 // @desc    Get performance data for the current instructor
 // @route   GET /api/reports/my-performance
@@ -25,7 +26,7 @@ export const getMyPerformance = asyncHandler(async (req: IRequest, res: Response
 // @desc    Get all reports for a department (for dept head)
 // @route   GET /api/reports/department/:id
 // @access  Private (DepartmentHead)
-export const getDepartmentReport = asyncHandler(async (req: Request, res: Response) => {
+export const getDepartmentReport = asyncHandler(async (req: IRequest, res: Response) => {
     const departmentId = req.params.id;
     // Note: This requires linking users (teachers) to departments.
     // This is a placeholder for future implementation.
