@@ -8,6 +8,8 @@ const statsCacheSchema = new Schema<IStatsCache>({
   studentSubmissionCount: { type: Number, default: 0 },
   studentScoreSum: { type: Number, default: 0 },
   studentAvg: { type: Number, default: 0 },
+  peerSubmissionCount: { type: Number, default: 0 },
+  peerScoreSum: { type: Number, default: 0 },
   peerAvg: { type: Number, default: 0 },
   deptAvg: { type: Number, default: 0 },
   finalScore: { type: Number, default: 0 },
