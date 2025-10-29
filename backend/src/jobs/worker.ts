@@ -4,7 +4,7 @@ import { aggregateTeacherScores } from '../services/aggregationService';
 import AuditLog from '../models/AuditLog';
 import { LogLevel } from '../types';
 
-const connection = new Redis(process.env.REDIS_URL!, { maxRetriesPerRequest: null });
+const connection = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379', { maxRetriesPerRequest: null });
 
 interface AggregationJobData {
   teacherId: string;
