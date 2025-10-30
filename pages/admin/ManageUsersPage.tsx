@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { apiGetUsers, apiCreateUser, apiBulkImportUsers, apiUpdateUser, apiDeleteUser } from '../../services/api';
 import { User, UserRole } from '../../types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusCircle, Upload, MoreVertical, X, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Upload, X, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const ManageUsersPage: React.FC = () => {
@@ -34,7 +34,7 @@ const ManageUsersPage: React.FC = () => {
     const handleCreateUser = async (userData: Partial<User>) => {
         try {
             const newUser = await apiCreateUser(userData);
-            setUsers([...users, newUser]);
+            fetchUsers(); // Refetch to get populated data
             setIsCreateModalOpen(false);
             toast.success('User created successfully!');
         } catch (err) {
@@ -44,8 +44,8 @@ const ManageUsersPage: React.FC = () => {
 
     const handleUpdateUser = async (userId: string, userData: Partial<User>) => {
         try {
-            const updatedUser = await apiUpdateUser(userId, userData);
-            setUsers(users.map(u => u._id === userId ? updatedUser : u));
+            await apiUpdateUser(userId, userData);
+            fetchUsers(); // Refetch to get populated data
             setIsEditModalOpen(false);
             toast.success('User updated successfully!');
         } catch (err) {
@@ -65,10 +65,7 @@ const ManageUsersPage: React.FC = () => {
         }
     };
 
-    const handleBulkImportClick = () => {
-        fileInputRef.current?.click();
-    };
-
+    const handleBulkImportClick = () => { fileInputRef.current?.click(); };
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
@@ -116,9 +113,9 @@ const ManageUsersPage: React.FC = () => {
                     <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                         {users.map(user => (
                             <motion.tr key={user._id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                <td className="td">{user.name}</td>
+                                <td className="td">{`${user.firstName} ${user.lastName}`}</td>
                                 <td className="td">{user.email}</td>
-                                <td className="td"><span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-red-100 text-red-800' : user.role === 'teacher' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>{user.role}</span></td>
+                                <td className="td"><span className={`role-badge ${user.role}`}>{user.role}</span></td>
                                 <td className="td">{user.department?.name || 'N/A'}</td>
                                 <td className="td text-right">
                                     <button onClick={() => openEditModal(user)} className="text-blue-500 hover:text-blue-700 mr-2"><Edit size={18}/></button>
@@ -136,35 +133,36 @@ const ManageUsersPage: React.FC = () => {
     );
 };
 
-// Modal Components...
+// Modal Components
 interface CreateUserModalProps { isOpen: boolean; onClose: () => void; onCreate: (userData: Partial<User>) => void; }
 const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onCreate }) => {
-    const [name, setName] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState<UserRole>(UserRole.Student);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onCreate({ name, email, password, role });
+        onCreate({ firstName, lastName, email, password, role });
     };
 
-    return (<AnimatePresence>{isOpen && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop"><motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -50, opacity: 0 }} className="modal-content"><div className="modal-header"><h2 className="text-2xl font-bold">Create New User</h2><button onClick={onClose}><X size={24} /></button></div><form onSubmit={handleSubmit} className="space-y-4"><input type="text" placeholder="Name" value={name} onChange={e => setName(e.target.value)} className="input" required /><input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required /><input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="input" required /><select value={role} onChange={e => setRole(e.target.value as UserRole)} className="input">{Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}</select><div className="modal-footer"><button type="button" onClick={onClose} className="btn-secondary">Cancel</button><button type="submit" className="btn-primary">Create</button></div></form></motion.div></motion.div>)}</AnimatePresence>);
+    return (<AnimatePresence>{isOpen && (<motion.div className="modal-backdrop"><motion.div className="modal-content"><div className="modal-header"><h2 className="text-2xl font-bold">Create New User</h2><button onClick={onClose}><X size={24} /></button></div><form onSubmit={handleSubmit} className="space-y-4"><input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="input" required /><input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="input" required /><input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required /><input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="input" /><select value={role} onChange={e => setRole(e.target.value as UserRole)} className="input">{Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}</select><div className="modal-footer"><button type="button" onClick={onClose} className="btn-secondary">Cancel</button><button type="submit" className="btn-primary">Create</button></div></form></motion.div></motion.div>)}</AnimatePresence>);
 };
 
 interface EditUserModalProps { isOpen: boolean; onClose: () => void; user: User; onUpdate: (userId: string, userData: Partial<User>) => void; }
 const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, onUpdate }) => {
-    const [name, setName] = useState(user.name);
+    const [firstName, setFirstName] = useState(user.firstName);
+    const [lastName, setLastName] = useState(user.lastName);
     const [email, setEmail] = useState(user.email);
     const [role, setRole] = useState<UserRole>(user.role);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onUpdate(user._id, { name, email, role });
+        onUpdate(user._id, { firstName, lastName, email, role });
     };
 
-    return (<AnimatePresence>{isOpen && (<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="modal-backdrop"><motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -50, opacity: 0 }} className="modal-content"><div className="modal-header"><h2 className="text-2xl font-bold">Edit User</h2><button onClick={onClose}><X size={24} /></button></div><form onSubmit={handleSubmit} className="space-y-4"><input type="text" placeholder="Name" value={name} onChange={e => setName(e.target.value)} className="input" required /><input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required /><select value={role} onChange={e => setRole(e.target.value as UserRole)} className="input">{Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}</select><div className="modal-footer"><button type="button" onClick={onClose} className="btn-secondary">Cancel</button><button type="submit" className="btn-primary">Update</button></div></form></motion.div></motion.div>)}</AnimatePresence>);
+    return (<AnimatePresence>{isOpen && (<motion.div className="modal-backdrop"><motion.div className="modal-content"><div className="modal-header"><h2 className="text-2xl font-bold">Edit User</h2><button onClick={onClose}><X size={24} /></button></div><form onSubmit={handleSubmit} className="space-y-4"><input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="input" required /><input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="input" required /><input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required /><select value={role} onChange={e => setRole(e.target.value as UserRole)} className="input">{Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}</select><div className="modal-footer"><button type="button" onClick={onClose} className="btn-secondary">Cancel</button><button type="submit" className="btn-primary">Update</button></div></form></motion.div></motion.div>)}</AnimatePresence>);
 };
-
 
 export default ManageUsersPage;

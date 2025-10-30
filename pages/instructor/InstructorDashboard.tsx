@@ -39,7 +39,7 @@ const InstructorDashboard: React.FC = () => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
             <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-white">My Performance</h1>
-            <p className="mb-8 text-lg text-gray-600 dark:text-gray-300">Welcome, {user?.name}. Here is a summary of your recent evaluations.</p>
+            <p className="mb-8 text-lg text-gray-600 dark:text-gray-300">Welcome, {user ? `${user.firstName} ${user.lastName}` : ''}. Here is a summary of your recent evaluations.</p>
             
              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
                 <h2 className="text-xl font-semibold mb-4 text-gray-700 dark:text-white">Scores by Evaluation Period</h2>
