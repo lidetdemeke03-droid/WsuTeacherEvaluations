@@ -43,7 +43,7 @@ export const apiLogout = (): Promise<void> => {
 export const apiGetUsers = (): Promise<User[]> => apiRequest<User[]>('/users');
 export const apiUpdateUser = (userId: string, userData: Partial<User>): Promise<User> => apiRequest<User>(`/users/${userId}`, { method: 'PUT', body: JSON.stringify(userData) });
 export const apiDeleteUser = (userId: string): Promise<void> => apiRequest<void>(`/users/${userId}`, { method: 'DELETE' });
-export const apiCreateUser = (userData: Partial<User>): Promise<User> => apiRequest<User>('/admin/users', { method: 'POST', body: JSON.stringify(userData) });
+export const apiCreateUser = (userData: { firstName: string, lastName: string, email: string, role: UserRole, password?: string }): Promise<User> => apiRequest<User>('/admin/users', { method: 'POST', body: JSON.stringify(userData) });
 
 export const apiBulkImportUsers = async (file: File): Promise<{ success: boolean, message: string }> => {
     const token = sessionStorage.getItem('authToken');

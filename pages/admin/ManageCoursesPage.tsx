@@ -62,7 +62,7 @@ const ManageCoursesPage: React.FC = () => {
                         <div>
                             <h2 className="text-xl font-bold">{course.name}</h2>
                             <p className="text-gray-600 dark:text-gray-400">{course.courseCode}</p>
-                            <p className="mt-2 text-sm">Teacher: {course.teacher?.name || 'N/A'}</p>
+                            <p className="mt-2 text-sm">Teacher: {course.teacher ? `${course.teacher.firstName} ${course.teacher.lastName}` : 'N/A'}</p>
                         </div>
                         <button onClick={() => openAssignModal(course)} className="mt-4 flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
                             <UserPlus size={18} className="mr-2" />
@@ -119,8 +119,8 @@ const CreateCourseModal: React.FC<CreateCourseModalProps> = ({ isOpen, onClose, 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <input type="text" placeholder="Course Name" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 border rounded" />
                             <input type="text" placeholder="Course Code" value={courseCode} onChange={e => setCourseCode(e.target.value)} className="w-full p-2 border rounded" />
-                            <select value={teacherId} onChange={e => setTeacherId(e.target.value)} className="w-full p-2 border rounded"><option value="">Select Teacher</option>{teachers.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}</select>
-                            <select value={departmentId} onChange={e => setDepartmentId(e.target.value)} className="w-full p-2 border rounded"><option value="">Select Department</option>{departments.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}</select>
+                            <select value={teacherId} onChange={e => setTeacherId(e.target.value)} className="w-full p-2 border rounded"><option value="">Select Teacher</option>{teachers.map(t => <option key={t._id} value={t._id}>{`${t.firstName} ${t.lastName}`}</option>)}</select>
+                            <select value={departmentId} onChange={e => setDepartmentId(e.target.value)} className="w-full p-2 border rounded"><option value="">Select Department</option>{departments.map(d => <option key={d._id} value={d.name}</option>)}</select>
                             <div className="flex justify-end space-x-2"><button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Cancel</button><button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Create</button></div>
                         </form>
                     </motion.div>
@@ -179,7 +179,7 @@ const AssignStudentModal: React.FC<AssignStudentModalProps> = ({ isOpen, onClose
                         <div className="max-h-64 overflow-y-auto pr-2">
                             {students.map(student => (
                                 <div key={student._id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                                    <span>{student.name}</span>
+                                    <span>{`${student.firstName} ${student.lastName}`}</span>
                                     <input type="checkbox" checked={selectedStudents.includes(student._id)} onChange={() => toggleStudentSelection(student._id)} className="form-checkbox h-5 w-5"/>
                                 </div>
                             ))}
