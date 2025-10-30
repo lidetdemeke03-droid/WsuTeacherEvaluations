@@ -120,7 +120,7 @@ const CreateCourseModal: React.FC<CreateCourseModalProps> = ({ isOpen, onClose, 
                             <input type="text" placeholder="Course Name" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 border rounded" />
                             <input type="text" placeholder="Course Code" value={courseCode} onChange={e => setCourseCode(e.target.value)} className="w-full p-2 border rounded" />
                             <select value={teacherId} onChange={e => setTeacherId(e.target.value)} className="w-full p-2 border rounded"><option value="">Select Teacher</option>{teachers.map(t => <option key={t._id} value={t._id}>{`${t.firstName} ${t.lastName}`}</option>)}</select>
-                            <select value={departmentId} onChange={e => setDepartmentId(e.target.value)} className="w-full p-2 border rounded"><option value="">Select Department</option>{departments.map(d => <option key={d._id} value={d.name}</option>)}</select>
+                            <select value={departmentId} onChange={e => setDepartmentId(e.target.value)} className="w-full p-2 border rounded"><option value="">Select Department</option>{departments.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}</select>
                             <div className="flex justify-end space-x-2"><button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Cancel</button><button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Create</button></div>
                         </form>
                     </motion.div>
