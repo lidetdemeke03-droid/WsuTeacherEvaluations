@@ -1,6 +1,6 @@
-import { User, Evaluation, Criterion, EvaluationSubmission, Department, Course, Complaint, EvaluationPeriod } from '../types';
+import { User, Evaluation, Criterion, EvaluationSubmission, Department, Course, Complaint, EvaluationPeriod, UserRole } from '../types';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 const apiRequest = async <T,>(url: string, options: RequestInit = {}): Promise<T> => {
     const token = sessionStorage.getItem('authToken');
