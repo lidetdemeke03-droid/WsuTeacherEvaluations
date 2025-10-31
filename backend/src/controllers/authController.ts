@@ -11,7 +11,7 @@ const generateTokens = (user: any) => {
 
 export const register = async (req: Request, res: Response) => {
     try {
-        const { name, email, password, role, department } = req.body;
+        const { firstName, lastName, email, password, role, department } = req.body;
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -19,7 +19,8 @@ export const register = async (req: Request, res: Response) => {
         }
 
         const user = new User({
-            name,
+            firstName,
+            lastName,
             email,
             password,
             role: role || UserRole.Student, // Default role
