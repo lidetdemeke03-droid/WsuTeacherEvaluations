@@ -19,6 +19,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
 
   const getNavLinks = () => {
     switch (user.role) {
+      case UserRole.SuperAdmin:
+        return [
+            { to: "/dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
+            { to: "/superadmin/admins", icon: <Users size={20} />, label: "Manage Admins" },
+            { to: "/superadmin/logs", icon: <ClipboardList size={20} />, label: "Activity Logs" },
+        ];
       case UserRole.Admin:
         return [
           { to: "/dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
@@ -36,7 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
           { to: "/instructor/results", icon: <BarChart3 size={20} />, label: "Instructors Result" },
           { to: "/evaluation/new", icon: <FilePlus2 size={20} />, label: "Make Evaluation" },
         ];
-      case UserRole.Instructor:
+      case UserRole.Teacher:
         return [
           { to: "/dashboard", icon: <Home size={20} />, label: "Home" },
           { to: "/evaluation/new", icon: <FilePlus2 size={20} />, label: "Make Evaluation" },

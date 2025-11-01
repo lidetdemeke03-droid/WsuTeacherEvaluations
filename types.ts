@@ -1,9 +1,10 @@
 
 export enum UserRole {
-  Admin = 'Admin',
-  DepartmentHead = 'Department Head',
-  Instructor = 'Instructor',
-  Student = 'Student',
+  Student = 'student',
+  Teacher = 'teacher',
+  DepartmentHead = 'department_head',
+  Admin = 'admin',
+  SuperAdmin = 'superadmin',
 }
 
 export interface User {

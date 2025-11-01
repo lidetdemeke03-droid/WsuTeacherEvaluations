@@ -47,6 +47,12 @@ export const apiUpdateUser = (userId: string, userData: Partial<User>): Promise<
 export const apiDeleteUser = (userId: string): Promise<void> => apiRequest<void>(`/users/${userId}`, { method: 'DELETE' });
 export const apiCreateUser = (userData: { firstName: string, lastName: string, email: string, role: UserRole, password?: string }): Promise<User> => apiRequest<User>('/admin/users', { method: 'POST', body: JSON.stringify(userData) });
 
+// SuperAdmin
+export const apiGetAdmins = (): Promise<User[]> => apiRequest<User[]>('/superadmin/admins');
+export const apiCreateAdmin = (userData: { firstName: string, lastName: string, email: string, password?: string }): Promise<User> => apiRequest<User>('/superadmin/admins', { method: 'POST', body: JSON.stringify(userData) });
+export const apiUpdateAdmin = (userId: string, userData: Partial<User>): Promise<User> => apiRequest<User>(`/superadmin/admins/${userId}`, { method: 'PUT', body: JSON.stringify(userData) });
+export const apiDeleteAdmin = (userId: string): Promise<void> => apiRequest<void>(`/superadmin/admins/${userId}`, { method: 'DELETE' });
+
 export const apiBulkImportUsers = async (file: File): Promise<{ success: boolean, message: string }> => {
     const token = sessionStorage.getItem('authToken');
     const formData = new FormData();

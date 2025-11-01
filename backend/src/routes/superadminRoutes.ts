@@ -1,0 +1,20 @@
+import { Router } from 'express';
+import { getAdmins, createAdmin, updateAdmin, deleteAdmin } from '../controllers/superadminController';
+import { protect } from '../middleware/auth';
+import { authorize } from '../middleware/role';
+import { UserRole } from '../types';
+
+const router = Router();
+
+// Apply protect and authorize middleware to all routes in this file
+router.use(protect, authorize(UserRole.SuperAdmin));
+
+router.route('/')
+    .get(getAdmins)
+    .post(createAdmin);
+
+router.route('/:id')
+    .put(updateAdmin)
+    .delete(deleteAdmin);
+
+export default router;
