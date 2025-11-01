@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ManageUsersPage from './pages/admin/ManageUsersPage';
+import ManageAdminsPage from './pages/superadmin/ManageAdminsPage';
 import ManageDepartmentsPage from './pages/admin/ManageDepartmentsPage';
 import ManageEvaluationPeriodsPage from './pages/admin/ManageEvaluationPeriodsPage';
 import StudentEvaluationsPage from './pages/student/StudentEvaluationsPage';
@@ -72,6 +73,8 @@ const AppContent: React.FC = () => {
             <Route element={<ProtectedLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 
+                <Route path="/superadmin/admins" element={<RoleProtectedRoute roles={[UserRole.SuperAdmin]}><ManageAdminsPage /></RoleProtectedRoute>} />
+
                 <Route path="/admin/users" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageUsersPage /></RoleProtectedRoute>} />
                 <Route path="/admin/courses" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageCoursesPage /></RoleProtectedRoute>} />
                 <Route path="/admin/departments" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageDepartmentsPage /></RoleProtectedRoute>} />
@@ -80,13 +83,13 @@ const AppContent: React.FC = () => {
                 
                 <Route path="/student/evaluations" element={<RoleProtectedRoute roles={[UserRole.Student]}><StudentEvaluationsPage /></RoleProtectedRoute>} />
 
-                <Route path="/instructor/performance" element={<RoleProtectedRoute roles={[UserRole.Instructor]}><InstructorDashboard /></RoleProtectedRoute>} />
+                <Route path="/instructor/performance" element={<RoleProtectedRoute roles={[UserRole.Teacher]}><InstructorDashboard /></RoleProtectedRoute>} />
 
-                <Route path="/complaints" element={<RoleProtectedRoute roles={[UserRole.Admin, UserRole.DepartmentHead, UserRole.Instructor, UserRole.Student]}><ComplaintsPage /></RoleProtectedRoute>} />
+                <Route path="/complaints" element={<RoleProtectedRoute roles={[UserRole.Admin, UserRole.DepartmentHead, UserRole.Teacher, UserRole.Student]}><ComplaintsPage /></RoleProtectedRoute>} />
                 <Route path="/reports" element={<RoleProtectedRoute roles={[UserRole.Admin, UserRole.DepartmentHead]}><ReportsPage /></RoleProtectedRoute>} />
 
                 <Route path="/profile" element={<Profile />} />
-                <Route path="/evaluation/new" element={<RoleProtectedRoute roles={[UserRole.Instructor, UserRole.DepartmentHead]}><NewEvaluation /></RoleProtectedRoute>} />
+                <Route path="/evaluation/new" element={<RoleProtectedRoute roles={[UserRole.Teacher, UserRole.DepartmentHead]}><NewEvaluation /></RoleProtectedRoute>} />
                 <Route path="/instructor/results" element={<RoleProtectedRoute roles={[UserRole.DepartmentHead]}><InstructorResults /></RoleProtectedRoute>} />
             </Route>
             
