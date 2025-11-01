@@ -65,7 +65,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
 
   return (
     <>
-      {/* Desktop sidebar */}
       <aside className="hidden md:flex w-64 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 flex flex-col">
         <div className="flex items-center space-x-2 mb-8">
           <GraduationCap className="text-blue-600 dark:text-blue-400" size={32} />
@@ -85,7 +84,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
         </nav>
       </aside>
 
-      {/* Mobile drawer */}
       <div className={`md:hidden fixed inset-0 z-40 ${isOpen ? '' : 'pointer-events-none'}`} aria-hidden={!isOpen}>
         {/* backdrop */}
         <div
