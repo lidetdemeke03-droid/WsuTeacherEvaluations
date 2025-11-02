@@ -38,8 +38,8 @@ export const getCourse = async (req: Request, res: Response) => {
 
 export const createCourse = async (req: Request, res: Response) => {
     try {
-        const { name, department, instructor } = req.body;
-        const course = new Course({ name, department, instructor });
+        const { title, code, department, teacher } = req.body;
+        const course = new Course({ title, code, department, teacher });
         await course.save();
         res.status(201).json({ success: true, data: course });
     } catch (error: any) {
@@ -49,8 +49,8 @@ export const createCourse = async (req: Request, res: Response) => {
 
 export const updateCourse = async (req: Request, res: Response) => {
     try {
-        const { name, department, instructor } = req.body;
-        const course = await Course.findByIdAndUpdate(req.params.id, { name, department, instructor }, { new: true, runValidators: true });
+        const { title, code, department, teacher } = req.body;
+        const course = await Course.findByIdAndUpdate(req.params.id, { title, code, department, teacher }, { new: true, runValidators: true });
         if (!course) {
             return res.status(404).json({ success: false, error: 'Course not found' });
         }
