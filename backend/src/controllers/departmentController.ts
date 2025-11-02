@@ -40,8 +40,8 @@ export const getDepartment = async (req: Request, res: Response) => {
 
 export const createDepartment = async (req: Request, res: Response) => {
     try {
-        const { name } = req.body;
-        const department = new Department({ name });
+        const { name, code } = req.body;
+        const department = new Department({ name, code });
         await department.save();
         res.status(201).json({ success: true, data: department });
     } catch (error: any) {
@@ -51,8 +51,8 @@ export const createDepartment = async (req: Request, res: Response) => {
 
 export const updateDepartment = async (req: Request, res: Response) => {
     try {
-        const { name } = req.body;
-        const department = await Department.findByIdAndUpdate(req.params.id, { name }, { new: true, runValidators: true });
+        const { name, code } = req.body;
+        const department = await Department.findByIdAndUpdate(req.params.id, { name, code }, { new: true, runValidators: true });
         if (!department) {
             return res.status(404).json({ success: false, error: 'Department not found' });
         }
