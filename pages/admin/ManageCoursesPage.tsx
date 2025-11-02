@@ -60,8 +60,8 @@ const ManageCoursesPage: React.FC = () => {
                 {courses.map(course => (
                     <motion.div key={course._id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex flex-col justify-between">
                         <div>
-                            <h2 className="text-xl font-bold">{course.name}</h2>
-                            <p className="text-gray-600 dark:text-gray-400">{course.courseCode}</p>
+                            <h2 className="text-xl font-bold">{course.title}</h2>
+                            <p className="text-gray-600 dark:text-gray-400">{course.code}</p>
                             <p className="mt-2 text-sm">Teacher: {course.teacher ? `${course.teacher.firstName} ${course.teacher.lastName}` : 'N/A'}</p>
                         </div>
                         <button onClick={() => openAssignModal(course)} className="mt-4 flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
@@ -87,8 +87,8 @@ interface CreateCourseModalProps {
 }
 
 const CreateCourseModal: React.FC<CreateCourseModalProps> = ({ isOpen, onClose, onCreate }) => {
-    const [name, setName] = useState('');
-    const [courseCode, setCourseCode] = useState('');
+    const [title, setTitle] = useState('');
+    const [code, setCode] = useState('');
     const [teacherId, setTeacherId] = useState('');
     const [departmentId, setDepartmentId] = useState('');
 
@@ -104,7 +104,7 @@ const CreateCourseModal: React.FC<CreateCourseModalProps> = ({ isOpen, onClose, 
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onCreate({ name, courseCode, teacher: teacherId, department: departmentId });
+        onCreate({ title, code, teacher: teacherId, department: departmentId });
     };
 
     return (
@@ -117,8 +117,8 @@ const CreateCourseModal: React.FC<CreateCourseModalProps> = ({ isOpen, onClose, 
                             <button onClick={onClose}><X size={24} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <input type="text" placeholder="Course Name" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 border rounded" />
-                            <input type="text" placeholder="Course Code" value={courseCode} onChange={e => setCourseCode(e.target.value)} className="w-full p-2 border rounded" />
+                            <input type="text" placeholder="Course Title" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 border rounded" />
+                            <input type="text" placeholder="Course Code" value={code} onChange={e => setCode(e.target.value)} className="w-full p-2 border rounded" />
                             <select value={teacherId} onChange={e => setTeacherId(e.target.value)} className="w-full p-2 border rounded"><option value="">Select Teacher</option>{teachers.map(t => <option key={t._id} value={t._id}>{`${t.firstName} ${t.lastName}`}</option>)}</select>
                             <select value={departmentId} onChange={e => setDepartmentId(e.target.value)} className="w-full p-2 border rounded"><option value="">Select Department</option>{departments.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}</select>
                             <div className="flex justify-end space-x-2"><button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Cancel</button><button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Create</button></div>
@@ -175,7 +175,7 @@ const AssignStudentModal: React.FC<AssignStudentModalProps> = ({ isOpen, onClose
             {isOpen && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -50, opacity: 0 }} className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6">
-                        <h2 className="text-2xl font-bold mb-4">Assign Students to {course.name}</h2>
+                        <h2 className="text-2xl font-bold mb-4">Assign Students to {course.title}</h2>
                         <div className="max-h-64 overflow-y-auto pr-2">
                             {students.map(student => (
                                 <div key={student._id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
