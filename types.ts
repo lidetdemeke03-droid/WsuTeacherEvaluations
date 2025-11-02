@@ -20,6 +20,7 @@ export interface User {
 export interface Department {
   id: string;
   name: string;
+  code: string;
 }
 
 export interface EvaluationPeriod {

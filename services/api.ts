@@ -86,8 +86,8 @@ export const apiDeleteCriterion = (criterionId: string): Promise<void> => apiReq
 
 // Departments
 export const apiGetDepartments = (): Promise<Department[]> => apiRequest<Department[]>('/departments');
-export const apiCreateDepartment = (name: string): Promise<Department> => apiRequest<Department>('/departments', { method: 'POST', body: JSON.stringify({ name }) });
-export const apiUpdateDepartment = (deptId: string, name: string): Promise<Department> => apiRequest<Department>(`/departments/${deptId}`, { method: 'PUT', body: JSON.stringify({ name }) });
+export const apiCreateDepartment = (data: { name: string, code: string }): Promise<Department> => apiRequest<Department>('/departments', { method: 'POST', body: JSON.stringify(data) });
+export const apiUpdateDepartment = (deptId: string, data: { name: string, code: string }): Promise<Department> => apiRequest<Department>(`/departments/${deptId}`, { method: 'PUT', body: JSON.stringify(data) });
 export const apiDeleteDepartment = (deptId: string): Promise<void> => apiRequest<void>(`/departments/${deptId}`, { method: 'DELETE' });
 
 // Courses
