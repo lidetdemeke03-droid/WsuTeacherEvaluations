@@ -11,7 +11,7 @@ const ManageDepartmentsPage: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [currentDepartment, setCurrentDepartment] = useState<Department | null>(null);
-    const [formData, setFormData] = useState({ name: '' });
+    const [formData, setFormData] = useState({ name: '', code: '' });
 
     useEffect(() => {
         fetchDepartments();
@@ -36,10 +36,10 @@ const ManageDepartmentsPage: React.FC = () => {
         e.preventDefault();
         try {
             if (isEditing && currentDepartment) {
-                await apiUpdateDepartment(currentDepartment.id, formData.name);
+                await apiUpdateDepartment(currentDepartment.id, formData);
                 toast.success('Department updated successfully');
             } else {
-                await apiCreateDepartment(formData.name);
+                await apiCreateDepartment(formData);
                 toast.success('Department created successfully');
             }
             fetchDepartments();
@@ -65,11 +65,11 @@ const ManageDepartmentsPage: React.FC = () => {
         if (department) {
             setIsEditing(true);
             setCurrentDepartment(department);
-            setFormData({ name: department.name });
+            setFormData({ name: department.name, code: department.code });
         } else {
             setIsEditing(false);
             setCurrentDepartment(null);
-            setFormData({ name: '' });
+            setFormData({ name: '', code: '' });
         }
         setIsModalOpen(true);
     };
@@ -93,7 +93,7 @@ const ManageDepartmentsPage: React.FC = () => {
 
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-white p-6 rounded-md">
+                    <div className="bg-white p-6 rounded-md w-1/3">
                         <h2 className="text-xl font-bold mb-4">{isEditing ? 'Edit' : 'Add'} Department</h2>
                         <form onSubmit={handleSubmit}>
                             <div className="mb-4">
@@ -102,6 +102,17 @@ const ManageDepartmentsPage: React.FC = () => {
                                     type="text"
                                     name="name"
                                     value={formData.name}
+                                    onChange={handleInputChange}
+                                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                    required
+                                />
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700">Department Code</label>
+                                <input
+                                    type="text"
+                                    name="code"
+                                    value={formData.code}
                                     onChange={handleInputChange}
                                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                     required
@@ -135,6 +146,7 @@ const ManageDepartmentsPage: React.FC = () => {
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Name</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -142,6 +154,7 @@ const ManageDepartmentsPage: React.FC = () => {
                             {departments.map((dept) => (
                                 <tr key={dept.id}>
                                     <td className="px-6 py-4 whitespace-nowrap">{dept.name}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap">{dept.code}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right">
                                         <button onClick={() => openModal(dept)} className="text-indigo-600 hover:text-indigo-900 mr-4">
                                             <Edit size={20} />
