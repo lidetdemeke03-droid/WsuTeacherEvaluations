@@ -24,5 +24,5 @@ export const loginValidation = [
 export const courseValidation = [
     body('name').notEmpty().withMessage('Course name is required').trim().escape(),
     body('department').isMongoId().withMessage('Valid department ID is required'),
-    body('instructor').isMongoId().withMessage('Valid instructor ID is required'),
+    body('teacher').isMongoId().withMessage('Valid teacher ID is required'),
 ];
