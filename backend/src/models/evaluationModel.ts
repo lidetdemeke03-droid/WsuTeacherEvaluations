@@ -1,13 +1,11 @@
 import { Schema, model, Document } from 'mongoose';
 import { IUser } from './User';
 import { ICourse } from './Course';
-import { IEvaluationForm } from './EvaluationForm';
 
 export interface IEvaluation extends Document {
     student: IUser['_id'];
     course: ICourse['_id'];
     teacher: IUser['_id'];
-    form: IEvaluationForm['_id'];
     status: 'Pending' | 'Completed';
 }
 
@@ -15,7 +13,6 @@ const evaluationSchema = new Schema({
     student: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     course: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
     teacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    form: { type: Schema.Types.ObjectId, ref: 'EvaluationForm', required: true },
     status: { type: String, enum: ['Pending', 'Completed'], default: 'Pending' },
 });
 

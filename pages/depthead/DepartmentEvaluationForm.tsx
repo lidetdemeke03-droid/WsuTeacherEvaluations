@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { departmentHeadEvaluationQuestions as questions } from '../../constants/forms';
 
 const DepartmentEvaluationForm: React.FC = () => {
     const { teacherId } = useParams<{ teacherId: string }>();
@@ -27,17 +28,6 @@ const DepartmentEvaluationForm: React.FC = () => {
                 console.error('Error submitting evaluation:', err);
             });
     };
-
-    // Questions from seed.ts
-    const questions = [
-        { code: 'D1', text: 'Overall teaching effectiveness (clarity, preparation)' },
-        { code: 'D2', text: 'Contribution to curriculum and course planning' },
-        { code: 'D3', text: 'Mentoring and student advising effectiveness' },
-        { code: 'D4', text: 'Participation in departmental responsibilities' },
-        { code: 'D5', text: 'Professional behavior & ethics' },
-        { code: 'D6', text: 'Time management & consultation availability' },
-        { code: 'DC1', text: 'Overall comments', type: 'text' },
-    ];
 
     const handleAnswerChange = (questionCode: string, value: string | number, type: string = 'rating') => {
         const newAnswers = [...answers];

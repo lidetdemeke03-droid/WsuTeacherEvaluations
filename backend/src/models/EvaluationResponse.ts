@@ -10,7 +10,7 @@ const evaluationResponseSchema = new Schema<IEvaluationResponse>({
   period: { type: String, required: true },
   answers: [
       {
-          questionId: { type: Schema.Types.ObjectId, required: true },
+          questionCode: { type: String, required: true },
           response: { type: String },
           score: { type: Number },
           conflict: { type: Boolean, default: false },
