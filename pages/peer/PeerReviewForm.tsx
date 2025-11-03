@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { peerEvaluationQuestions as questions } from '../../constants/forms';
 
 const PeerReviewForm: React.FC = () => {
     const { assignmentId } = useParams<{ assignmentId: string }>();
@@ -32,12 +33,17 @@ const PeerReviewForm: React.FC = () => {
             });
     };
 
-    // In a real app, you would fetch the questions for the form
-    const questions = [
-        { _id: 'q1', text: 'Clarity of instruction' },
-        { _id: 'q2', text: 'Engagement with students' },
-        { _id: 'q3', text: 'Overall feedback' },
-    ];
+    const handleAnswerChange = (questionCode: string, value: string | number, type: string) => {
+        const newAnswers = [...answers];
+        const existingAnswerIndex = newAnswers.findIndex(a => a.questionCode === questionCode);
+
+        if (existingAnswerIndex > -1) {
+            newAnswers[existingAnswerIndex] = { ...newAnswers[existingAnswerIndex], [type === 'text' ? 'response' : 'score']: value };
+        } else {
+            newAnswers.push({ questionCode, [type === 'text' ? 'response' : 'score']: value });
+        }
+        setAnswers(newAnswers);
+    };
 
     return (
         <div className="container mx-auto p-4">
@@ -56,10 +62,24 @@ const PeerReviewForm: React.FC = () => {
                 ) : (
                     <div>
                         {questions.map(q => (
-                            <div key={q._id} className="mb-4">
+                            <div key={q.code} className="mb-4">
                                 <label className="block mb-1">{q.text}</label>
-                                <input type="number" min="1" max="5" className="p-2 border rounded w-full" placeholder="Score (1-5)" />
-                                <textarea className="p-2 border rounded w-full mt-2" placeholder="Comments"></textarea>
+                                {q.type === 'rating' ? (
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="5"
+                                        className="p-2 border rounded w-full"
+                                        placeholder="Score (1-5)"
+                                        onChange={e => handleAnswerChange(q.code, parseInt(e.target.value), 'rating')}
+                                    />
+                                ) : (
+                                    <textarea
+                                        className="p-2 border rounded w-full mt-2"
+                                        placeholder="Comments"
+                                        onChange={e => handleAnswerChange(q.code, e.target.value, 'text')}
+                                    ></textarea>
+                                )}
                             </div>
                         ))}
                     </div>

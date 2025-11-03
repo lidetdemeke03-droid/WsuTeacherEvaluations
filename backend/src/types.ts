@@ -43,24 +43,6 @@ export interface ICourse extends Document {
 export enum QuestionType {
   Rating = 'rating',
   Text = 'text',
-  Boolean = 'boolean',
-  MCQ = 'mcq',
-}
-
-export interface IQuestion extends Document {
-  code: string;
-  text: string;
-  type: QuestionType;
-  weight: number;
-  options?: string[];
-}
-
-export interface IEvaluationForm extends Document {
-  formCode: string;
-  title: string;
-  isDefault?: boolean;
-  anonymous: boolean;
-  questions: IQuestion[];
 }
 
 export enum EvaluationType {
@@ -77,7 +59,7 @@ export interface IEvaluationResponse extends Document {
   course: Types.ObjectId;
   period: string;
   answers: {
-      questionId: Types.ObjectId;
+      questionCode: string;
       response?: string;
       score?: number;
       conflict?: boolean;

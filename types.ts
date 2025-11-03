@@ -31,17 +31,11 @@ export interface EvaluationPeriod {
   status: 'Active' | 'Inactive';
 }
 
-export interface Criterion {
-  id: string;
-  text: string;
-  maxScore: number;
-}
-
 export interface EvaluationSubmission {
     studentId: string;
     instructorId: string;
     periodId: string;
-    scores: { criterionId: string; score: number; comment: string }[];
+    scores: { questionCode: string; score: number; comment: string }[];
 }
 
 

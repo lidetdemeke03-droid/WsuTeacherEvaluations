@@ -5,7 +5,6 @@ import ScheduleWindow from '../models/ScheduleWindow';
 import { IRequest } from '../middleware/auth';
 import User from '../models/User';
 import Evaluation from '../models/evaluationModel';
-import EvaluationForm from '../models/EvaluationForm';
 import { createHash } from 'crypto';
 import StatsCache from '../models/StatsCache';
 import { EvaluationType } from '../types';
@@ -21,7 +20,7 @@ export const getAssignedForms = asyncHandler(async (req: Request, res: Response)
     const assignedEvaluations = await Evaluation.find({
         student: studentId,
         status: 'Pending',
-    }).populate('course teacher form');
+    }).populate('course teacher');
 
     res.json({
         success: true,
@@ -102,18 +101,10 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
 export const createEvaluationAssignment = asyncHandler(async (req: Request, res: Response) => {
     const { studentId, courseId, teacherId } = req.body;
 
-    // Find the default evaluation form
-    const defaultForm = await EvaluationForm.findOne({ isDefault: true });
-    if (!defaultForm) {
-        res.status(500);
-        throw new Error('A default evaluation form has not been set. Please contact an administrator.');
-    }
-
     const assignment = await Evaluation.create({
         student: studentId,
         course: courseId,
         teacher: teacherId,
-        form: defaultForm._id,
     });
 
     res.status(201).json({ success: true, data: assignment });
