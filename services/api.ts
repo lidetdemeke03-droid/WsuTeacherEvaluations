@@ -87,10 +87,6 @@ export const apiGetStudentEvaluations = (studentId: string): Promise<Evaluation[
 export const apiSubmitEvaluation = (submission: EvaluationSubmission): Promise<any> => apiRequest<any>('/evaluations/student', { method: 'POST', body: JSON.stringify(submission) });
 export const apiAssignEvaluation = (assignData: { studentIds: string[], courseId: string, teacherId: string }): Promise<any> => apiRequest<any>('/evaluations/assign', { method: 'POST', body: JSON.stringify(assignData) });
 
-// Criteria
-export const apiCreateCriterion = (criterionData: { text: string, maxScore: number }): Promise<Criterion> => apiRequest<Criterion>('/criteria', { method: 'POST', body: JSON.stringify(criterionData) });
-export const apiUpdateCriterion = (criterionId: string, criterionData: { text: string, maxScore: number }): Promise<Criterion> => apiRequest<Criterion>(`/criteria/${criterionId}`, { method: 'PUT', body: JSON.stringify(criterionData) });
-export const apiDeleteCriterion = (criterionId: string): Promise<void> => apiRequest<void>(`/criteria/${criterionId}`, { method: 'DELETE' });
 
 // Departments
 export const apiGetDepartments = (): Promise<Department[]> => apiRequest<Department[]>('/departments');
