@@ -5,6 +5,7 @@ import ScheduleWindow from '../models/ScheduleWindow';
 import { IRequest } from '../middleware/auth';
 import User from '../models/User';
 import Evaluation from '../models/evaluationModel';
+import EvaluationForm from '../models/EvaluationForm';
 import { createHash } from 'crypto';
 import StatsCache from '../models/StatsCache';
 import { EvaluationType } from '../types';
@@ -99,13 +100,20 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
 // @route   POST /api/evaluations/assign
 // @access  Private (Admin)
 export const createEvaluationAssignment = asyncHandler(async (req: Request, res: Response) => {
-    const { studentId, courseId, teacherId, formId } = req.body;
+    const { studentId, courseId, teacherId } = req.body;
+
+    // Find the default evaluation form
+    const defaultForm = await EvaluationForm.findOne({ formCode: 'DEFAULT_STUDENT_EVAL' });
+    if (!defaultForm) {
+        res.status(500);
+        throw new Error('Default evaluation form not found. Please ensure it is seeded in the database.');
+    }
 
     const assignment = await Evaluation.create({
         student: studentId,
         course: courseId,
         teacher: teacherId,
-        form: formId,
+        form: defaultForm._id,
     });
 
     res.status(201).json({ success: true, data: assignment });
