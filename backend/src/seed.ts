@@ -3,7 +3,7 @@ dotenv.config();
 
 import mongoose from 'mongoose';
 import { connectDB } from './config/db';
-import { seedAdminUser } from './utils/seeder';
+import { seedAdminUser, seedEvaluationForms } from './utils/seeder';
 
 const seedDB = async () => {
     await connectDB();
@@ -11,6 +11,7 @@ const seedDB = async () => {
 
     try {
         await seedAdminUser();
+        await seedEvaluationForms();
         console.log('Database seeding complete!');
     } catch (error) {
         console.error('Error seeding database:', error);

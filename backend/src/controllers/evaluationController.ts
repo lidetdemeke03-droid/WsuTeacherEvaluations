@@ -103,10 +103,10 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
     const { studentId, courseId, teacherId } = req.body;
 
     // Find the default evaluation form
-    const defaultForm = await EvaluationForm.findOne({ formCode: 'DEFAULT_STUDENT_EVAL' });
+    const defaultForm = await EvaluationForm.findOne({ isDefault: true });
     if (!defaultForm) {
         res.status(500);
-        throw new Error('Default evaluation form not found. Please ensure it is seeded in the database.');
+        throw new Error('A default evaluation form has not been set. Please contact an administrator.');
     }
 
     const assignment = await Evaluation.create({
