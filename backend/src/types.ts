@@ -58,6 +58,7 @@ export interface IQuestion extends Document {
 export interface IEvaluationForm extends Document {
   formCode: string;
   title: string;
+  isDefault?: boolean;
   anonymous: boolean;
   questions: IQuestion[];
 }
