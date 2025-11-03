@@ -45,6 +45,15 @@ export interface Evaluation {
   courseName: string;
   periodName: string;
   status: 'Pending' | 'Completed';
+  course: { _id: string };
+  teacher: { _id: string };
+  period: string;
+}
+
+export interface Answer {
+    questionCode: string;
+    score?: number;
+    response?: string;
 }
 
 export enum ComplaintStatus {
