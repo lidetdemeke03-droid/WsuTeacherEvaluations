@@ -17,6 +17,7 @@ if (!TOKEN) {
 const transport = TOKEN ? Nodemailer.createTransport(
   MailtrapTransport({
     token: TOKEN,
+    testInboxId: 3714384,
   })
 ) : null;
 
@@ -38,6 +39,7 @@ export const sendEmail = async (options: EmailOptions) => {
     text: options.text,
     html: options.html,
     category: "Integration Test", // As per your demo
+    sandbox: true,
   };
 
   try {
