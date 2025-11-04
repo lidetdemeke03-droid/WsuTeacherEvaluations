@@ -152,7 +152,7 @@ const AssignStudentModal: React.FC<AssignStudentModalProps> = ({ isOpen, onClose
             return;
         }
         const assignments = selectedStudents.map(studentId =>
-            apiAssignEvaluation({ studentId, courseId: course._id, teacherId: course.teacher._id })
+            apiAssignEvaluation({ student: studentId, courseId: course._id, teacherId: course.teacher._id })
         );
         const toastId = toast.loading('Assigning students...');
         try {

@@ -99,10 +99,10 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
 // @route   POST /api/evaluations/assign
 // @access  Private (Admin)
 export const createEvaluationAssignment = asyncHandler(async (req: Request, res: Response) => {
-    const { studentId, courseId, teacherId } = req.body;
+    const { student, courseId, teacherId } = req.body;
 
     const assignment = await Evaluation.create({
-        student: studentId,
+        student,
         course: courseId,
         teacher: teacherId,
     });
