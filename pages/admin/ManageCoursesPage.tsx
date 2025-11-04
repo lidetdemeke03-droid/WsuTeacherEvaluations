@@ -156,8 +156,8 @@ const AssignStudentModal: React.FC<AssignStudentModalProps> = ({ isOpen, onClose
         );
         const toastId = toast.loading('Assigning students...');
         try {
-            await Promise.all(assignments);
-            toast.success('Students assigned successfully!', { id: toastId });
+            await apiAssignEvaluation({ studentIds: selectedStudents, courseId: course._id, teacherId: course.teacher._id });
+            toast.success(`${selectedStudents.length} student(s) assigned successfully!`, { id: toastId });
             onClose();
         } catch (error) {
             toast.error('Failed to assign students.', { id: toastId });

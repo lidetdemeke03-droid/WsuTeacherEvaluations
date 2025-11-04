@@ -14,10 +14,19 @@ const apiRequest = async <T,>(url: string, options: RequestInit = {}): Promise<T
 
     try {
         const response = await fetch(`${API_BASE_URL}${url}`, { ...options, headers });
-        const data = await response.json();
+
         if (!response.ok) {
-            throw new Error(data.error || 'Something went wrong');
+            const errorText = await response.text();
+            try {
+                // Try to parse error response as JSON
+                const errorData = JSON.parse(errorText);
+                throw new Error(errorData.error || 'Something went wrong');
+            } catch (e) {
+                // If it's not JSON, the text itself is the error.
+                throw new Error(errorText || 'An unknown server error occurred.');
+            }
         }
+        const data = await response.json();
         return data.data;
     } catch (error) {
         console.error('API Request Error:', error);
