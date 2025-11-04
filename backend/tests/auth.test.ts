@@ -104,4 +104,44 @@ describe('Auth Routes', () => {
       expect(res.body.error).toBe('Invalid credentials');
     });
   });
+
+  describe('Password Reset', () => {
+    it('should allow a user to reset their password with a valid token', async () => {
+        const resetToken = require('crypto').randomBytes(32).toString('hex');
+        const passwordResetToken = require('crypto').createHash('sha256').update(resetToken).digest('hex');
+        const passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+        const user = await User.create({
+            firstName: 'Test',
+            lastName: 'User',
+            email: 'reset@example.com',
+            password: 'oldpassword',
+            role: UserRole.Student,
+            passwordResetToken,
+            passwordResetExpires,
+        });
+
+        const newPassword = 'newpassword';
+        const response = await request(app)
+            .post(`/api/auth/reset-password/${resetToken}`)
+            .send({ password: newPassword });
+
+        expect(response.status).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.data).toHaveProperty('accessToken');
+
+        const updatedUser = await User.findById(user._id);
+        expect(updatedUser?.passwordResetToken).toBeUndefined();
+    });
+
+    it('should return an error for an invalid or expired token', async () => {
+        const response = await request(app)
+            .post('/api/auth/reset-password/invalidtoken')
+            .send({ password: 'newpassword' });
+
+        expect(response.status).toBe(400);
+        expect(response.body.success).toBe(false);
+        expect(response.body.error).toBe('Token is invalid or has expired');
+    });
+  });
 });

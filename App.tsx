@@ -20,6 +20,7 @@ import HomePage from './pages/HomePage';
 import Profile from './pages/profile/Profile';
 import NewEvaluation from './pages/evaluation/NewEvaluation';
 import InstructorResults from './pages/instructor/InstructorResults';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 const ProtectedLayout: React.FC = () => {
     const { user } = useAuth();
@@ -67,6 +68,7 @@ const AppContent: React.FC = () => {
             {/* Public Routes */}
             <Route path="/" element={user ? <Navigate to="/dashboard" /> : <HomePage />} />
             <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <LoginPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
             {/* Private Routes */}
             <Route element={<ProtectedLayout />}>

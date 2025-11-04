@@ -50,6 +50,18 @@ export const apiLogout = (): Promise<void> => {
     return Promise.resolve();
 };
 
+export const apiVerifyResetToken = (token: string): Promise<void> =>
+    apiRequest<void>(`/auth/reset-password/${token}`);
+
+export const apiResetPassword = async (token: string, password: string): Promise<User> => {
+    const { user, accessToken } = await apiRequest<{ user: User, accessToken: string }>(`/auth/reset-password/${token}`, {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+    });
+    sessionStorage.setItem('authToken', accessToken);
+    return user;
+};
+
 // Users
 export const apiGetUsers = (): Promise<User[]> => apiRequest<User[]>('/users');
 export const apiUpdateUser = (userId: string, userData: Partial<User>): Promise<User> => apiRequest<User>(`/users/${userId}`, { method: 'PUT', body: JSON.stringify(userData) });

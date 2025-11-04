@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import User from '../models/User';
 import jwt from 'jsonwebtoken';
 import { UserRole } from '../types';
+import crypto from 'crypto';
 
 const generateTokens = (user: any) => {
     const accessToken = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET as string, { expiresIn: '15m' });
@@ -78,5 +79,53 @@ export const refresh = async (req: Request, res: Response) => {
 
     } catch (error) {
         return res.status(403).json({ success: false, error: 'Invalid or expired token' });
+    }
+};
+
+export const verifyResetToken = async (req: Request, res: Response) => {
+    try {
+        const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
+        const user = await User.findOne({
+            passwordResetToken: hashedToken,
+            passwordResetExpires: { $gt: Date.now() },
+        });
+
+        if (!user) {
+            return res.status(400).json({ success: false, error: 'Token is invalid or has expired' });
+        }
+
+        res.status(200).json({ success: true, message: 'Token is valid' });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+}
+
+export const resetPassword = async (req: Request, res: Response) => {
+    try {
+        const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
+        const user = await User.findOne({
+            passwordResetToken: hashedToken,
+            passwordResetExpires: { $gt: Date.now() },
+        });
+
+        if (!user) {
+            return res.status(400).json({ success: false, error: 'Token is invalid or has expired' });
+        }
+
+        user.password = req.body.password;
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        await user.save();
+
+        const tokens = generateTokens(user);
+
+        const userResponse: any = user.toObject();
+        delete userResponse.password;
+
+        res.status(200).json({ success: true, data: { ...tokens, user: userResponse } });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
     }
 };
