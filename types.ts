@@ -8,7 +8,7 @@ export enum UserRole {
 }
 
 export interface User {
-  id: string;
+  _id: string;
     firstName: string;
     lastName: string;
   email: string;
@@ -18,13 +18,21 @@ export interface User {
 }
 
 export interface Department {
-  id: string;
+  _id: string;
   name: string;
   code: string;
 }
 
+export interface Course {
+  _id: string;
+  title: string;
+  code: string;
+  teacher?: User;
+  department: Department;
+}
+
 export interface EvaluationPeriod {
-  id: string;
+  _id: string;
   name: string;
   startDate: string;
   endDate: string;
@@ -40,7 +48,7 @@ export interface EvaluationSubmission {
 
 
 export interface Evaluation {
-  id: string;
+  _id: string;
   instructorName: string;
   courseName: string;
   periodName: string;
@@ -63,7 +71,7 @@ export enum ComplaintStatus {
 }
 
 export interface Complaint {
-    id: string;
+    _id: string;
     subject: string;
     message: string;
     submitterName: string;
