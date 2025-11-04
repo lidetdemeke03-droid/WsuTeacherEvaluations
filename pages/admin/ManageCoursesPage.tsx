@@ -151,11 +151,9 @@ const AssignStudentModal: React.FC<AssignStudentModalProps> = ({ isOpen, onClose
             toast.error("This course does not have a teacher assigned.");
             return;
         }
-        if (selectedStudents.length === 0) {
-            toast.error("Please select at least one student to assign.");
-            return;
-        }
-
+        const assignments = selectedStudents.map(studentId =>
+            apiAssignEvaluation({ student: studentId, courseId: course._id, teacherId: course.teacher._id })
+        );
         const toastId = toast.loading('Assigning students...');
         try {
             await apiAssignEvaluation({ studentIds: selectedStudents, courseId: course._id, teacherId: course.teacher._id });
