@@ -58,7 +58,7 @@ const ManageCoursesPage: React.FC = () => {
 
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {courses.map(course => (
-                    <motion.div key={course._id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex flex-col justify-between">
+                    <motion.div key={course._id} className="bg-white dark-bg-gray-800 rounded-lg shadow-md p-6 flex flex-col justify-between">
                         <div>
                             <h2 className="text-xl font-bold">{course.title}</h2>
                             <p className="text-gray-600 dark:text-gray-400">{course.code}</p>
