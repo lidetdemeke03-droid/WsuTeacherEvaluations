@@ -12,8 +12,8 @@ router.use(protect);
 // GET /api/reports/my-performance - Get performance data for the current instructor
 router.get('/my-performance', authorize(UserRole.Teacher), getMyPerformance);
 
-// GET /api/reports/department/:id - Get all reports for a department (for dept head)
-router.get('/department/:id', authorize(UserRole.DepartmentHead), getDepartmentReport);
+// GET /api/reports/department - Get all reports for the current department head's department
+router.get('/department', authorize(UserRole.DepartmentHead), getDepartmentReport);
 
 
 export default router;

@@ -96,13 +96,9 @@ export interface IStatsCache extends Document {
   teacher: Types.ObjectId;
   course?: Types.ObjectId;
   period: string;
-  studentSubmissionCount: number;
-  studentScoreSum: number;
-  studentAvg: number;
-  peerSubmissionCount: number;
-  peerScoreSum: number;
-  peerAvg: number;
-  deptAvg: number;
+  studentScore: number;
+  peerScore: number;
+  deptHeadScore: number;
   finalScore: number;
   lastUpdated: Date;
 }

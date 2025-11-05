@@ -125,6 +125,7 @@ export const apiDeleteEvaluationPeriod = (periodId: string): Promise<void> => ap
 
 // Reports
 export const apiGetMyPerformance = (): Promise<any[]> => apiRequest<any[]>('/reports/my-performance');
+export const apiGetDepartmentReport = (): Promise<any[]> => apiRequest<any[]>('/reports/department');
 
 export const api = {
     get: <T>(url: string) => apiRequest<T>(url, { method: 'GET' }),

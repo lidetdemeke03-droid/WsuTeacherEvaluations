@@ -121,6 +121,6 @@ describe('Evaluation API', () => {
             period: '2025-Fall',
         });
         expect(stats).not.toBeNull();
-        expect(stats?.studentAvg).toBe(4.5);
+        expect(stats?.studentScore).toBe(90); // (4.5 / 5) * 100
     });
 });
