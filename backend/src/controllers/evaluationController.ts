@@ -20,7 +20,14 @@ export const getAssignedForms = asyncHandler(async (req: Request, res: Response)
     const assignedEvaluations = await Evaluation.find({
         student: studentId,
         status: 'Pending',
-    }).populate('course teacher');
+    }).populate({
+        path: 'course',
+        model: 'Course',
+    }).populate({
+        path: 'teacher',
+        model: 'User',
+        select: 'firstName lastName',
+    });
 
     res.json({
         success: true,
@@ -100,6 +107,20 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
 // @access  Private (Admin)
 export const createEvaluationAssignment = asyncHandler(async (req: Request, res: Response) => {
     const { student, courseId, teacherId } = req.body;
+
+    // Check if an evaluation assignment already exists for this combination
+    const existingAssignment = await Evaluation.findOne({
+        student,
+        course: courseId,
+        teacher: teacherId,
+    });
+
+    if (existingAssignment) {
+        return res.status(409).json({
+            success: false,
+            error: 'This evaluation has already been assigned to this student.',
+        });
+    }
 
     const assignment = await Evaluation.create({
         student,

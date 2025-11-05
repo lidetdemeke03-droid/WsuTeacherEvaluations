@@ -5,7 +5,6 @@ import User from '../src/models/User';
 import Course from '../src/models/Course';
 import Evaluation from '../src/models/evaluationModel';
 import EvaluationResponse from '../src/models/EvaluationResponse';
-import EvaluationForm from '../src/models/EvaluationForm';
 import StatsCache from '../src/models/StatsCache';
 
 beforeAll(async () => {
@@ -21,7 +20,6 @@ describe('Evaluation API', () => {
     let student: any;
     let teacher: any;
     let course: any;
-    let evaluationForm: any;
     let token: string;
     let adminToken: string;
 
@@ -59,12 +57,6 @@ describe('Evaluation API', () => {
             students: [student._id],
         });
 
-        evaluationForm = await EvaluationForm.create({
-            formCode: 'TEST_FORM',
-            title: 'Test Evaluation Form',
-            questions: [],
-        });
-
         // Generate tokens
         const adminRes = await request(app).post('/api/auth/login').send({
             email: 'admin@test.com',
@@ -84,7 +76,6 @@ describe('Evaluation API', () => {
         await Course.deleteMany({});
         await Evaluation.deleteMany({});
         await EvaluationResponse.deleteMany({});
-        await EvaluationForm.deleteMany({});
         await StatsCache.deleteMany({});
     });
 
@@ -94,10 +85,9 @@ describe('Evaluation API', () => {
             .post('/api/evaluations/assign')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({
-                studentId: student._id,
+                student: student._id,
                 courseId: course._id,
                 teacherId: teacher._id,
-                formId: evaluationForm._id,
             });
 
         // 2. Fetch assigned evaluations for the student
