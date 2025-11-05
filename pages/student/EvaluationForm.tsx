@@ -80,12 +80,15 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
     };
 
     const handleSubmit = async () => {
-        const allScored = studentEvaluationQuestions
+        const allAnswered = studentEvaluationQuestions
             .filter(q => q.type === 'rating')
-            .every(q => answers[q.code]?.score);
+            .every(q => {
+                const answer = answers[q.code];
+                return answer && (answer.score !== undefined);
+            });
 
-        if (!allScored) {
-            toast.error("Please provide a score for every rating question.");
+        if (!allAnswered) {
+            toast.error("Please provide a score or select 'NA' for every rating question.");
             return;
         }
         setSubmitting(true);
@@ -150,6 +153,7 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
 
                             {question.type === 'rating' && (
                                 <div className="flex items-center justify-center space-x-2 sm:space-x-4">
+                                <div className="flex items-center justify-center space-x-2 sm:space-x-4">
                                     {[...Array(5)].map((_, i) => {
                                         const scoreValue = i + 1;
                                         return (
@@ -168,6 +172,19 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
                                             </label>
                                         );
                                     })}
+                                    <label className="flex flex-col items-center space-y-1 cursor-pointer">
+                                        <input
+                                            type="radio"
+                                            name={`score-${question.code}`}
+                                            value={-1} // Using -1 to represent NA
+                                            checked={answers[question.code]?.score === -1}
+                                            onChange={() => handleAnswerChange(question.code, -1)}
+                                            className="sr-only"
+                                        />
+                                        <span className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 transition-all ${answers[question.code]?.score === -1 ? 'bg-gray-500 text-white border-gray-600' : 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-gray-400'}`}>
+                                            NA
+                                        </span>
+                                    </label>
                                 </div>
                             )}
 

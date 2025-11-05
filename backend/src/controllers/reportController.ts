@@ -23,20 +23,29 @@ export const getMyPerformance = asyncHandler(async (req: IRequest, res: Response
     });
 });
 
-// @desc    Get all reports for a department (for dept head)
-// @route   GET /api/reports/department/:id
+// @desc    Get all reports for the current department head's department
+// @route   GET /api/reports/department
 // @access  Private (DepartmentHead)
 export const getDepartmentReport = asyncHandler(async (req: IRequest, res: Response) => {
-    const departmentId = req.params.id;
-    // Note: This requires linking users (teachers) to departments.
-    // This is a placeholder for future implementation.
-    const reports = await StatsCache.find({}).populate({
-        path: 'teacher',
-        match: { department: departmentId }
-    });
+    const departmentId = req.user!.department;
+
+    if (!departmentId) {
+        res.status(400);
+        throw new Error('User is not assigned to a department.');
+    }
+
+    const reports = await StatsCache.find({})
+        .populate({
+            path: 'teacher',
+            model: 'User',
+            match: { department: departmentId },
+            select: 'firstName lastName',
+        });
+
+    const departmentReports = reports.filter(r => r.teacher);
 
     res.json({
         success: true,
-        data: reports.filter(r => r.teacher),
+        data: departmentReports,
     });
 });
