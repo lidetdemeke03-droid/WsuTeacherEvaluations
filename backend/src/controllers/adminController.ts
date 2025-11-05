@@ -43,7 +43,8 @@ export const createUser = async (req: Request, res: Response) => {
     await user.save();
 
     // Send welcome email
-    const setPasswordUrl = `${req.protocol}://${req.get('host')}/reset-password/${resetToken}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const setPasswordUrl = `${frontendUrl}/reset-password/${resetToken}`;
     const message = `Hello ${firstName},
 
 An account has been created for you on the Wolaita Sodo University Evaluation System.
