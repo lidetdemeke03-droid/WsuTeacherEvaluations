@@ -153,7 +153,6 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
 
                             {question.type === 'rating' && (
                                 <div className="flex items-center justify-center space-x-2 sm:space-x-4">
-                                <div className="flex items-center justify-center space-x-2 sm:space-x-4">
                                     {[...Array(5)].map((_, i) => {
                                         const scoreValue = i + 1;
                                         return (
