@@ -80,15 +80,18 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
     };
 
     const handleSubmit = async () => {
-        const allAnswered = studentEvaluationQuestions
-            .filter(q => q.type === 'rating')
-            .every(q => {
+        const unansweredQuestionIndex = studentEvaluationQuestions.findIndex(q => {
+            if (q.type === 'rating') {
                 const answer = answers[q.code];
-                return answer && (answer.score !== undefined);
-            });
+                return !answer || answer.score === undefined;
+            }
+            return false;
+        });
 
-        if (!allAnswered) {
-            toast.error("Please provide a score or select 'NA' for every rating question.");
+        if (unansweredQuestionIndex !== -1) {
+            const unansweredQuestion = studentEvaluationQuestions[unansweredQuestionIndex];
+            setPage([unansweredQuestionIndex, unansweredQuestionIndex > page ? 1 : -1]);
+            toast.error(`Please answer question ${unansweredQuestionIndex + 1}: "${unansweredQuestion.text}"`);
             return;
         }
         setSubmitting(true);
