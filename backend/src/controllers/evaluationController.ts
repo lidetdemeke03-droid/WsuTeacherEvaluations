@@ -111,10 +111,11 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
     });
 
     if (existingAssignment) {
-        return res.status(409).json({
+        res.status(409).json({
             success: false,
             error: 'This evaluation has already been assigned to this student.',
         });
+        return;
     }
 
     const assignment = await Evaluation.create({
