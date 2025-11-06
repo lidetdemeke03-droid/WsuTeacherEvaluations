@@ -8,9 +8,9 @@ import { toast } from 'react-hot-toast';
 
 interface PerformanceData {
     period: string;
-    studentAvg: number;
-    peerAvg: number;
-    deptAvg: number;
+    studentScore: number;
+    peerScore: number;
+    deptHeadScore: number;
     finalScore: number;
 }
 
@@ -48,12 +48,12 @@ const InstructorDashboard: React.FC = () => {
                         <BarChart data={performanceData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
                             <XAxis dataKey="period" className="text-xs" />
-                            <YAxis type="number" domain={[0, 5]} className="text-xs" />
+                            <YAxis type="number" domain={[0, 100]} className="text-xs" />
                             <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none', color: '#fff' }} />
                             <Legend />
-                            <Bar dataKey="studentAvg" name="Student Avg." fill="#3b82f6" />
-                            <Bar dataKey="peerAvg" name="Peer Avg." fill="#84cc16" />
-                            <Bar dataKey="deptAvg" name="Dept. Head Avg." fill="#f97316" />
+                            <Bar dataKey="studentScore" name="Student Score" fill="#3b82f6" />
+                            <Bar dataKey="peerScore" name="Peer Score" fill="#84cc16" />
+                            <Bar dataKey="deptHeadScore" name="Dept. Head Score" fill="#f97316" />
                             <Bar dataKey="finalScore" name="Final Score" fill="#ef4444" />
                         </BarChart>
                     </ResponsiveContainer>

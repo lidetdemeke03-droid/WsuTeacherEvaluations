@@ -26,7 +26,7 @@ const StudentEvaluationsPage: React.FC = () => {
             }
         };
         fetchEvaluations();
-    }, []);
+    }, [user]);
     
     const handleEvaluationComplete = (completedId: string) => {
         setEvaluations(prev => prev.map(ev => ev.id === completedId ? { ...ev, status: 'Completed' } : ev));
@@ -47,7 +47,7 @@ const StudentEvaluationsPage: React.FC = () => {
                     <AnimatePresence>
                         {evaluations.map((evaluation, index) => (
                             <motion.li
-                                key={evaluation.id}
+                                key={evaluation._id}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.1 }}
@@ -55,9 +55,10 @@ const StudentEvaluationsPage: React.FC = () => {
                             >
                                 <div onClick={() => evaluation.status === 'Pending' && setSelectedEvaluation(evaluation)} className={`p-4 flex items-center justify-between ${evaluation.status === 'Pending' ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50' : 'opacity-60'}`}>
                                     <div>
-                                        <p className="font-semibold text-lg text-gray-800 dark:text-white">{evaluation.courseName}</p>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">Instructor: {evaluation.instructorName}</p>
-                                        <p className="text-xs text-gray-500">{evaluation.periodName}</p>
+                                        <p className="font-semibold text-lg text-gray-800 dark:text-white">{evaluation.course.title}</p>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            {evaluation.course.code} - Instructor: {evaluation.teacher.firstName} {evaluation.teacher.lastName}
+                                        </p>
                                     </div>
                                     <div className="flex items-center space-x-4">
                                         {evaluation.status === 'Completed' ? (

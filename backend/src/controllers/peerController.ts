@@ -5,6 +5,8 @@ import EvaluationResponse from '../models/EvaluationResponse';
 import StatsCache from '../models/StatsCache';
 import { EvaluationType } from '../types';
 import { IRequest } from '../middleware/auth';
+import { calculateNormalizedScore, recalculateFinalScore } from '../services/scoreService';
+import { studentEvaluationQuestions } from '../constants/forms'; // Assuming same questions for now
 
 // @desc    Get peer evaluation assignments for a teacher
 // @route   GET /api/peers/:teacherId/assignments
@@ -49,12 +51,11 @@ export const submitPeerEvaluation = asyncHandler(async (req: IRequest, res: Resp
 
     // 3. Handle conflict of interest
     const isConflict = answers.some((a: any) => a.conflict === true);
-    let totalScore = 0;
+    let normalizedScore = 0;
 
     if (!isConflict) {
-        // 4. Calculate total score
-        const ratedAnswers = answers.filter((a: any) => typeof a.score === 'number');
-        totalScore = ratedAnswers.length > 0 ? ratedAnswers.reduce((sum: number, a: any) => sum + a.score, 0) / ratedAnswers.length : 0;
+        const totalRatingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating').length;
+        normalizedScore = calculateNormalizedScore(answers, totalRatingQuestions);
     }
 
     const response = await EvaluationResponse.create({
@@ -64,26 +65,22 @@ export const submitPeerEvaluation = asyncHandler(async (req: IRequest, res: Resp
         course: courseId,
         period: assignment.window.start.toISOString().substring(0, 7), // e.g., "2025-10"
         answers,
-        totalScore,
+        totalScore: normalizedScore,
     });
 
     // 5. Update StatsCache
     if (!isConflict) {
+        // Get the average peer score
+        const peerEvals = await EvaluationResponse.find({ targetTeacher: teacherId, course: courseId, type: EvaluationType.Peer });
+        const avgPeerScore = peerEvals.reduce((sum, ev) => sum + ev.totalScore, 0) / peerEvals.length;
+
         const stats = await StatsCache.findOneAndUpdate(
             { teacher: teacherId, course: courseId, period: assignment.window.start.toISOString().substring(0, 7) },
-            { $inc: { peerSubmissionCount: 1, peerScoreSum: totalScore } },
+            { $set: { peerScore: avgPeerScore } },
             { upsert: true, new: true }
         );
 
-        if (stats) {
-            const newPeerAvg = stats.peerScoreSum / stats.peerSubmissionCount;
-            stats.peerAvg = newPeerAvg;
-
-            // Recalculate final score
-            const finalScore = (stats.studentAvg * 0.5) + (newPeerAvg * 0.35) + (stats.deptAvg * 0.15);
-            stats.finalScore = finalScore;
-            await stats.save();
-        }
+        await recalculateFinalScore(stats._id);
     }
 
     res.status(201).json({ success: true, data: response });

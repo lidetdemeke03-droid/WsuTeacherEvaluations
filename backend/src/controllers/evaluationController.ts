@@ -8,6 +8,8 @@ import Evaluation from '../models/evaluationModel';
 import { createHash } from 'crypto';
 import StatsCache from '../models/StatsCache';
 import { EvaluationType } from '../types';
+import { calculateNormalizedScore, recalculateFinalScore } from '../services/scoreService';
+import { studentEvaluationQuestions } from '../constants/forms';
 
 
 // @desc    Get assigned evaluation forms for a student
@@ -20,7 +22,14 @@ export const getAssignedForms = asyncHandler(async (req: Request, res: Response)
     const assignedEvaluations = await Evaluation.find({
         student: studentId,
         status: 'Pending',
-    }).populate('course teacher');
+    }).populate({
+        path: 'course',
+        model: 'Course',
+    }).populate({
+        path: 'teacher',
+        model: 'User',
+        select: 'firstName lastName',
+    });
 
     res.json({
         success: true,
@@ -47,9 +56,19 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
         throw new Error('You have already submitted an evaluation for this course and period.');
     }
 
-    // Calculate total score
-    const ratedAnswers = answers.filter((a: any) => typeof a.score === 'number' && a.score >= 1 && a.score <= 5);
-    const totalScore = ratedAnswers.length > 0 ? ratedAnswers.reduce((sum: number, a: any) => sum + a.score, 0) / ratedAnswers.length : 0;
+    // Validate that all rating questions have a score
+    const ratingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating');
+    for (const question of ratingQuestions) {
+        const answer = answers.find((a: any) => a.questionCode === question.code);
+        if (!answer || answer.score === undefined) {
+            res.status(400);
+            throw new Error(`Please provide a score or select 'NA' for the question: "${question.text}"`);
+        }
+    }
+
+    // Calculate normalized score
+    const totalRatingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating').length;
+    const normalizedScore = calculateNormalizedScore(answers, totalRatingQuestions);
 
     // Create new evaluation response
     const response = await EvaluationResponse.create({
@@ -58,39 +77,22 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
         teacher: teacherId,
         period,
         answers,
-        totalScore,
+        totalScore: normalizedScore, // Storing normalized score in totalScore for now
     });
 
-    // Update StatsCache atomically
-    await StatsCache.findOneAndUpdate(
+    // Atomically find or create the StatsCache document and get the average student score
+    const studentEvals = await EvaluationResponse.find({ teacher: teacherId, course: courseId, period });
+    const avgStudentScore = studentEvals.reduce((sum, ev) => sum + ev.totalScore, 0) / studentEvals.length;
+
+
+    // Update StatsCache and recalculate final score
+    const stats = await StatsCache.findOneAndUpdate(
         { teacher: teacherId, course: courseId, period },
-        [
-            {
-                $set: {
-                    studentSubmissionCount: { $add: ["$studentSubmissionCount", 1] },
-                    studentScoreSum: { $add: ["$studentScoreSum", totalScore] },
-                }
-            },
-            {
-                $set: {
-                    studentAvg: { $divide: ["$studentScoreSum", "$studentSubmissionCount"] },
-                }
-            },
-            {
-                $set: {
-                    finalScore: {
-                        $add: [
-                            { $multiply: ["$studentAvg", 0.5] },
-                            { $multiply: ["$peerAvg", 0.35] },
-                            { $multiply: ["$deptAvg", 0.15] }
-                        ]
-                    }
-                }
-            }
-        ],
+        { $set: { studentScore: avgStudentScore } },
         { upsert: true, new: true }
     );
 
+    await recalculateFinalScore(stats._id);
 
     res.status(201).json({ success: true, data: response });
 });
@@ -100,6 +102,21 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
 // @access  Private (Admin)
 export const createEvaluationAssignment = asyncHandler(async (req: Request, res: Response) => {
     const { student, courseId, teacherId } = req.body;
+
+    // Check if an evaluation assignment already exists for this combination
+    const existingAssignment = await Evaluation.findOne({
+        student,
+        course: courseId,
+        teacher: teacherId,
+    });
+
+    if (existingAssignment) {
+        res.status(409).json({
+            success: false,
+            error: 'This evaluation has already been assigned to this student.',
+        });
+        return;
+    }
 
     const assignment = await Evaluation.create({
         student,
@@ -130,9 +147,9 @@ export const submitDepartmentEvaluation = asyncHandler(async (req: IRequest, res
         throw new Error('You have already submitted an evaluation for this teacher for this period.');
     }
 
-    // Calculate total score
-    const ratedAnswers = answers.filter((a: any) => typeof a.score === 'number');
-    const totalScore = ratedAnswers.length > 0 ? ratedAnswers.reduce((sum: number, a: any) => sum + a.score, 0) / ratedAnswers.length : 0;
+    // Calculate normalized score
+    const totalRatingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating').length;
+    const normalizedScore = calculateNormalizedScore(answers, totalRatingQuestions);
 
     // Create new evaluation response
     const response = await EvaluationResponse.create({
@@ -141,24 +158,17 @@ export const submitDepartmentEvaluation = asyncHandler(async (req: IRequest, res
         targetTeacher: teacherId,
         period,
         answers,
-        totalScore,
+        totalScore: normalizedScore,
     });
 
-    // Update StatsCache with deptAvg
+    // Update StatsCache and recalculate final score
     const stats = await StatsCache.findOneAndUpdate(
         { teacher: teacherId, period, course: courseId },
-        { 
-            $set: { deptAvg: totalScore }
-        },
+        { $set: { deptHeadScore: normalizedScore } },
         { upsert: true, new: true }
     );
 
-    // Recalculate final score
-    if (stats) {
-        const finalScore = (stats.studentAvg * 0.5) + (stats.peerAvg * 0.35) + (stats.deptAvg * 0.15);
-        stats.finalScore = finalScore;
-        await stats.save();
-    }
+    await recalculateFinalScore(stats._id);
 
     res.status(201).json({ success: true, data: response });
 });
