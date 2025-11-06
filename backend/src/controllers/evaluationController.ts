@@ -56,6 +56,16 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
         throw new Error('You have already submitted an evaluation for this course and period.');
     }
 
+    // Validate that all rating questions have a score
+    const ratingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating');
+    for (const question of ratingQuestions) {
+        const answer = answers.find((a: any) => a.questionCode === question.code);
+        if (!answer || answer.score === undefined) {
+            res.status(400);
+            throw new Error(`Please provide a score or select 'NA' for the question: "${question.text}"`);
+        }
+    }
+
     // Calculate normalized score
     const totalRatingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating').length;
     const normalizedScore = calculateNormalizedScore(answers, totalRatingQuestions);
