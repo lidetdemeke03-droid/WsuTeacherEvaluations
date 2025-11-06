@@ -5,7 +5,7 @@ import { UserRole } from '../types';
 import crypto from 'crypto';
 
 const generateTokens = (user: any) => {
-    const accessToken = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET as string, { expiresIn: '15m' });
+    const accessToken = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET as string, { expiresIn: '8h' });
     const refreshToken = jwt.sign({ id: user._id }, process.env.JWT_REFRESH_SECRET as string, { expiresIn: '7d' });
     return { accessToken, refreshToken };
 };

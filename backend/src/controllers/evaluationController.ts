@@ -42,7 +42,6 @@ export const getAssignedForms = asyncHandler(async (req: Request, res: Response)
 // @access  Private (Student)
 export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response) => {
     const { courseId, teacherId, period, answers } = req.body;
-    console.log('Received answers:', JSON.stringify(answers, null, 2)); // Temporary logging
     const studentObjectId = req.user!._id;
 
     // Generate anonymous token

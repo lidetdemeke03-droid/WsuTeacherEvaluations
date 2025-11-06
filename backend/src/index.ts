@@ -39,6 +39,8 @@ const corsOptions = {
     }
 };
 
+app.set('trust proxy', 1); // Trust the first hop from the proxy
+
 // Security Middleware
 app.use(cors(corsOptions));
 app.use(helmet());
