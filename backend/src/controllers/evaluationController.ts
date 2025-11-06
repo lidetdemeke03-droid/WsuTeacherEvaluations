@@ -60,7 +60,7 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
     const ratingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating');
     for (const question of ratingQuestions) {
         const answer = answers.find((a: any) => a.questionCode === question.code);
-        if (!answer || (answer.score === undefined && answer.score !== null)) {
+        if (!answer || typeof answer.score !== 'number') {
             res.status(400);
             throw new Error(`Please provide a score or select 'NA' for the question: "${question.text}"`);
         }
