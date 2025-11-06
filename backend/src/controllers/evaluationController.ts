@@ -42,6 +42,7 @@ export const getAssignedForms = asyncHandler(async (req: Request, res: Response)
 // @access  Private (Student)
 export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response) => {
     const { courseId, teacherId, period, answers } = req.body;
+    console.log('Received answers:', JSON.stringify(answers, null, 2)); // Temporary logging
     const studentObjectId = req.user!._id;
 
     // Generate anonymous token
@@ -60,7 +61,7 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
     const ratingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating');
     for (const question of ratingQuestions) {
         const answer = answers.find((a: any) => a.questionCode === question.code);
-        if (!answer || typeof answer.score !== 'number') {
+        if (!answer || answer.score === undefined) {
             res.status(400);
             throw new Error(`Please provide a score or select 'NA' for the question: "${question.text}"`);
         }
