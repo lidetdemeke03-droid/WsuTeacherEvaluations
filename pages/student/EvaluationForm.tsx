@@ -51,7 +51,11 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
         } else {
             const initialAnswers: Record<string, Answer> = {};
             studentEvaluationQuestions.forEach(q => {
-                initialAnswers[q.code] = { questionCode: q.code };
+                initialAnswers[q.code] = {
+                    questionCode: q.code,
+                    score: undefined,
+                    response: undefined,
+                };
             });
             setAnswers(initialAnswers);
         }
