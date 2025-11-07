@@ -41,9 +41,6 @@ export const getAssignedForms = asyncHandler(async (req: Request, res: Response)
 // @route   POST /api/evaluations/student
 // @access  Private (Student)
 export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response) => {
-    console.log('Full request body:', JSON.stringify(req.body, null, 2));
-    console.log('Student evaluation questions:', JSON.stringify(studentEvaluationQuestions, null, 2));
-
     const { courseId, teacherId, period, answers } = req.body;
     const studentObjectId = req.user!._id;
 
