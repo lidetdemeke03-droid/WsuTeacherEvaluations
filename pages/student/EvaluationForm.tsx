@@ -41,7 +41,7 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
         setPage([page + newDirection, newDirection]);
     };
 
-    const draftKey = `evaluation_draft_${evaluation.id}`;
+    const draftKey = `evaluation_draft_${evaluation._id}`;
 
     useEffect(() => {
         // Load draft from local storage
@@ -59,7 +59,7 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
             });
             setAnswers(initialAnswers);
         }
-    }, [evaluation.id, draftKey]);
+    }, [evaluation._id, draftKey]);
 
     const saveDraft = useCallback(() => {
         localStorage.setItem(draftKey, JSON.stringify(answers));
@@ -108,7 +108,7 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
             });
             toast.success("Evaluation submitted successfully.");
             localStorage.removeItem(draftKey);
-            onComplete(evaluation.id);
+            onComplete(evaluation._id);
         } catch (error) {
             console.error("Failed to submit evaluation", error);
             toast.error("Submission failed. Please try again.");
