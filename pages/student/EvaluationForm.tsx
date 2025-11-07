@@ -103,7 +103,7 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
             await apiSubmitEvaluation({
                 courseId: evaluation.course._id,
                 teacherId: evaluation.teacher._id,
-                period: evaluation.period,
+                period: evaluation.period._id,
                 answers: Object.values(answers),
             });
             toast.success("Evaluation submitted successfully.");
