@@ -9,7 +9,7 @@ import { createHash } from 'crypto';
 import StatsCache from '../models/StatsCache';
 import { EvaluationType } from '../types';
 import { calculateNormalizedScore, recalculateFinalScore } from '../services/scoreService';
-import { studentEvaluationQuestions, departmentHeadEvaluationQuestions } from '../constants/forms';
+import { studentEvaluationQuestions, departmentHeadEvaluationQuestions, peerEvaluationQuestions } from '../constants/forms';
 
 
 // @desc    Get assigned evaluation forms for a student
@@ -113,8 +113,8 @@ export const submitPeerEvaluation = asyncHandler(async (req: IRequest, res: Resp
         throw new Error('You have already submitted a peer evaluation for this teacher for this period.');
     }
 
-    // Validate that all rating questions have a score
-    const ratingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating');
+    // Validate that all rating questions for the peer form have a score
+    const ratingQuestions = peerEvaluationQuestions.filter(q => q.type === 'rating');
     for (const question of ratingQuestions) {
         const answer = answers.find((a: any) => a.questionCode === question.code);
         if (!answer || answer.score === undefined) {
@@ -123,7 +123,7 @@ export const submitPeerEvaluation = asyncHandler(async (req: IRequest, res: Resp
         }
     }
 
-    const totalRatingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating').length;
+    const totalRatingQuestions = peerEvaluationQuestions.filter(q => q.type === 'rating').length;
     const normalizedScore = calculateNormalizedScore(answers, totalRatingQuestions);
 
     const response = await EvaluationResponse.create({

@@ -164,9 +164,10 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
             toast.success("Evaluation submitted successfully.");
             localStorage.removeItem(draftKey);
             onComplete(evaluation._id);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to submit evaluation", error);
-            toast.error("Submission failed. Please try again.");
+            const message = error?.message || (typeof error === 'string' ? error : 'Submission failed. Please try again.');
+            toast.error(message);
         } finally {
             setSubmitting(false);
         }
