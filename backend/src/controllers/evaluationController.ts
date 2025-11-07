@@ -72,12 +72,14 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
 
     // Create new evaluation response
     const response = await EvaluationResponse.create({
+        type: EvaluationType.Student,
+        evaluator: studentObjectId,
+        targetTeacher: teacherId,
         anonymousToken,
         course: courseId,
-        teacher: teacherId,
         period,
         answers,
-        totalScore: normalizedScore, // Storing normalized score in totalScore for now
+        totalScore: normalizedScore,
     });
 
     // Atomically find or create the StatsCache document and get the average student score
