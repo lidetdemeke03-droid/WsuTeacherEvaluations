@@ -99,6 +99,58 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
     res.status(201).json({ success: true, data: response });
 });
 
+// @desc    Submit a peer (teacher) evaluation response
+// @route   POST /api/evaluations/peer
+// @access  Private (Teacher)
+export const submitPeerEvaluation = asyncHandler(async (req: IRequest, res: Response) => {
+    const { courseId, teacherId, period, answers } = req.body;
+    const evaluatorId = req.user!._id;
+
+    // Prevent duplicate peer submissions
+    const existingResponse = await EvaluationResponse.findOne({ evaluator: evaluatorId, targetTeacher: teacherId, period, type: EvaluationType.Peer });
+    if (existingResponse) {
+        res.status(400);
+        throw new Error('You have already submitted a peer evaluation for this teacher for this period.');
+    }
+
+    // Validate that all rating questions have a score
+    const ratingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating');
+    for (const question of ratingQuestions) {
+        const answer = answers.find((a: any) => a.questionCode === question.code);
+        if (!answer || answer.score === undefined) {
+            res.status(400);
+            throw new Error(`Please provide a score or select 'NA' for the question: "${question.text}"`);
+        }
+    }
+
+    const totalRatingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating').length;
+    const normalizedScore = calculateNormalizedScore(answers, totalRatingQuestions);
+
+    const response = await EvaluationResponse.create({
+        type: EvaluationType.Peer,
+        evaluator: evaluatorId,
+        targetTeacher: teacherId,
+        course: courseId,
+        period,
+        answers,
+        totalScore: normalizedScore,
+    });
+
+    // Update StatsCache peer score
+    const peerEvals = await EvaluationResponse.find({ targetTeacher: teacherId, course: courseId, period, type: EvaluationType.Peer });
+    const avgPeerScore = peerEvals.reduce((sum, ev) => sum + ev.totalScore, 0) / (peerEvals.length || 1);
+
+    const stats = await StatsCache.findOneAndUpdate(
+        { teacher: teacherId, course: courseId, period },
+        { $set: { peerScore: avgPeerScore } },
+        { upsert: true, new: true }
+    );
+
+    await recalculateFinalScore(stats._id);
+
+    res.status(201).json({ success: true, data: response });
+});
+
 // @desc    Create an evaluation assignment
 // @route   POST /api/evaluations/assign
 // @access  Private (Admin)

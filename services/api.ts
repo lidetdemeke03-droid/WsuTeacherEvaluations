@@ -97,6 +97,7 @@ export const apiBulkImportUsers = async (file: File): Promise<{ success: boolean
 export const apiGetStudentCourses = (studentId: string): Promise<Course[]> => apiRequest<Course[]>(`/students/${studentId}/courses`);
 export const apiGetStudentEvaluations = (studentId: string): Promise<Evaluation[]> => apiRequest<Evaluation[]>(`/evaluations/assigned?studentId=${studentId}`);
 export const apiSubmitEvaluation = (submission: EvaluationSubmission): Promise<any> => apiRequest<any>('/evaluations/student', { method: 'POST', body: JSON.stringify(submission) });
+export const apiSubmitPeerEvaluation = (submission: EvaluationSubmission): Promise<any> => apiRequest<any>('/evaluations/peer', { method: 'POST', body: JSON.stringify(submission) });
 export const apiAssignEvaluation = (assignData: { student: string, courseId: string, teacherId: string, periodId: string }): Promise<any> => apiRequest<any>('/evaluations/assign', { method: 'POST', body: JSON.stringify(assignData) });
 
 

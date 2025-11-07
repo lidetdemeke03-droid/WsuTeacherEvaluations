@@ -1,12 +1,58 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { apiGetStudentEvaluations } from '../../services/api';
+import { Evaluation } from '../../types';
+import { motion } from 'framer-motion';
+import EvaluationForm from '../student/EvaluationForm';
 
 const NewEvaluation: React.FC = () => {
+  const { user } = useAuth();
+  const [assignments, setAssignments] = useState<Evaluation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Evaluation | null>(null);
+
+  useEffect(() => {
+    const fetch = async () => {
+      if (!user) return;
+      try {
+        const data = await apiGetStudentEvaluations(user._id);
+        setAssignments(data);
+      } catch (e) {
+        console.error('Failed to fetch assignments', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, [user]);
+
+  if (loading) return <div>Loading...</div>;
+
+  if (selected) return <EvaluationForm evaluation={selected} onBack={() => setSelected(null)} onComplete={(id: string) => { setAssignments(prev => prev.map(a => a._id === id ? { ...a, status: 'Completed' } : a)); setSelected(null); }} />;
+
   return (
-    <div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Make Evaluation</h1>
-      <p className="text-lg text-gray-600 dark:text-gray-300">This is a placeholder page for making a new evaluation.</p>
-    </div>
+      {assignments.length === 0 ? (
+        <p className="text-lg text-gray-600 dark:text-gray-300">No assignments to evaluate.</p>
+      ) : (
+        <div className="grid gap-4">
+          {assignments.map(a => (
+            <div key={a._id} className="p-4 bg-white dark:bg-gray-800 rounded shadow flex items-center justify-between">
+              <div>
+                <div className="font-semibold text-gray-800 dark:text-white">{a.course.title}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">For: {a.teacher.firstName} {a.teacher.lastName}</div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button onClick={() => setSelected(a)} className="px-3 py-2 bg-blue-600 text-white rounded">Evaluate</button>
+                <span className="text-sm text-gray-500">{a.status}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </motion.div>
   );
 };
 

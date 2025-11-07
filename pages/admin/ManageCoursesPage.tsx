@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { apiGetCourses, apiCreateCourse, apiGetUsers, apiGetDepartments, apiAssignEvaluation } from '../../services/api';
-import { Course, User, Department, UserRole } from '../../types';
+import { apiGetCourses, apiCreateCourse, apiGetUsers, apiGetDepartments, apiAssignEvaluation, apiGetEvaluationPeriods } from '../../services/api';
+import { Course, User, Department, UserRole, EvaluationPeriod } from '../../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle, X, UserPlus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -66,14 +66,14 @@ const ManageCoursesPage: React.FC = () => {
                         </div>
                         <button onClick={() => openAssignModal(course)} className="mt-4 flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
                             <UserPlus size={18} className="mr-2" />
-                            Assign Students
+                            Assign Evaluator
                         </button>
                     </motion.div>
                 ))}
             </div>
 
             <CreateCourseModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onCreate={handleCreateCourse} />
-            {selectedCourse && <AssignStudentModal isOpen={isAssignModalOpen} onClose={() => setIsAssignModalOpen(false)} course={selectedCourse} />}
+            {selectedCourse && <AssignEvaluatorModal isOpen={isAssignModalOpen} onClose={() => setIsAssignModalOpen(false)} course={selectedCourse} />}
         </motion.div>
     );
 };
@@ -130,55 +130,60 @@ const CreateCourseModal: React.FC<CreateCourseModalProps> = ({ isOpen, onClose, 
     );
 };
 
-interface AssignStudentModalProps {
+interface AssignEvaluatorModalProps {
     isOpen: boolean;
     onClose: () => void;
     course: Course;
 }
-
-const AssignStudentModal: React.FC<AssignStudentModalProps> = ({ isOpen, onClose, course }) => {
+const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onClose, course }) => {
     const [students, setStudents] = useState<User[]>([]);
-    const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+    const [teachers, setTeachers] = useState<User[]>([]);
+    const [selectedEvaluators, setSelectedEvaluators] = useState<string[]>([]);
     const [evaluationPeriods, setEvaluationPeriods] = useState<EvaluationPeriod[]>([]);
     const [selectedPeriod, setSelectedPeriod] = useState<string>('');
+    const [mode, setMode] = useState<'students' | 'teachers'>('students');
 
     useEffect(() => {
         if (isOpen) {
-            apiGetUsers().then(users => setStudents(users.filter(u => u.role === UserRole.Student)));
-            apiGetEvaluationPeriods().then(periods => setEvaluationPeriods(periods.filter(p => p.status === 'Active')));
+            apiGetUsers().then(users => {
+                setStudents(users.filter(u => u.role === UserRole.Student));
+                // Exclude course owner from teacher list
+                setTeachers(users.filter(u => u.role === UserRole.Teacher && u._id !== (course.teacher?._id ?? '')));
+            });
+            apiGetEvaluationPeriods().then(periods => setEvaluationPeriods(periods));
         }
-    }, [isOpen]);
+    }, [isOpen, course]);
 
     const handleAssign = async () => {
         if (!course.teacher?._id) {
             toast.error("This course does not have a teacher assigned.");
             return;
         }
-        if (selectedStudents.length === 0) {
-            toast.error("Please select at least one student.");
+        if (selectedEvaluators.length === 0) {
+            toast.error(`Please select at least one ${mode === 'students' ? 'student' : 'teacher'}.`);
             return;
         }
         if (!selectedPeriod) {
             toast.error("Please select an evaluation period.");
             return;
         }
-        const toastId = toast.loading('Assigning students...');
+        const toastId = toast.loading('Assigning evaluators...');
         try {
             await Promise.all(
-                selectedStudents.map(studentId =>
-                    apiAssignEvaluation({ student: studentId, courseId: course._id, teacherId: course.teacher._id, periodId: selectedPeriod })
+                selectedEvaluators.map(evaluatorId =>
+                    apiAssignEvaluation({ student: evaluatorId, courseId: course._id, teacherId: course.teacher._id, periodId: selectedPeriod })
                 )
             );
-            toast.success(`${selectedStudents.length} student(s) assigned successfully!`, { id: toastId });
+            toast.success(`${selectedEvaluators.length} evaluator(s) assigned successfully!`, { id: toastId });
             onClose();
         } catch (error) {
-            toast.error('Failed to assign students.', { id: toastId });
+            toast.error('Failed to assign evaluators.', { id: toastId });
         }
     };
 
-    const toggleStudentSelection = (studentId: string) => {
-        setSelectedStudents(prev =>
-            prev.includes(studentId) ? prev.filter(id => id !== studentId) : [...prev, studentId]
+    const toggleSelection = (id: string) => {
+        setSelectedEvaluators(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
         );
     };
 
@@ -186,8 +191,14 @@ const AssignStudentModal: React.FC<AssignStudentModalProps> = ({ isOpen, onClose
         <AnimatePresence>
             {isOpen && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                    <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -50, opacity: 0 }} className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6">
-                        <h2 className="text-2xl font-bold mb-4">Assign Students to {course.title}</h2>
+                    <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -50, opacity: 0 }} className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-2xl font-bold">Assign Evaluator(s) to {course.title}</h2>
+                            <div className="space-x-2">
+                                <button onClick={() => setMode('students')} className={`px-3 py-1 rounded ${mode === 'students' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Students</button>
+                                <button onClick={() => setMode('teachers')} className={`px-3 py-1 rounded ${mode === 'teachers' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Teachers</button>
+                            </div>
+                        </div>
                         <div className="mb-4">
                             <label htmlFor="evaluationPeriod" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Evaluation Period</label>
                             <select
@@ -202,11 +213,11 @@ const AssignStudentModal: React.FC<AssignStudentModalProps> = ({ isOpen, onClose
                                 ))}
                             </select>
                         </div>
-                        <div className="max-h-64 overflow-y-auto pr-2">
-                            {students.map(student => (
-                                <div key={student._id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                                    <span>{`${student.firstName} ${student.lastName}`}</span>
-                                    <input type="checkbox" checked={selectedStudents.includes(student._id)} onChange={() => toggleStudentSelection(student._id)} className="form-checkbox h-5 w-5"/>
+                        <div className="max-h-72 overflow-y-auto pr-2 grid grid-cols-1 gap-2">
+                            {(mode === 'students' ? students : teachers).map(user => (
+                                <div key={user._id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <span>{`${user.firstName} ${user.lastName}`}</span>
+                                    <input type="checkbox" checked={selectedEvaluators.includes(user._id)} onChange={() => toggleSelection(user._id)} className="form-checkbox h-5 w-5"/>
                                 </div>
                             ))}
                         </div>

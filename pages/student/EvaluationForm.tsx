@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Evaluation, Answer } from '../../types';
-import { apiSubmitEvaluation, apiGetEvaluationPeriods } from '../../services/api';
+import { apiSubmitEvaluation, apiGetEvaluationPeriods, apiSubmitPeerEvaluation } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { UserRole } from '../../types';
 import { studentEvaluationQuestions } from '../../constants/forms';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
@@ -84,6 +86,8 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
         saveDraft();
     };
 
+    const { user } = useAuth();
+
     const handleSubmit = async () => {
         const unansweredQuestionIndex = studentEvaluationQuestions.findIndex(q => {
             if (q.type === 'rating') {
@@ -132,12 +136,22 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
                 return;
             }
 
-            await apiSubmitEvaluation({
-                courseId,
-                teacherId,
-                period: resolvedPeriodId,
-                answers: Object.values(answers),
-            });
+            if (user?.role === UserRole.Teacher) {
+                // Peer evaluation submission
+                await apiSubmitPeerEvaluation({
+                    courseId,
+                    teacherId,
+                    period: resolvedPeriodId,
+                    answers: Object.values(answers),
+                });
+            } else {
+                await apiSubmitEvaluation({
+                    courseId,
+                    teacherId,
+                    period: resolvedPeriodId,
+                    answers: Object.values(answers),
+                });
+            }
             toast.success("Evaluation submitted successfully.");
             localStorage.removeItem(draftKey);
             onComplete(evaluation._id);
