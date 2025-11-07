@@ -1,27 +1,24 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { api } from '../../services/api';
-import { IUser } from '../../backend/src/types';
+import { apiGetDepartmentTeachers } from '../../services/api';
+import { User } from '../../types';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const DepartmentHeadDashboard: React.FC = () => {
     const { user } = useAuth();
-    const [teachers, setTeachers] = useState<IUser[]>([]);
+    const [teachers, setTeachers] = useState<User[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
         if (user && user.department) {
-            api.get(`/departments/${user.department}/teachers`)
-                .then(res => {
-                    setTeachers(res.data.data);
-                    setLoading(false);
-                })
-                .catch(err => {
-                    console.error('Error fetching teachers:', err);
-                    setLoading(false);
-                });
+            apiGetDepartmentTeachers(String((user as any).department))
+                .then(list => setTeachers(list))
+                .catch(err => console.error('Error fetching teachers:', err))
+                .finally(() => setLoading(false));
+        } else {
+            setLoading(false);
         }
     }, [user]);
 

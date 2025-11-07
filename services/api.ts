@@ -106,6 +106,7 @@ export const apiGetDepartments = (): Promise<Department[]> => apiRequest<Departm
 export const apiCreateDepartment = (data: { name: string, code: string, head?: string[] | string }): Promise<Department> => apiRequest<Department>('/departments', { method: 'POST', body: JSON.stringify(data) });
 export const apiUpdateDepartment = (deptId: string, data: { name: string, code: string, head?: string[] }): Promise<Department> => apiRequest<Department>(`/departments/${deptId}`, { method: 'PUT', body: JSON.stringify(data) });
 export const apiDeleteDepartment = (deptId: string): Promise<void> => apiRequest<void>(`/departments/${deptId}`, { method: 'DELETE' });
+export const apiGetDepartmentTeachers = (deptId: string): Promise<User[]> => apiRequest<User[]>(`/departments/${deptId}/teachers`);
 
 // Courses
 export const apiGetCourses = (): Promise<Course[]> => apiRequest<Course[]>('/courses');

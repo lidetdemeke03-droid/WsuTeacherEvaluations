@@ -19,6 +19,7 @@ import InstructorDashboard from './pages/instructor/InstructorDashboard';
 import HomePage from './pages/HomePage';
 import Profile from './pages/profile/Profile';
 import NewEvaluation from './pages/evaluation/NewEvaluation';
+import DepartmentEvaluationForm from './pages/depthead/DepartmentEvaluationForm';
 import InstructorResults from './pages/instructor/InstructorResults';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 
@@ -90,6 +91,7 @@ const AppContent: React.FC = () => {
 
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/evaluation/new" element={<RoleProtectedRoute roles={[UserRole.Teacher, UserRole.DepartmentHead]}><NewEvaluation /></RoleProtectedRoute>} />
+                <Route path="/department/evaluate/:teacherId" element={<RoleProtectedRoute roles={[UserRole.DepartmentHead]}><DepartmentEvaluationForm /></RoleProtectedRoute>} />
                 <Route path="/instructor/results" element={<RoleProtectedRoute roles={[UserRole.DepartmentHead]}><InstructorResults /></RoleProtectedRoute>} />
             </Route>
             
