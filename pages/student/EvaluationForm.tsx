@@ -3,7 +3,7 @@ import { Evaluation, Answer } from '../../types';
 import { apiSubmitEvaluation, apiGetEvaluationPeriods, apiSubmitPeerEvaluation } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types';
-import { studentEvaluationQuestions } from '../../constants/forms';
+import { studentEvaluationQuestions, peerEvaluationQuestions, departmentHeadEvaluationQuestions } from '../../constants/forms';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -37,7 +37,17 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
     const [[page, direction], setPage] = useState([0, 0]);
 
     const questionIndex = page;
-    const question = studentEvaluationQuestions[questionIndex];
+
+    const { user } = useAuth();
+
+    // Select question set based on role
+    const questionSet = user?.role === UserRole.Teacher
+        ? peerEvaluationQuestions
+        : user?.role === UserRole.DepartmentHead
+            ? departmentHeadEvaluationQuestions
+            : studentEvaluationQuestions;
+
+    const question = questionSet[questionIndex];
 
     const paginate = (newDirection: number) => {
         setPage([page + newDirection, newDirection]);
@@ -53,7 +63,7 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
             setAnswers(JSON.parse(savedDraft));
         } else {
             const initialAnswers: Record<string, Answer> = {};
-            studentEvaluationQuestions.forEach(q => {
+            questionSet.forEach(q => {
                 initialAnswers[q.code] = {
                     questionCode: q.code,
                     score: undefined,
@@ -62,7 +72,7 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
             });
             setAnswers(initialAnswers);
         }
-    }, [evaluation._id, draftKey]);
+    }, [evaluation._id, draftKey, user?.role]);
 
     const saveDraft = useCallback(() => {
         localStorage.setItem(draftKey, JSON.stringify(answers));
@@ -86,10 +96,9 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
         saveDraft();
     };
 
-    const { user } = useAuth();
 
     const handleSubmit = async () => {
-        const unansweredQuestionIndex = studentEvaluationQuestions.findIndex(q => {
+        const unansweredQuestionIndex = questionSet.findIndex(q => {
             if (q.type === 'rating') {
                 const answer = answers[q.code];
                 return !answer || answer.score === undefined;
@@ -98,7 +107,7 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
         });
 
         if (unansweredQuestionIndex !== -1) {
-            const unansweredQuestion = studentEvaluationQuestions[unansweredQuestionIndex];
+            const unansweredQuestion = questionSet[unansweredQuestionIndex];
             setPage([unansweredQuestionIndex, unansweredQuestionIndex > page ? 1 : -1]);
             toast.error(`Please answer question ${unansweredQuestionIndex + 1}: "${unansweredQuestion.text}"`);
             return;
@@ -163,7 +172,7 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
         }
     };
 
-    const progress = Math.round(((questionIndex + 1) / studentEvaluationQuestions.length) * 100);
+    const progress = Math.round(((questionIndex + 1) / questionSet.length) * 100);
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col h-full">
@@ -173,7 +182,8 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
                     <span>Back to Evaluations</span>
                 </button>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">{evaluation.course.title}</h1>
-                <h2 className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-4">For: {evaluation.teacher.firstName} {evaluation.teacher.lastName}</h2>
+                <h2 className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-2">For: {evaluation.teacher.firstName} {evaluation.teacher.lastName}</h2>
+                <h3 className="text-sm text-gray-500 mb-4">Form: {user?.role === UserRole.Teacher ? 'Peer Evaluation' : user?.role === UserRole.DepartmentHead ? 'Department Head Evaluation' : 'Student Evaluation'}</h3>
 
                 {/* Progress Bar */}
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-4">
@@ -265,7 +275,7 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
                     <ArrowLeft size={18} /> <span>Previous</span>
                 </motion.button>
 
-                {questionIndex < studentEvaluationQuestions.length - 1 ? (
+                {questionIndex < questionSet.length - 1 ? (
                     <motion.button
                         whileHover={{ scale: 1.05 }}
                         onClick={() => paginate(1)}
