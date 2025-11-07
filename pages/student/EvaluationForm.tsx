@@ -54,25 +54,41 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
     };
 
     const evalIdForDraft = evaluation._id ?? (typeof evaluation.course === 'string' ? evaluation.course : evaluation.course?._id ?? 'draft');
-    const draftKey = `evaluation_draft_${evalIdForDraft}`;
+    const formType = user?.role === UserRole.Teacher ? 'peer' : user?.role === UserRole.DepartmentHead ? 'dept' : 'student';
+    const draftKey = `evaluation_draft_${evalIdForDraft}_${formType}`;
 
     useEffect(() => {
-        // Load draft from local storage
+        // Load draft from local storage, but only if it matches the current form's question codes
         const savedDraft = localStorage.getItem(draftKey);
         if (savedDraft) {
-            setAnswers(JSON.parse(savedDraft));
-        } else {
-            const initialAnswers: Record<string, Answer> = {};
-            questionSet.forEach(q => {
-                initialAnswers[q.code] = {
-                    questionCode: q.code,
-                    score: undefined,
-                    response: undefined,
-                };
-            });
-            setAnswers(initialAnswers);
+            try {
+                const parsed = JSON.parse(savedDraft) as Record<string, Answer>;
+                const parsedCodes = Object.values(parsed as Record<string, any>).map((a: any) => String(a.questionCode || '').toUpperCase());
+                const expectedCodes = questionSet.map(q => q.code.toUpperCase());
+                const allMatch = parsedCodes.every(c => expectedCodes.includes(c));
+                if (allMatch) {
+                    setAnswers(parsed);
+                    return;
+                } else {
+                    // Drop mismatched draft to avoid cross-form contamination
+                    localStorage.removeItem(draftKey);
+                }
+            } catch (e) {
+                console.error('Invalid draft data, ignoring', e);
+                localStorage.removeItem(draftKey);
+            }
         }
-    }, [evaluation._id, draftKey, user?.role]);
+
+        const initialAnswers: Record<string, Answer> = {};
+        questionSet.forEach(q => {
+            initialAnswers[q.code] = {
+                questionCode: q.code,
+                score: undefined,
+                response: undefined,
+            };
+        });
+        setAnswers(initialAnswers);
+    }, [evaluation._id, draftKey, user?.role, questionSet]);
 
     const saveDraft = useCallback(() => {
         localStorage.setItem(draftKey, JSON.stringify(answers));
