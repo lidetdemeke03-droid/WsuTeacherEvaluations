@@ -138,6 +138,8 @@ interface AssignEvaluatorModalProps {
 const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onClose, course }) => {
     const [students, setStudents] = useState<User[]>([]);
     const [teachers, setTeachers] = useState<User[]>([]);
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState<string>('');
     const [selectedEvaluators, setSelectedEvaluators] = useState<string[]>([]);
     const [evaluationPeriods, setEvaluationPeriods] = useState<EvaluationPeriod[]>([]);
     const [selectedPeriod, setSelectedPeriod] = useState<string>('');
@@ -151,6 +153,7 @@ const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onC
                 setTeachers(users.filter(u => u.role === UserRole.Teacher && u._id !== (course.teacher?._id ?? '')));
             });
             apiGetEvaluationPeriods().then(periods => setEvaluationPeriods(periods));
+            apiGetDepartments().then(setDepartments).catch(() => setDepartments([]));
         }
     }, [isOpen, course]);
 
@@ -199,7 +202,7 @@ const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onC
                                 <button onClick={() => setMode('teachers')} className={`px-3 py-1 rounded ${mode === 'teachers' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Teachers</button>
                             </div>
                         </div>
-                        <div className="mb-4">
+                        <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <label htmlFor="evaluationPeriod" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Evaluation Period</label>
                             <select
                                 id="evaluationPeriod"
@@ -212,15 +215,39 @@ const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onC
                                     <option key={period._id} value={period._id}>{period.name}</option>
                                 ))}
                             </select>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Filter by Department</label>
+                                <select value={selectedDepartmentFilter} onChange={e => setSelectedDepartmentFilter(e.target.value)} className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent">
+                                    <option value="">-- All Departments --</option>
+                                    {departments.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
+                                </select>
+                            </div>
                         </div>
-                        <div className="max-h-72 overflow-y-auto pr-2 grid grid-cols-1 gap-2">
-                            {(mode === 'students' ? students : teachers).map(user => (
-                                <div key={user._id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                                    <span>{`${user.firstName} ${user.lastName}`}</span>
-                                    <input type="checkbox" checked={selectedEvaluators.includes(user._id)} onChange={() => toggleSelection(user._id)} className="form-checkbox h-5 w-5"/>
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="text-sm text-gray-600">Showing {mode === 'students' ? 'students' : 'teachers'} {selectedDepartmentFilter ? `in selected department` : ''}</div>
+                                <div>
+                                    <button type="button" onClick={() => {
+                                        // select all visible
+                                        const visible = (mode === 'students' ? students : teachers).filter(u => !selectedDepartmentFilter || (u.department && ((u.department as any)._id === selectedDepartmentFilter) ) || (u.departmentId === selectedDepartmentFilter));
+                                        setSelectedEvaluators(visible.map(v => v._id));
+                                    }} className="px-3 py-1 bg-gray-200 rounded text-sm">Select all visible</button>
                                 </div>
-                            ))}
-                        </div>
+                            </div>
+
+                            <div className="max-h-72 overflow-y-auto pr-2 grid grid-cols-1 gap-2">
+                                {((mode === 'students' ? students : teachers).filter(u => {
+                                    if (!selectedDepartmentFilter) return true;
+                                    return ((u.department && ((u.department as any)._id === selectedDepartmentFilter)) || (u.departmentId === selectedDepartmentFilter));
+                                })).map(user => (
+                                    <div key={user._id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <div>
+                                            <div className="font-medium">{`${user.firstName} ${user.lastName}`}</div>
+                                            <div className="text-xs text-gray-500">{(user as any).department?.name || (user.departmentName) || ''}</div>
+                                        </div>
+                                        <input type="checkbox" checked={selectedEvaluators.includes(user._id)} onChange={() => toggleSelection(user._id)} className="form-checkbox h-5 w-5"/>
+                                    </div>
+                                ))}
+                            </div>
                         <div className="flex justify-end space-x-2 mt-4"><button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Cancel</button><button onClick={handleAssign} className="px-4 py-2 bg-blue-600 text-white rounded">Assign</button></div>
                     </motion.div>
                 </motion.div>

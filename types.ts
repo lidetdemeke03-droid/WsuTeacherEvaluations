@@ -21,6 +21,7 @@ export interface Department {
   _id: string;
   name: string;
   code: string;
+  head?: { _id: string; firstName: string; lastName: string; email: string }[];
 }
 
 export interface Course {

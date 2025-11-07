@@ -66,7 +66,7 @@ export const apiResetPassword = async (token: string, password: string): Promise
 export const apiGetUsers = (): Promise<User[]> => apiRequest<User[]>('/users');
 export const apiUpdateUser = (userId: string, userData: Partial<User>): Promise<User> => apiRequest<User>(`/users/${userId}`, { method: 'PUT', body: JSON.stringify(userData) });
 export const apiDeleteUser = (userId: string): Promise<void> => apiRequest<void>(`/users/${userId}`, { method: 'DELETE' });
-export const apiCreateUser = (userData: { firstName: string, lastName: string, email: string, role: UserRole, password?: string }): Promise<User> => apiRequest<User>('/admin/users', { method: 'POST', body: JSON.stringify(userData) });
+export const apiCreateUser = (userData: { firstName: string, lastName: string, email: string, role: UserRole, password?: string, department?: string, isDeptHead?: boolean }): Promise<User> => apiRequest<User>('/admin/users', { method: 'POST', body: JSON.stringify(userData) });
 
 // SuperAdmin
 export const apiGetAdmins = (): Promise<User[]> => apiRequest<User[]>('/superadmin/admins');
@@ -103,8 +103,8 @@ export const apiAssignEvaluation = (assignData: { student: string, courseId: str
 
 // Departments
 export const apiGetDepartments = (): Promise<Department[]> => apiRequest<Department[]>('/departments');
-export const apiCreateDepartment = (data: { name: string, code: string }): Promise<Department> => apiRequest<Department>('/departments', { method: 'POST', body: JSON.stringify(data) });
-export const apiUpdateDepartment = (deptId: string, data: { name: string, code: string }): Promise<Department> => apiRequest<Department>(`/departments/${deptId}`, { method: 'PUT', body: JSON.stringify(data) });
+export const apiCreateDepartment = (data: { name: string, code: string, head?: string[] | string }): Promise<Department> => apiRequest<Department>('/departments', { method: 'POST', body: JSON.stringify(data) });
+export const apiUpdateDepartment = (deptId: string, data: { name: string, code: string, head?: string[] }): Promise<Department> => apiRequest<Department>(`/departments/${deptId}`, { method: 'PUT', body: JSON.stringify(data) });
 export const apiDeleteDepartment = (deptId: string): Promise<void> => apiRequest<void>(`/departments/${deptId}`, { method: 'DELETE' });
 
 // Courses

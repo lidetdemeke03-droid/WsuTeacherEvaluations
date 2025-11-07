@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
+import Department from '../models/Department';
 import Course from '../models/Course';
 import PeerAssignment from '../models/PeerAssignment';
 import ScheduleWindow from '../models/ScheduleWindow';
@@ -41,6 +42,15 @@ export const createUser = async (req: Request, res: Response) => {
     user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
     user.passwordResetExpires = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
     await user.save();
+
+    // If user is created as a department head, ensure the department references the user
+    if (isDeptHead && department) {
+      try {
+        await Department.findByIdAndUpdate(department, { $addToSet: { head: user._id } });
+      } catch (e) {
+        console.error('Failed to add user to department head list', e);
+      }
+    }
 
     // Send welcome email
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { Department } from '../../types';
-import { apiGetDepartments, apiCreateDepartment, apiUpdateDepartment, apiDeleteDepartment } from '../../services/api';
+import { Department, User, UserRole } from '../../types';
+import { apiGetDepartments, apiCreateDepartment, apiUpdateDepartment, apiDeleteDepartment, apiGetUsers } from '../../services/api';
 import toast from 'react-hot-toast';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 
@@ -12,6 +12,8 @@ const ManageDepartmentsPage: React.FC = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [currentDepartment, setCurrentDepartment] = useState<Department | null>(null);
     const [formData, setFormData] = useState({ name: '', code: '' });
+    const [users, setUsers] = useState<User[]>([]);
+    const [selectedHead, setSelectedHead] = useState<string | null>(null);
 
     useEffect(() => {
         fetchDepartments();
@@ -36,10 +38,10 @@ const ManageDepartmentsPage: React.FC = () => {
         e.preventDefault();
         try {
             if (isEditing && currentDepartment) {
-                await apiUpdateDepartment(currentDepartment.id, formData);
+                await apiUpdateDepartment(currentDepartment.id, { ...formData, head: selectedHead ? [selectedHead] : [] });
                 toast.success('Department updated successfully');
             } else {
-                await apiCreateDepartment(formData);
+                await apiCreateDepartment({ ...formData, head: selectedHead ? [selectedHead] : [] });
                 toast.success('Department created successfully');
             }
             fetchDepartments();
@@ -66,13 +68,20 @@ const ManageDepartmentsPage: React.FC = () => {
             setIsEditing(true);
             setCurrentDepartment(department);
             setFormData({ name: department.name, code: department.code });
+            setSelectedHead(department.head && department.head.length ? (department.head[0]._id || (department.head[0] as any).id) : null);
         } else {
             setIsEditing(false);
             setCurrentDepartment(null);
             setFormData({ name: '', code: '' });
+            setSelectedHead(null);
         }
         setIsModalOpen(true);
     };
+
+    useEffect(() => {
+        // fetch users to populate possible department heads
+        apiGetUsers().then(list => setUsers(list.filter(u => u.role === UserRole.DepartmentHead))).catch(() => setUsers([]));
+    }, []);
 
     const closeModal = () => {
         setIsModalOpen(false);
@@ -117,6 +126,13 @@ const ManageDepartmentsPage: React.FC = () => {
                                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                                     required
                                 />
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700">Department Head (optional)</label>
+                                <select value={selectedHead || ''} onChange={e => setSelectedHead(e.target.value || null)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                                    <option value="">-- Select Department Head --</option>
+                                    {users.map(u => <option key={u._id} value={u._id}>{`${u.firstName} ${u.lastName} (${u.email})`}</option>)}
+                                </select>
                             </div>
                             <div className="flex justify-end">
                                 <button

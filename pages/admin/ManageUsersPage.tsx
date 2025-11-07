@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { apiGetUsers, apiCreateUser, apiBulkImportUsers, apiUpdateUser, apiDeleteUser } from '../../services/api';
+import { apiGetUsers, apiCreateUser, apiBulkImportUsers, apiUpdateUser, apiDeleteUser, apiGetDepartments } from '../../services/api';
 import { User, UserRole } from '../../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle, Upload, X, Edit, Trash2 } from 'lucide-react';
@@ -31,7 +31,7 @@ const ManageUsersPage: React.FC = () => {
         fetchUsers();
     }, []);
 
-    const handleCreateUser = async (userData: Partial<User>) => {
+    const handleCreateUser = async (userData: any) => {
         try {
             const newUser = await apiCreateUser(userData);
             fetchUsers(); // Refetch to get populated data
@@ -141,13 +141,59 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onCr
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState<UserRole>(UserRole.Student);
+    const [departmentId, setDepartmentId] = useState('');
+    const [departments, setDepartments] = useState<any[]>([]);
+    const [isDeptHead, setIsDeptHead] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onCreate({ firstName, lastName, email, password, role });
+        onCreate({ firstName, lastName, email, password, role, department: departmentId || undefined, isDeptHead });
     };
+    useEffect(() => {
+        if (isOpen) {
+            apiGetDepartments().then(setDepartments).catch(() => setDepartments([]));
+        }
+    }, [isOpen]);
 
-    return (<AnimatePresence>{isOpen && (<motion.div className="modal-backdrop"><motion.div className="modal-content"><div className="modal-header"><h2 className="text-2xl font-bold">Create New User</h2><button onClick={onClose}><X size={24} /></button></div><form onSubmit={handleSubmit} className="space-y-4"><input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="input" required /><input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="input" required /><input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required /><input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="input" /><select value={role} onChange={e => setRole(e.target.value as UserRole)} className="input">{Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}</select><div className="modal-footer"><button type="button" onClick={onClose} className="btn-secondary">Cancel</button><button type="submit" className="btn-primary">Create</button></div></form></motion.div></motion.div>)}</AnimatePresence>);
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div className="modal-backdrop">
+                    <motion.div className="modal-content">
+                        <div className="modal-header">
+                            <h2 className="text-2xl font-bold">Create New User</h2>
+                            <button onClick={onClose}><X size={24} /></button>
+                        </div>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="input" required />
+                            <input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="input" required />
+                            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required />
+                            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="input" />
+                            <select value={role} onChange={e => setRole(e.target.value as UserRole)} className="input">
+                                {Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+
+                            <label className="block text-sm">Department</label>
+                            <select value={departmentId} onChange={e => setDepartmentId(e.target.value)} className="input">
+                                <option value="">-- Select Department (optional) --</option>
+                                {departments.map(d => <option key={d._id || d.id} value={d._id || d.id}>{d.name}</option>)}
+                            </select>
+
+                            <label className="flex items-center space-x-2">
+                                <input type="checkbox" checked={isDeptHead} onChange={e => setIsDeptHead(e.target.checked)} />
+                                <span className="text-sm">Make this user a department head</span>
+                            </label>
+
+                            <div className="modal-footer">
+                                <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+                                <button type="submit" className="btn-primary">Create</button>
+                            </div>
+                        </form>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
 };
 
 interface EditUserModalProps { isOpen: boolean; onClose: () => void; user: User; onUpdate: (userId: string, userData: Partial<User>) => void; }
@@ -156,13 +202,57 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
     const [lastName, setLastName] = useState(user.lastName);
     const [email, setEmail] = useState(user.email);
     const [role, setRole] = useState<UserRole>(user.role);
+    const [departments, setDepartments] = useState<any[]>([]);
+    const [departmentId, setDepartmentId] = useState<string | undefined>((user as any).department?._id || (user as any).departmentId || undefined);
+    const [isDeptHead, setIsDeptHead] = useState<boolean>((user as any).isDeptHead || false);
+
+    useEffect(() => {
+        apiGetDepartments().then(setDepartments).catch(() => setDepartments([]));
+    }, []);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onUpdate(user._id, { firstName, lastName, email, role });
+        onUpdate(user._id, { firstName, lastName, email, role, department: departmentId, isDeptHead });
     };
 
-    return (<AnimatePresence>{isOpen && (<motion.div className="modal-backdrop"><motion.div className="modal-content"><div className="modal-header"><h2 className="text-2xl font-bold">Edit User</h2><button onClick={onClose}><X size={24} /></button></div><form onSubmit={handleSubmit} className="space-y-4"><input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="input" required /><input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="input" required /><input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required /><select value={role} onChange={e => setRole(e.target.value as UserRole)} className="input">{Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}</select><div className="modal-footer"><button type="button" onClick={onClose} className="btn-secondary">Cancel</button><button type="submit" className="btn-primary">Update</button></div></form></motion.div></motion.div>)}</AnimatePresence>);
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div className="modal-backdrop">
+                    <motion.div className="modal-content">
+                        <div className="modal-header">
+                            <h2 className="text-2xl font-bold">Edit User</h2>
+                            <button onClick={onClose}><X size={24} /></button>
+                        </div>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="input" required />
+                            <input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="input" required />
+                            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required />
+                            <select value={role} onChange={e => setRole(e.target.value as UserRole)} className="input">
+                                {Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+
+                            <label className="block text-sm">Department</label>
+                            <select value={departmentId || ''} onChange={e => setDepartmentId(e.target.value || undefined)} className="input">
+                                <option value="">-- Select Department (optional) --</option>
+                                {departments.map(d => <option key={d._id || d.id} value={d._id || d.id}>{d.name}</option>)}
+                            </select>
+
+                            <label className="flex items-center space-x-2">
+                                <input type="checkbox" checked={isDeptHead} onChange={e => setIsDeptHead(e.target.checked)} />
+                                <span className="text-sm">Department head</span>
+                            </label>
+
+                            <div className="modal-footer">
+                                <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+                                <button type="submit" className="btn-primary">Update</button>
+                            </div>
+                        </form>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
 };
 
 export default ManageUsersPage;

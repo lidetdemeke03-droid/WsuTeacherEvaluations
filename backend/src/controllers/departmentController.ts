@@ -9,7 +9,7 @@ export const getDepartments = async (req: Request, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 10;
         const skip = (page - 1) * limit;
 
-        const departments = await Department.find().skip(skip).limit(limit);
+        const departments = await Department.find().skip(skip).limit(limit).populate('head', 'firstName lastName email role department');
         const total = await Department.countDocuments();
 
         res.status(200).json({
@@ -28,7 +28,7 @@ export const getDepartments = async (req: Request, res: Response) => {
 
 export const getDepartment = async (req: Request, res: Response) => {
     try {
-        const department = await Department.findById(req.params.id);
+        const department = await Department.findById(req.params.id).populate('head', 'firstName lastName email role department');
         if (!department) {
             return res.status(404).json({ success: false, error: 'Department not found' });
         }
@@ -40,10 +40,29 @@ export const getDepartment = async (req: Request, res: Response) => {
 
 export const createDepartment = async (req: Request, res: Response) => {
     try {
-        const { name, code } = req.body;
-        const department = new Department({ name, code });
+        const { name, code, head } = req.body;
+
+        // head can be a single id or an array of ids
+        const headArray: string[] = !head ? [] : Array.isArray(head) ? head : [head];
+
+        const department = new Department({ name, code, head: headArray });
         await department.save();
-        res.status(201).json({ success: true, data: department });
+
+        // If heads were provided, mark users as department heads and assign their department
+        if (headArray.length > 0) {
+            await Promise.all(headArray.map(async (userId: string) => {
+                try {
+                    await User.findByIdAndUpdate(userId, { isDeptHead: true, department: department._id });
+                } catch (e) {
+                    // continue on error for individual users
+                    console.error('Failed to update head user', userId, e);
+                }
+            }));
+        }
+
+        const populatedDept = await Department.findById(department._id).populate('head', 'firstName lastName email role department');
+
+        res.status(201).json({ success: true, data: populatedDept });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
     }
@@ -51,12 +70,31 @@ export const createDepartment = async (req: Request, res: Response) => {
 
 export const updateDepartment = async (req: Request, res: Response) => {
     try {
-        const { name, code } = req.body;
-        const department = await Department.findByIdAndUpdate(req.params.id, { name, code }, { new: true, runValidators: true });
+        const { name, code, head } = req.body;
+        const headArray: string[] = !head ? [] : Array.isArray(head) ? head : [head];
+
+        const prevDept = await Department.findById(req.params.id);
+        const prevHeads: string[] = (prevDept && prevDept.head) ? prevDept.head.map((h: any) => String(h)) : [];
+
+        const department = await Department.findByIdAndUpdate(req.params.id, { name, code, head: headArray }, { new: true, runValidators: true });
         if (!department) {
             return res.status(404).json({ success: false, error: 'Department not found' });
         }
-        res.status(200).json({ success: true, data: department });
+
+        // unset isDeptHead for users removed from head list
+        const removed = prevHeads.filter(h => !headArray.includes(h));
+        if (removed.length > 0) {
+            await User.updateMany({ _id: { $in: removed } }, { isDeptHead: false });
+        }
+
+        // set isDeptHead and assign department for new heads
+        const added = headArray.filter(h => !prevHeads.includes(h));
+        if (added.length > 0) {
+            await User.updateMany({ _id: { $in: added } }, { isDeptHead: true, department: department._id });
+        }
+
+        const populated = await Department.findById(department._id).populate('head', 'firstName lastName email role department');
+        res.status(200).json({ success: true, data: populated });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
     }
