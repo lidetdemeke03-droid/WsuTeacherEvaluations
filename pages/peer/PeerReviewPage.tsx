@@ -1,25 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../../services/api'; // Assuming api service is set up
-import { IPeerAssignment } from '../../backend/src/types'; // Assuming path is correct
+import { api } from '../../services/api';
+import { PeerAssignment } from '../../types';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const PeerReviewPage: React.FC = () => {
     const { user } = useAuth();
-    const [assignments, setAssignments] = useState<IPeerAssignment[]>([]);
+    const [assignments, setAssignments] = useState<PeerAssignment[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
         if (user) {
-            api.get(`/peers/${user.id}/assignments`)
-                .then(res => {
-                    setAssignments(res.data);
-                    setLoading(false);
-                })
-                .catch(err => {
-                    console.error('Error fetching peer assignments:', err);
-                    setLoading(false);
-                });
+            api.get<PeerAssignment[]>(`/peers/${(user as any).id}/assignments`)
+                .then(list => { setAssignments(list); setLoading(false); })
+                .catch(err => { console.error('Error fetching peer assignments:', err); setLoading(false); });
         }
     }, [user]);
 

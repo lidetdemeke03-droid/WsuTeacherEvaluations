@@ -78,3 +78,11 @@ export interface Complaint {
     assignedToName?: string;
     submissionDate: string;
 }
+
+export interface PeerAssignment {
+  _id: string;
+  evaluator: string;
+  targetTeacher: User;
+  course: Course;
+  window: { start: string; end: string };
+}

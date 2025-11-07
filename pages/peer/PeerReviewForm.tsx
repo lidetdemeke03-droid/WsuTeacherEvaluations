@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useHistory } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { peerEvaluationQuestions as questions } from '../../constants/forms';
@@ -16,7 +16,7 @@ const variants = {
 const PeerReviewForm: React.FC = () => {
     const { assignmentId } = useParams<{ assignmentId: string }>();
     const { user } = useAuth();
-    const history = useHistory();
+    const navigate = useNavigate();
     const [answers, setAnswers] = useState<Record<string, { questionCode: string; score?: number; response?: string }>>({});
     const [conflict, setConflict] = useState<boolean>(false);
     const [reason, setReason] = useState<string>('');
@@ -59,7 +59,7 @@ const PeerReviewForm: React.FC = () => {
                 answers: conflict ? [{ conflict: true, reason }] : Object.values(answers),
             });
             toast.success('Peer evaluation submitted successfully!');
-            history.push('/peer/reviews');
+            navigate('/peer/reviews');
         } catch (err) {
             console.error('Error submitting evaluation:', err);
             toast.error('Failed to submit evaluation.');

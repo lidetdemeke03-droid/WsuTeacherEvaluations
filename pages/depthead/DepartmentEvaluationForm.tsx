@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useHistory } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { departmentHeadEvaluationQuestions as questions } from '../../constants/forms';
@@ -16,7 +16,7 @@ const variants = {
 const DepartmentEvaluationForm: React.FC = () => {
     const { teacherId } = useParams<{ teacherId: string }>();
     const { user } = useAuth();
-    const history = useHistory();
+    const navigate = useNavigate();
     const [answers, setAnswers] = useState<Record<string, { questionCode: string; score?: number; response?: string }>>({});
     const [[page, direction], setPage] = useState([0, 0]);
     const [submitting, setSubmitting] = useState(false);
@@ -56,7 +56,7 @@ const DepartmentEvaluationForm: React.FC = () => {
                 answers: Object.values(answers),
             });
             toast.success('Evaluation submitted successfully!');
-            history.push('/dashboard');
+            navigate('/dashboard');
         } catch (err) {
             console.error('Error submitting evaluation:', err);
             toast.error('Failed to submit evaluation.');
