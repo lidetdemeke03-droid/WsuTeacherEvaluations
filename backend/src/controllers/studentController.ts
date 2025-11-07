@@ -19,3 +19,12 @@ export const getStudentCourses = asyncHandler(async (req: Request, res: Response
         throw new Error('Student not found');
     }
 });
+
+// @desc    Get courses for a teacher
+// @route   GET /api/users/:id/courses
+// @access  Private (Admin, DepartmentHead, Teacher)
+export const getTeacherCourses = asyncHandler(async (req: Request, res: Response) => {
+    const teacherId = req.params.id;
+    const courses = await Course.find({ teacher: teacherId });
+    res.json({ success: true, data: courses });
+});

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Department from '../models/Department';
 import User from '../models/User';
 import { UserRole } from '../types';
+import '../types/express'; // Ensure the custom type is loaded
 
 export const getDepartments = async (req: Request, res: Response) => {
     try {
@@ -114,8 +115,26 @@ export const deleteDepartment = async (req: Request, res: Response) => {
 
 export const getDepartmentTeachers = async (req: Request, res: Response) => {
     try {
+        const period = req.query.period as string | undefined;
         const teachers = await User.find({ department: req.params.id, role: UserRole.Teacher });
-        res.status(200).json({ success: true, data: teachers });
+
+        // If requester is a department head and a period is provided, mark whether each teacher has been evaluated by this user for the period
+        let result: any[] = teachers;
+        if (req.user && (req.user as any).role === UserRole.DepartmentHead) {
+            const EvaluationResponse = (await import('../models/EvaluationResponse')).default;
+            result = await Promise.all(teachers.map(async (t) => {
+                const teacherObj: any = t.toObject();
+                if (period) {
+                    const exists = await EvaluationResponse.exists({ evaluator: req.user!._id, targetTeacher: t._id, type: 'dept', period });
+                    teacherObj.evaluated = !!exists;
+                } else {
+                    teacherObj.evaluated = false;
+                }
+                return teacherObj;
+            }));
+        }
+
+        res.status(200).json({ success: true, data: result });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });
     }

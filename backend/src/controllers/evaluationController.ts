@@ -229,6 +229,7 @@ export const submitDepartmentEvaluation = asyncHandler(async (req: IRequest, res
         type: EvaluationType.DepartmentHead,
         evaluator: evaluatorId,
         targetTeacher: teacherId,
+        course: courseId,
         period,
         answers,
         totalScore: normalizedScore,

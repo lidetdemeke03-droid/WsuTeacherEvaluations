@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { departmentHeadEvaluationQuestions as questions } from '../../constants/forms';
 import { motion, AnimatePresence } from 'framer-motion';
+import { apiGetTeacherCourses } from '../../services/api';
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -20,6 +21,14 @@ const DepartmentEvaluationForm: React.FC = () => {
     const [answers, setAnswers] = useState<Record<string, { questionCode: string; score?: number; response?: string }>>({});
     const [[page, direction], setPage] = useState([0, 0]);
     const [submitting, setSubmitting] = useState(false);
+    const [courses, setCourses] = useState<any[]>([]);
+    const [selectedCourse, setSelectedCourse] = useState<string>('');
+
+    React.useEffect(() => {
+        if (teacherId) {
+            apiGetTeacherCourses(teacherId).then(list => setCourses(list)).catch(() => setCourses([]));
+        }
+    }, [teacherId]);
 
     const questionIndex = page;
     const question = questions[questionIndex];
@@ -47,11 +56,18 @@ const DepartmentEvaluationForm: React.FC = () => {
             return;
         }
 
+        if (!selectedCourse) {
+            toast.error('Please select a course for this evaluation.');
+            setSubmitting(false);
+            return;
+        }
+
         setSubmitting(true);
         try {
             await api.post('/evaluations/department', {
                 evaluatorId: user?.id,
                 teacherId,
+                courseId: selectedCourse || undefined,
                 period: '2025-Spring', // This should be dynamic
                 answers: Object.values(answers),
             });
@@ -70,6 +86,13 @@ const DepartmentEvaluationForm: React.FC = () => {
     return (
         <div className="container mx-auto p-4 flex flex-col h-full">
             <h1 className="text-3xl font-bold mb-4">Department Head Evaluation</h1>
+            <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">Select Course (required)</label>
+                <select value={selectedCourse} onChange={e => setSelectedCourse(e.target.value)} className="w-full p-2 border rounded">
+                    <option value="">-- Select course --</option>
+                    {courses.map(c => <option key={c._id} value={c._id}>{c.title} ({c.code})</option>)}
+                </select>
+            </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6">
                 <motion.div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }} />
             </div>
