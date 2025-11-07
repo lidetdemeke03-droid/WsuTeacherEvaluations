@@ -1,25 +1,39 @@
 export const studentEvaluationQuestions = [
-    { code: 'STU_Q1', text: 'Gives course outline and references at beginning', type: 'rating' },
-    { code: 'STU_Q2', text: 'Offers lab/practical sessions when applicable', type: 'rating' },
-    { code: 'STU_Q3', text: 'Punctual for class', type: 'rating' },
-    { code: 'STU_Q4', text: 'Well prepared and organized', type: 'rating' },
-    { code: 'STU_Q5', text: 'Strong subject matter knowledge', type: 'rating' },
-    { code: 'STU_Q6', text: 'Clear delivery of topics', type: 'rating' },
-    { code: 'STU_Q7', text: 'Encourages participation and questions', type: 'rating' },
-    { code: 'STU_Q8', text: 'Fully covers course outline', type: 'rating' },
-    { code: 'STU_Q9', text: 'Relates topics to real-world', type: 'rating' },
-    { code: 'STU_Q10', text: 'Informs grading criteria early', type: 'rating' },
-    { code: 'STU_Q11', text: 'Creates interest in the subject', type: 'rating' },
-    { code: 'STU_Q12', text: 'Returns assessments on time', type: 'rating' },
-    { code: 'STU_Q13', text: 'Writes key points clearly', type: 'rating' },
-    { code: 'STU_Q14', text: 'Uses relevant instructional aids', type: 'rating' },
-    { code: 'STU_Q15', text: 'Uses continuous assessment', type: 'rating' },
-    { code: 'STU_Q16', text: 'Available for consultation', type: 'rating' },
-    { code: 'STU_Q17', text: 'Considers differences among learners', type: 'rating' },
-    { code: 'STU_Q18', text: 'Exams reflect topics covered', type: 'rating' },
-    { code: 'STU_Q19', text: 'Demonstrates discipline and professionalism', type: 'rating' },
-    { code: 'STU_S1', text: 'Strengths', type: 'text' },
-    { code: 'STU_S2', text: 'Areas for improvement', type: 'text' },
+    {
+        code: 'SE01',
+        text: 'The instructor communicates the subject matter clearly.',
+        type: 'rating',
+    },
+    {
+        code: 'SE02',
+        text: 'The instructor provides useful feedback on my performance.',
+        type: 'rating',
+    },
+    {
+        code: 'SE03',
+        text: 'The instructor is enthusiastic about the subject.',
+        type: 'rating',
+    },
+    {
+        code: 'SE04',
+        text: 'The course materials (readings, assignments) are relevant to the course goals.',
+        type: 'rating',
+    },
+    {
+        code: 'SE05',
+        text: 'The course is well-organized.',
+        type: 'rating',
+    },
+    {
+        code: 'SE06',
+        text: 'What are the strengths of this instructor?',
+        type: 'text',
+    },
+    {
+        code: 'SE07',
+        text: 'What are the weaknesses of this instructor?',
+        type: 'text',
+    },
 ];
 
 export const peerEvaluationQuestions = [
