@@ -7,6 +7,10 @@ interface EmailOptions {
   html?: string;
 }
 
+if (!process.env.MAILTRAP_USER || !process.env.MAILTRAP_PASS) {
+  console.error('MAILTRAP_USER or MAILTRAP_PASS is not set. Email functionality will be disabled.');
+}
+
 const transport = Nodemailer.createTransport({
   host: "sandbox.smtp.mailtrap.io",
   port: 2525,
