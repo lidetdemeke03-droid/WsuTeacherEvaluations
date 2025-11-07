@@ -6,7 +6,7 @@ import StatsCache from '../models/StatsCache';
 import { EvaluationType } from '../types';
 import { IRequest } from '../middleware/auth';
 import { calculateNormalizedScore, recalculateFinalScore } from '../services/scoreService';
-import { studentEvaluationQuestions } from '../constants/forms'; // Assuming same questions for now
+import { peerEvaluationQuestions } from '../constants/forms';
 
 // @desc    Get peer evaluation assignments for a teacher
 // @route   GET /api/peers/:teacherId/assignments
@@ -54,7 +54,7 @@ export const submitPeerEvaluation = asyncHandler(async (req: IRequest, res: Resp
     let normalizedScore = 0;
 
     if (!isConflict) {
-        const totalRatingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating').length;
+        const totalRatingQuestions = peerEvaluationQuestions.filter(q => q.type === 'rating').length;
         normalizedScore = calculateNormalizedScore(answers, totalRatingQuestions);
     }
 

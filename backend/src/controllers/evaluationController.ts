@@ -9,7 +9,7 @@ import { createHash } from 'crypto';
 import StatsCache from '../models/StatsCache';
 import { EvaluationType } from '../types';
 import { calculateNormalizedScore, recalculateFinalScore } from '../services/scoreService';
-import { studentEvaluationQuestions } from '../constants/forms';
+import { studentEvaluationQuestions, departmentHeadEvaluationQuestions } from '../constants/forms';
 
 
 // @desc    Get assigned evaluation forms for a student
@@ -148,7 +148,7 @@ export const submitDepartmentEvaluation = asyncHandler(async (req: IRequest, res
     }
 
     // Calculate normalized score
-    const totalRatingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating').length;
+    const totalRatingQuestions = departmentHeadEvaluationQuestions.filter(q => q.type === 'rating').length;
     const normalizedScore = calculateNormalizedScore(answers, totalRatingQuestions);
 
     // Create new evaluation response
