@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Evaluation, Answer } from '../../types';
-import { apiSubmitEvaluation } from '../../services/api';
+import { apiSubmitEvaluation, apiGetEvaluationPeriods } from '../../services/api';
 import { studentEvaluationQuestions } from '../../constants/forms';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
@@ -107,8 +107,26 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
             // period may be an object or a string id
             const periodId = typeof evaluation.period === 'string' ? evaluation.period : (evaluation.period?._id ?? (evaluation.period as any)?.id ?? undefined);
 
-            if (!courseId || !teacherId || !periodId) {
-                console.error('Missing identifiers for submission', { courseId, teacherId, periodId, evaluation });
+            // If periodId is missing, try to resolve an active/current period from the backend as a fallback
+            let resolvedPeriodId = periodId;
+            if (!resolvedPeriodId) {
+                try {
+                    const periods = await apiGetEvaluationPeriods();
+                    // prefer an Active period, otherwise take the most recent by startDate
+                    const active = periods.find((p: any) => p.status === 'Active');
+                    if (active) resolvedPeriodId = active._id;
+                    else if (periods.length > 0) {
+                        // sort by startDate desc
+                        periods.sort((a: any, b: any) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+                        resolvedPeriodId = periods[0]._id;
+                    }
+                } catch (fetchErr) {
+                    console.error('Failed to fetch periods for fallback', fetchErr);
+                }
+            }
+
+            if (!courseId || !teacherId || !resolvedPeriodId) {
+                console.error('Missing identifiers for submission', { courseId, teacherId, periodId: resolvedPeriodId, evaluation });
                 toast.error('Evaluation data is incomplete. Cannot submit.');
                 setSubmitting(false);
                 return;
@@ -117,7 +135,7 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
             await apiSubmitEvaluation({
                 courseId,
                 teacherId,
-                period: periodId,
+                period: resolvedPeriodId,
                 answers: Object.values(answers),
             });
             toast.success("Evaluation submitted successfully.");
