@@ -29,7 +29,7 @@ const StudentEvaluationsPage: React.FC = () => {
     }, [user]);
     
     const handleEvaluationComplete = (completedId: string) => {
-        setEvaluations(prev => prev.map(ev => ev.id === completedId ? { ...ev, status: 'Completed' } : ev));
+        setEvaluations(prev => prev.map(ev => ev._id === completedId ? { ...ev, status: 'Completed' } : ev));
         setSelectedEvaluation(null);
     }
 

@@ -126,8 +126,8 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
                     <ArrowLeft size={18} />
                     <span>Back to Evaluations</span>
                 </button>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">{evaluation.courseName}</h1>
-                <h2 className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-4">For: {evaluation.instructorName}</h2>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">{evaluation.course.title}</h1>
+                <h2 className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-4">For: {evaluation.teacher.firstName} {evaluation.teacher.lastName}</h2>
 
                 {/* Progress Bar */}
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-4">

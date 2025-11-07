@@ -49,13 +49,10 @@ export interface EvaluationSubmission {
 
 export interface Evaluation {
   _id: string;
-  instructorName: string;
-  courseName: string;
-  periodName: string;
   status: 'Pending' | 'Completed';
-  course: { _id: string };
-  teacher: { _id: string };
-  period: string;
+  course: Course;
+  teacher: User;
+  period: EvaluationPeriod;
 }
 
 export interface Answer {
