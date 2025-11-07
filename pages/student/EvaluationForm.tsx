@@ -98,6 +98,24 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
 
 
     const handleSubmit = async () => {
+        // Defensive client-side check: ensure submitted answers match the expected question codes for this form
+    const providedCodes = Object.values(answers as Record<string, any>).map((a: any) => String(a.questionCode || '').toUpperCase());
+        const expectedCodes = questionSet.map(q => q.code.toUpperCase());
+        const looksLikeStudent = providedCodes.some(c => c.startsWith('STU_'));
+        const looksLikePeer = providedCodes.some(c => c.startsWith('PEER_'));
+        const looksLikeDept = providedCodes.some(c => c.startsWith('DEPT_'));
+
+        if (user?.role === UserRole.Teacher && looksLikeStudent) {
+            toast.error('It looks like you filled the student evaluation form. Please use the Peer Evaluation form when evaluating a colleague.');
+            setSubmitting(false);
+            return;
+        }
+        if (user?.role !== UserRole.Teacher && looksLikePeer) {
+            toast.error('It looks like you filled the peer evaluation form. Please use the correct evaluation form for your role.');
+            setSubmitting(false);
+            return;
+        }
+
         const unansweredQuestionIndex = questionSet.findIndex(q => {
             if (q.type === 'rating') {
                 const answer = answers[q.code];

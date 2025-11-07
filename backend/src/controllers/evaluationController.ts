@@ -56,6 +56,15 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
         throw new Error('You have already submitted an evaluation for this course and period.');
     }
 
+    // Basic defensive check: ensure the payload looks like the student form
+    const providedCodes = (answers || []).map((a: any) => String(a.questionCode || '').toUpperCase());
+    const expectedStudentCodes = studentEvaluationQuestions.map(q => q.code.toUpperCase());
+    const looksLikePeer = providedCodes.some((c: string) => c.startsWith('PEER_'));
+    if (looksLikePeer) {
+        res.status(400);
+        throw new Error('It appears you submitted a peer evaluation to the student endpoint. Please submit using the correct peer evaluation form.');
+    }
+
     // Validate that all rating questions have a score
     const ratingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating');
     for (const question of ratingQuestions) {
@@ -111,6 +120,15 @@ export const submitPeerEvaluation = asyncHandler(async (req: IRequest, res: Resp
     if (existingResponse) {
         res.status(400);
         throw new Error('You have already submitted a peer evaluation for this teacher for this period.');
+    }
+
+    // Defensive: detect answers coming from the wrong form (e.g., student form submitted to peer endpoint)
+    const providedCodes = (answers || []).map((a: any) => String(a.questionCode || '').toUpperCase());
+    const looksLikeStudent = providedCodes.some((c: string) => c.startsWith('STU_'));
+    if (looksLikeStudent) {
+        // Provide a clear message so frontend can guide the user
+        res.status(400);
+        throw new Error('It appears you submitted the student evaluation form. Please complete the peer evaluation form for teacher-to-teacher evaluation.');
     }
 
     // Validate that all rating questions for the peer form have a score
