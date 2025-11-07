@@ -1,4 +1,4 @@
-import { User, Evaluation, Criterion, EvaluationSubmission, Department, Course, Complaint, EvaluationPeriod, UserRole } from '../types';
+import { User, Evaluation, EvaluationSubmission, Department, Course, Complaint, EvaluationPeriod, UserRole } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
@@ -97,7 +97,7 @@ export const apiBulkImportUsers = async (file: File): Promise<{ success: boolean
 export const apiGetStudentCourses = (studentId: string): Promise<Course[]> => apiRequest<Course[]>(`/students/${studentId}/courses`);
 export const apiGetStudentEvaluations = (studentId: string): Promise<Evaluation[]> => apiRequest<Evaluation[]>(`/evaluations/assigned?studentId=${studentId}`);
 export const apiSubmitEvaluation = (submission: EvaluationSubmission): Promise<any> => apiRequest<any>('/evaluations/student', { method: 'POST', body: JSON.stringify(submission) });
-export const apiAssignEvaluation = (assignData: { student: string, courseId: string, teacherId: string }): Promise<any> => apiRequest<any>('/evaluations/assign', { method: 'POST', body: JSON.stringify(assignData) });
+export const apiAssignEvaluation = (assignData: { student: string, courseId: string, teacherId: string, periodId: string }): Promise<any> => apiRequest<any>('/evaluations/assign', { method: 'POST', body: JSON.stringify(assignData) });
 
 
 // Departments

@@ -29,7 +29,7 @@ export const getAssignedForms = asyncHandler(async (req: Request, res: Response)
         path: 'teacher',
         model: 'User',
         select: 'firstName lastName',
-    });
+    }).populate('period');
 
     res.json({
         success: true,
@@ -103,7 +103,7 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
 // @route   POST /api/evaluations/assign
 // @access  Private (Admin)
 export const createEvaluationAssignment = asyncHandler(async (req: Request, res: Response) => {
-    const { student, courseId, teacherId } = req.body;
+    const { student, courseId, teacherId, periodId } = req.body;
 
     // Check if an evaluation assignment already exists for this combination
     const existingAssignment = await Evaluation.findOne({
@@ -124,6 +124,7 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
         student,
         course: courseId,
         teacher: teacherId,
+        period: periodId,
     });
 
     res.status(201).json({ success: true, data: assignment });

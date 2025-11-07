@@ -139,10 +139,13 @@ interface AssignStudentModalProps {
 const AssignStudentModal: React.FC<AssignStudentModalProps> = ({ isOpen, onClose, course }) => {
     const [students, setStudents] = useState<User[]>([]);
     const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+    const [evaluationPeriods, setEvaluationPeriods] = useState<EvaluationPeriod[]>([]);
+    const [selectedPeriod, setSelectedPeriod] = useState<string>('');
 
     useEffect(() => {
         if (isOpen) {
             apiGetUsers().then(users => setStudents(users.filter(u => u.role === UserRole.Student)));
+            apiGetEvaluationPeriods().then(periods => setEvaluationPeriods(periods.filter(p => p.status === 'Active')));
         }
     }, [isOpen]);
 
@@ -151,11 +154,19 @@ const AssignStudentModal: React.FC<AssignStudentModalProps> = ({ isOpen, onClose
             toast.error("This course does not have a teacher assigned.");
             return;
         }
+        if (selectedStudents.length === 0) {
+            toast.error("Please select at least one student.");
+            return;
+        }
+        if (!selectedPeriod) {
+            toast.error("Please select an evaluation period.");
+            return;
+        }
         const toastId = toast.loading('Assigning students...');
         try {
             await Promise.all(
                 selectedStudents.map(studentId =>
-                    apiAssignEvaluation({ student: studentId, courseId: course._id, teacherId: course.teacher._id })
+                    apiAssignEvaluation({ student: studentId, courseId: course._id, teacherId: course.teacher._id, periodId: selectedPeriod })
                 )
             );
             toast.success(`${selectedStudents.length} student(s) assigned successfully!`, { id: toastId });
@@ -177,6 +188,20 @@ const AssignStudentModal: React.FC<AssignStudentModalProps> = ({ isOpen, onClose
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                     <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -50, opacity: 0 }} className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-6">
                         <h2 className="text-2xl font-bold mb-4">Assign Students to {course.title}</h2>
+                        <div className="mb-4">
+                            <label htmlFor="evaluationPeriod" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Evaluation Period</label>
+                            <select
+                                id="evaluationPeriod"
+                                value={selectedPeriod}
+                                onChange={(e) => setSelectedPeriod(e.target.value)}
+                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:ring-blue-500 focus:border-blue-500"
+                            >
+                                <option value="">-- Select a Period --</option>
+                                {evaluationPeriods.map(period => (
+                                    <option key={period._id} value={period._id}>{period.name}</option>
+                                ))}
+                            </select>
+                        </div>
                         <div className="max-h-64 overflow-y-auto pr-2">
                             {students.map(student => (
                                 <div key={student._id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
