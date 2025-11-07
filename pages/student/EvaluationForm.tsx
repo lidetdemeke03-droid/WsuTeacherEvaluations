@@ -41,7 +41,8 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
         setPage([page + newDirection, newDirection]);
     };
 
-    const draftKey = `evaluation_draft_${evaluation._id}`;
+    const evalIdForDraft = evaluation._id ?? (typeof evaluation.course === 'string' ? evaluation.course : evaluation.course?._id ?? 'draft');
+    const draftKey = `evaluation_draft_${evalIdForDraft}`;
 
     useEffect(() => {
         // Load draft from local storage
@@ -100,10 +101,23 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
         }
         setSubmitting(true);
         try {
+            // Support cases where API returns nested objects or just IDs
+            const courseId = typeof evaluation.course === 'string' ? evaluation.course : (evaluation.course?._id ?? (evaluation.course as any)?.id ?? undefined);
+            const teacherId = typeof evaluation.teacher === 'string' ? evaluation.teacher : (evaluation.teacher?._id ?? (evaluation.teacher as any)?.id ?? undefined);
+            // period may be an object or a string id
+            const periodId = typeof evaluation.period === 'string' ? evaluation.period : (evaluation.period?._id ?? (evaluation.period as any)?.id ?? undefined);
+
+            if (!courseId || !teacherId || !periodId) {
+                console.error('Missing identifiers for submission', { courseId, teacherId, periodId, evaluation });
+                toast.error('Evaluation data is incomplete. Cannot submit.');
+                setSubmitting(false);
+                return;
+            }
+
             await apiSubmitEvaluation({
-                courseId: evaluation.course._id,
-                teacherId: evaluation.teacher._id,
-                period: evaluation.period._id,
+                courseId,
+                teacherId,
+                period: periodId,
                 answers: Object.values(answers),
             });
             toast.success("Evaluation submitted successfully.");
