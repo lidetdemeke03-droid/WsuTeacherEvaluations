@@ -40,10 +40,10 @@ export interface EvaluationPeriod {
 }
 
 export interface EvaluationSubmission {
-    studentId: string;
-    instructorId: string;
-    periodId: string;
-    scores: { questionCode: string; score: number; comment: string }[];
+    courseId: string;
+    teacherId: string;
+    period: string;
+    answers: Answer[];
 }
 
 
