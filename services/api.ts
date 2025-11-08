@@ -110,6 +110,7 @@ export const apiUpdateDepartment = (deptId: string, data: { name: string, code: 
 export const apiDeleteDepartment = (deptId: string): Promise<void> => apiRequest<void>(`/departments/${deptId}`, { method: 'DELETE' });
 export const apiGetDepartmentTeachers = (deptId: string, periodId?: string): Promise<User[]> => apiRequest<User[]>(`/departments/${deptId}/teachers${periodId ? `?period=${periodId}` : ''}`);
 export const apiGetTeacherCourses = (teacherId: string): Promise<Course[]> => apiRequest<Course[]>(`/users/${teacherId}/courses`);
+export const apiGetPeerAssignments = (teacherId: string): Promise<any[]> => apiRequest<any[]>(`/peers/${teacherId}/assignments`);
 
 // Courses
 export const apiGetCourses = (): Promise<Course[]> => apiRequest<Course[]>('/courses');

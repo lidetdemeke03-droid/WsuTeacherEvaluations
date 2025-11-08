@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../../services/api';
+import { apiGetPeerAssignments } from '../../services/api';
 import { PeerAssignment } from '../../types';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -11,7 +11,7 @@ const PeerReviewPage: React.FC = () => {
 
     useEffect(() => {
         if (user) {
-            api.get<PeerAssignment[]>(`/peers/${(user as any).id}/assignments`)
+            apiGetPeerAssignments((user as any)._id)
                 .then(list => { setAssignments(list); setLoading(false); })
                 .catch(err => { console.error('Error fetching peer assignments:', err); setLoading(false); });
         }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { api } from '../../services/api';
+import { api, apiGetPeerAssignments } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { peerEvaluationQuestions as questions } from '../../constants/forms';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -41,6 +41,22 @@ const PeerReviewForm: React.FC = () => {
         }));
     };
 
+    const [assignmentData, setAssignmentData] = useState<any | null>(null);
+
+    React.useEffect(() => {
+        const loadAssignment = async () => {
+            if (!assignmentId || !user) return;
+            try {
+                const list = await apiGetPeerAssignments((user as any)._id);
+                const found = (list || []).find((a: any) => a._id === assignmentId);
+                setAssignmentData(found || null);
+            } catch (err) {
+                console.error('Failed to load assignment data', err);
+            }
+        };
+        loadAssignment();
+    }, [assignmentId, user]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const allScored = questions.filter(q => q.type === 'rating').every(q => answers[q.code]?.score);
@@ -51,15 +67,14 @@ const PeerReviewForm: React.FC = () => {
 
         setSubmitting(true);
         try {
-            await api.post('/peers/evaluations', {
-                evaluatorId: user?.id,
-                // These would come from the assignment data, fetched separately
-                teacherId: 'TARGET_TEACHER_ID',
-                courseId: 'COURSE_ID',
+            const payload = {
+                teacherId: assignmentData ? assignmentData.targetTeacher._id : undefined,
+                courseId: assignmentData ? assignmentData.course._id : undefined,
                 answers: conflict ? [{ conflict: true, reason }] : Object.values(answers),
-            });
+            };
+            await api.post('/peers/evaluations', payload);
             toast.success('Peer evaluation submitted successfully!');
-            navigate('/peer/reviews');
+            navigate('/dashboard');
         } catch (err) {
             console.error('Error submitting evaluation:', err);
             toast.error('Failed to submit evaluation.');

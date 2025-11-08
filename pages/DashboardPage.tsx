@@ -16,7 +16,7 @@ const DashboardPage: React.FC = () => {
                 return <AdminDashboard />;
             case UserRole.DepartmentHead:
                 return <DepartmentHeadDashboard />;
-            case UserRole.Instructor:
+            case UserRole.Teacher:
                 return <InstructorDashboard />;
             case UserRole.Student:
                 return <StudentDashboard />;

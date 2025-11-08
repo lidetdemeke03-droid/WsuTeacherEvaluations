@@ -36,7 +36,7 @@ const InstructorDashboard: React.FC = () => {
             }
         };
 
-        fetchPerformance();
+        if (user) fetchPerformance();
     }, []);
 
     if (loading) return <div>Loading performance data...</div>;
@@ -44,9 +44,22 @@ const InstructorDashboard: React.FC = () => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
             <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-white">My Performance</h1>
-            <p className="mb-8 text-lg text-gray-600 dark:text-gray-300">Welcome, {user ? `${user.firstName} ${user.lastName}` : ''}. Here is a summary of your recent evaluations.</p>
-            
-             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <p className="mb-4 text-lg text-gray-600 dark:text-gray-300">Welcome, {user ? `${user.firstName} ${user.lastName}` : ''}. Here is a summary of your recent evaluations.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+                    <h3 className="text-sm text-gray-500">Periods with Scores</h3>
+                    <p className="text-2xl font-semibold">{performanceData.length}</p>
+                    <p className="text-sm text-gray-400">Historical performance periods</p>
+                </div>
+                <div className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+                    <h3 className="text-sm text-gray-500">Final Score (latest)</h3>
+                    <p className="text-2xl font-semibold">{performanceData.length ? performanceData[0].finalScore : 'N/A'}</p>
+                    <p className="text-sm text-gray-400">Calculated from student/peer/dept weights</p>
+                </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
                 <h2 className="text-xl font-semibold mb-4 text-gray-700 dark:text-white">Scores by Evaluation Period</h2>
                 {performanceData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={400}>

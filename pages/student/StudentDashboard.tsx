@@ -5,23 +5,30 @@ import { Link } from 'react-router-dom';
 import { FileText, ChevronRight, CheckCircle } from 'lucide-react';
 import { apiGetStudentCourses, apiGetStudentEvaluations } from '../../services/api';
 import { Course, Evaluation } from '../../types';
+import { apiGetEvaluationPeriods } from '../../services/api';
 
 const StudentDashboard: React.FC = () => {
     const { user } = useAuth();
     const [courses, setCourses] = useState<Course[]>([]);
     const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
     const [loading, setLoading] = useState(true);
+    const [periodActive, setPeriodActive] = useState<boolean | null>(null);
+    const [currentPeriod, setCurrentPeriod] = useState<any | null>(null);
 
     useEffect(() => {
         const fetchData = async () => {
             if (user) {
                 try {
-                    const [coursesData, evaluationsData] = await Promise.all([
+                    const [coursesData, evaluationsData, periodsResponse] = await Promise.all([
                         apiGetStudentCourses(user._id),
                         apiGetStudentEvaluations(user._id),
+                        apiGetEvaluationPeriods(),
                     ]);
                     setCourses(coursesData);
                     setEvaluations(evaluationsData);
+                    const active = periodsResponse && periodsResponse.length ? periodsResponse.find((p: any) => p.status === 'Active' || (new Date(p.startDate) <= new Date() && new Date(p.endDate) >= new Date())) : null;
+                    setCurrentPeriod(active);
+                    setPeriodActive(!!active);
                 } catch (error) {
                     console.error("Failed to fetch data", error);
                 } finally {
@@ -40,7 +47,16 @@ const StudentDashboard: React.FC = () => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
             <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Student Dashboard</h1>
-            <p className="mb-8 text-lg text-gray-600 dark:text-gray-300">Welcome back, {user?.firstName}!</p>
+            <p className="mb-2 text-lg text-gray-600 dark:text-gray-300">Welcome back, {user?.firstName} {user?.lastName}!</p>
+            {currentPeriod ? (
+                <p className="mb-6 text-sm text-gray-500">Current Period: {currentPeriod.name} ({new Date(currentPeriod.startDate).toLocaleDateString()} - {new Date(currentPeriod.endDate).toLocaleDateString()})</p>
+            ) : (
+                <p className="mb-6 text-sm text-gray-500">No active evaluation period.</p>
+            )}
+
+            {periodActive === false && (
+                <div className="mb-6 p-4 bg-yellow-100 text-yellow-800 rounded">Evaluation period closed.</div>
+            )}
 
             <div className="space-y-8">
                 <section>
