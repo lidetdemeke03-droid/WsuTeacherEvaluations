@@ -23,6 +23,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
         return [
             { to: "/dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
             { to: "/superadmin/admins", icon: <Users size={20} />, label: "Manage Admins" },
+            { to: "/superadmin/audit-logs", icon: <FileText size={20} />, label: "Audit Logs" },
         ];
       case UserRole.Admin:
         return [

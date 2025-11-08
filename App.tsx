@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ManageUsersPage from './pages/admin/ManageUsersPage';
 import ManageAdminsPage from './pages/superadmin/ManageAdminsPage';
+import AuditLogsPage from './pages/superadmin/AuditLogsPage';
 import ManageDepartmentsPage from './pages/admin/ManageDepartmentsPage';
 import ManageEvaluationPeriodsPage from './pages/admin/ManageEvaluationPeriodsPage';
 import StudentEvaluationsPage from './pages/student/StudentEvaluationsPage';
@@ -76,6 +77,7 @@ const AppContent: React.FC = () => {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 
                 <Route path="/superadmin/admins" element={<RoleProtectedRoute roles={[UserRole.SuperAdmin]}><ManageAdminsPage /></RoleProtectedRoute>} />
+                <Route path="/superadmin/audit-logs" element={<RoleProtectedRoute roles={[UserRole.SuperAdmin]}><AuditLogsPage /></RoleProtectedRoute>} />
 
                 <Route path="/admin/users" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageUsersPage /></RoleProtectedRoute>} />
                 <Route path="/admin/courses" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageCoursesPage /></RoleProtectedRoute>} />

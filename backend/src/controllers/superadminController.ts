@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import { IRequest } from '../middleware/auth';
 import User from '../models/User';
 import { UserRole } from '../types';
+import AuditLog from '../models/AuditLog';
 
 // @desc    Get all admin users
 // @route   GET /api/superadmin/admins
@@ -77,12 +78,32 @@ export const updateAdmin = asyncHandler(async (req: IRequest, res: Response) => 
 export const deleteAdmin = asyncHandler(async (req: IRequest, res: Response) => {
     const user = await User.findById(req.params.id);
 
-    if (user) {
-        user.deleted = true;
-        await user.save();
-        res.json({ success: true, message: 'User removed' });
-    } else {
+    if (!user) {
         res.status(404);
         throw new Error('User not found');
     }
+
+    // Prevent superadmin from deleting themselves
+    if (req.user && req.user.role === UserRole.SuperAdmin && String(req.user._id) === String(user._id)) {
+        res.status(400);
+        throw new Error('SuperAdmin cannot delete themselves');
+    }
+
+    user.deleted = true;
+    await user.save();
+    res.json({ success: true, message: 'User removed' });
+});
+
+// @desc    Get audit logs (SuperAdmin only)
+// @route   GET /api/superadmin/audit-logs
+// @access  Private (SuperAdmin)
+export const getAuditLogs = asyncHandler(async (req: IRequest, res: Response) => {
+    const page = parseInt((req.query.page as string) || '1');
+    const limit = parseInt((req.query.limit as string) || '100');
+    const skip = (page - 1) * limit;
+
+    const logs = await AuditLog.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate('user', 'firstName lastName email');
+    const total = await AuditLog.countDocuments();
+
+    res.status(200).json({ success: true, data: logs, pagination: { total, page, limit } });
 });

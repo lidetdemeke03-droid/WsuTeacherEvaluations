@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { IRequest } from '../middleware/auth';
 import User from '../models/User';
 import Department from '../models/Department';
 import Course from '../models/Course';
@@ -14,8 +15,15 @@ import { addAggregationJob } from '../jobs/queue';
 // @desc    Create a new user
 // @route   POST /api/admin/users
 // @access  Admin, SuperAdmin
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = async (req: IRequest, res: Response) => {
   const { firstName, lastName, email, role, department, employeeId, studentId, isDeptHead } = req.body;
+
+  // Prevent non-superadmins from creating Admin or SuperAdmin users via this endpoint
+  if (role === UserRole.Admin || role === UserRole.SuperAdmin) {
+    if (!req.user || req.user.role !== UserRole.SuperAdmin) {
+      return res.status(403).json({ success: false, error: 'Only SuperAdmin can create Admin or SuperAdmin users via this endpoint.' });
+    }
+  }
 
   try {
     const userExists = await User.findOne({ email });

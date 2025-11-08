@@ -2,6 +2,7 @@ import { Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import { IRequest } from '../middleware/auth';
 import User from '../models/User';
+import { UserRole } from '../types';
 
 // @desc    Get current user's profile
 // @route   GET /api/users/me
@@ -19,7 +20,12 @@ export const getMe = asyncHandler(async (req: IRequest, res: Response) => {
 // @route   GET /api/users
 // @access  Private (Admin)
 export const getUsers = asyncHandler(async (req: IRequest, res: Response) => {
-    const users = await User.find({ deleted: { $ne: true } }).populate('department');
+    // If requester is Admin, hide Admin and SuperAdmin users from the list
+    const baseFilter: any = { deleted: { $ne: true } };
+    if (req.user && req.user.role === UserRole.Admin) {
+        baseFilter.role = { $nin: [UserRole.Admin, UserRole.SuperAdmin] };
+    }
+    const users = await User.find(baseFilter).populate('department');
     res.status(200).json({ success: true, data: users });
 });
 
@@ -29,21 +35,27 @@ export const getUsers = asyncHandler(async (req: IRequest, res: Response) => {
 export const updateUser = asyncHandler(async (req: IRequest, res: Response) => {
     const user = await User.findById(req.params.id);
 
-    if (user) {
-        user.firstName = req.body.firstName || user.firstName;
-        user.lastName = req.body.lastName || user.lastName;
-        user.email = req.body.email || user.email;
-        user.role = req.body.role || user.role;
-        user.department = req.body.department || user.department;
-        if (req.body.password) {
-            user.password = req.body.password;
-        }
-        const updatedUser = await user.save();
-        res.json({ success: true, data: updatedUser });
-    } else {
+    if (!user) {
         res.status(404);
         throw new Error('User not found');
     }
+
+    // Prevent Admins from updating Admin or SuperAdmin users
+    if (req.user && req.user.role === UserRole.Admin && (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin)) {
+        res.status(403);
+        throw new Error('Insufficient permissions to update this user');
+    }
+
+    user.firstName = req.body.firstName || user.firstName;
+    user.lastName = req.body.lastName || user.lastName;
+    user.email = req.body.email || user.email;
+    user.role = req.body.role || user.role;
+    user.department = req.body.department || user.department;
+    if (req.body.password) {
+        user.password = req.body.password;
+    }
+    const updatedUser = await user.save();
+    res.json({ success: true, data: updatedUser });
 });
 
 // @desc    Delete a user (soft delete)
@@ -52,12 +64,24 @@ export const updateUser = asyncHandler(async (req: IRequest, res: Response) => {
 export const deleteUser = asyncHandler(async (req: IRequest, res: Response) => {
     const user = await User.findById(req.params.id);
 
-    if (user) {
-        user.deleted = true;
-        await user.save();
-        res.json({ success: true, message: 'User removed' });
-    } else {
+    if (!user) {
         res.status(404);
         throw new Error('User not found');
     }
+
+    // Prevent Admins from deleting Admin or SuperAdmin users
+    if (req.user && req.user.role === UserRole.Admin && (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin)) {
+        res.status(403);
+        throw new Error('Insufficient permissions to delete this user');
+    }
+
+    // Prevent SuperAdmin from deleting themselves
+    if (req.user && req.user.role === UserRole.SuperAdmin && String(req.user._id) === String(user._id)) {
+        res.status(400);
+        throw new Error('SuperAdmin cannot delete themselves');
+    }
+
+    user.deleted = true;
+    await user.save();
+    res.json({ success: true, message: 'User removed' });
 });

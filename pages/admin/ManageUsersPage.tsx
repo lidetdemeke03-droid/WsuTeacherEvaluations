@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiGetUsers, apiCreateUser, apiBulkImportUsers, apiUpdateUser, apiDeleteUser, apiGetDepartments } from '../../services/api';
 import { User, UserRole } from '../../types';
+import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle, Upload, X, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -15,11 +16,18 @@ const ManageUsersPage: React.FC = () => {
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const { user: currentUser } = useAuth();
+
     const fetchUsers = async () => {
         setLoading(true);
         try {
             const fetchedUsers = await apiGetUsers();
-            setUsers(fetchedUsers);
+            // If current user is Admin, filter out Admin and SuperAdmin users from list
+            if (currentUser && currentUser.role === UserRole.Admin) {
+                setUsers(fetchedUsers.filter((u: User) => u.role !== UserRole.Admin && u.role !== UserRole.SuperAdmin));
+            } else {
+                setUsers(fetchedUsers);
+            }
         } catch (err) {
             setError('Failed to fetch users.');
         } finally {
@@ -29,7 +37,7 @@ const ManageUsersPage: React.FC = () => {
 
     useEffect(() => {
         fetchUsers();
-    }, []);
+    }, [currentUser]);
 
     const handleCreateUser = async (userData: any) => {
         try {
@@ -136,6 +144,7 @@ const ManageUsersPage: React.FC = () => {
 // Modal Components
 interface CreateUserModalProps { isOpen: boolean; onClose: () => void; onCreate: (userData: Partial<User>) => void; }
 const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onCreate }) => {
+    const { user: currentUser } = useAuth();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
@@ -170,7 +179,9 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onCr
                             <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required />
                             <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="input" />
                             <select value={role} onChange={e => setRole(e.target.value as UserRole)} className="input">
-                                {Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}
+                                {Object.values(UserRole)
+                                    .filter(r => !(currentUser && currentUser.role === UserRole.Admin && (r === UserRole.Admin || r === UserRole.SuperAdmin)))
+                                    .map(r => <option key={r} value={r}>{r}</option>)}
                             </select>
 
                             <label className="block text-sm">Department</label>
@@ -198,6 +209,7 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onCr
 
 interface EditUserModalProps { isOpen: boolean; onClose: () => void; user: User; onUpdate: (userId: string, userData: Partial<User>) => void; }
 const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, onUpdate }) => {
+    const { user: currentUser } = useAuth();
     const [firstName, setFirstName] = useState(user.firstName);
     const [lastName, setLastName] = useState(user.lastName);
     const [email, setEmail] = useState(user.email);
@@ -229,7 +241,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
                             <input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="input" required />
                             <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required />
                             <select value={role} onChange={e => setRole(e.target.value as UserRole)} className="input">
-                                {Object.values(UserRole).map(r => <option key={r} value={r}>{r}</option>)}
+                                {Object.values(UserRole)
+                                    .filter(r => !(currentUser && currentUser.role === UserRole.Admin && (r === UserRole.Admin || r === UserRole.SuperAdmin)))
+                                    .map(r => <option key={r} value={r}>{r}</option>)}
                             </select>
 
                             <label className="block text-sm">Department</label>

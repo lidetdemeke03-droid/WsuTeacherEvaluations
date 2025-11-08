@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getAdmins, createAdmin, updateAdmin, deleteAdmin } from '../controllers/superadminController';
+import { getAdmins, createAdmin, updateAdmin, deleteAdmin, getAuditLogs } from '../controllers/superadminController';
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/role';
 import { UserRole } from '../types';
@@ -16,5 +16,7 @@ router.route('/')
 router.route('/:id')
     .put(updateAdmin)
     .delete(deleteAdmin);
+
+router.get('/audit-logs', getAuditLogs);
 
 export default router;
