@@ -122,12 +122,13 @@ export const getDepartmentTeachers = async (req: IRequest, res: Response) => {
         // If requester is a department head and a period is provided, mark whether each teacher has been evaluated by this user for the period
         let result: any[] = teachers;
         if (req.user && req.user.role === UserRole.DepartmentHead) {
+            const evaluatorId = req.user._id;
             const EvaluationResponse = (await import('../models/EvaluationResponse')).default;
             result = await Promise.all(teachers.map(async (t) => {
                 const teacherObj: any = t.toObject();
                 if (period) {
                     const exists = await EvaluationResponse.exists({
-                        evaluator: req.user._id, targetTeacher: t._id, type: EvaluationType.DepartmentHead, period
+                        evaluator: evaluatorId, targetTeacher: t._id, type: EvaluationType.DepartmentHead, period
                     });
                     teacherObj.evaluated = !!exists;
                 } else {
