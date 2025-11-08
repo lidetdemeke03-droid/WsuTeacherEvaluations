@@ -17,9 +17,12 @@ export const getMyPerformance = asyncHandler(async (req: IRequest, res: Response
         throw new Error('No performance data found for this instructor.');
     }
 
+    // populate period name for frontend display
+    const populated = await StatsCache.find({ teacher: instructorId }).populate('period', 'name');
+
     res.status(200).json({
         success: true,
-        data: performanceData,
+        data: populated,
     });
 });
 
@@ -40,7 +43,8 @@ export const getDepartmentReport = asyncHandler(async (req: IRequest, res: Respo
             model: 'User',
             match: { department: departmentId },
             select: 'firstName lastName',
-        });
+        })
+        .populate('period', 'name');
 
     const departmentReports = reports.filter(r => r.teacher);
 

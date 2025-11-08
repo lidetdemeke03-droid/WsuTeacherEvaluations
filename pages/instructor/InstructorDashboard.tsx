@@ -23,7 +23,12 @@ const InstructorDashboard: React.FC = () => {
         const fetchPerformance = async () => {
             try {
                 const data = await apiGetMyPerformance();
-                setPerformanceData(data);
+                // Normalize period to human-readable name if populated
+                const mapped = data.map((d: any) => ({
+                    ...d,
+                    period: d.period && typeof d.period === 'object' ? d.period.name : d.period,
+                }));
+                setPerformanceData(mapped);
             } catch (error) {
                 toast.error("Failed to fetch performance data.");
             } finally {

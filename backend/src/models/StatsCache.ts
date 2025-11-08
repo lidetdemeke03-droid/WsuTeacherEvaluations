@@ -4,7 +4,7 @@ import { IStatsCache } from '../types';
 const statsCacheSchema = new Schema<IStatsCache>({
   teacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   course: { type: Schema.Types.ObjectId, ref: 'Course' },
-  period: { type: String, required: true },
+  period: { type: Schema.Types.ObjectId, ref: 'EvaluationPeriod', required: true },
   studentScore: { type: Number, default: 0 },
   peerScore: { type: Number, default: 0 },
   deptHeadScore: { type: Number, default: 0 },

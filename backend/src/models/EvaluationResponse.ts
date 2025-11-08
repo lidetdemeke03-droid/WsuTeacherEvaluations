@@ -7,7 +7,7 @@ const evaluationResponseSchema = new Schema<IEvaluationResponse>({
   targetTeacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   anonymousToken: { type: String, unique: true, sparse: true },
   course: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
-  period: { type: String, required: true },
+    period: { type: Schema.Types.ObjectId, ref: 'EvaluationPeriod', required: true },
   answers: [
       {
           questionCode: { type: String, required: true },

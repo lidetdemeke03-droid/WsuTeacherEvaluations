@@ -24,7 +24,11 @@ const InstructorResults: React.FC = () => {
         const fetchReport = async () => {
             try {
                 const data = await apiGetDepartmentReport();
-                setReportData(data);
+                const mapped = data.map((d: any) => ({
+                    ...d,
+                    period: d.period && typeof d.period === 'object' ? d.period.name : d.period,
+                }));
+                setReportData(mapped);
             } catch (error) {
                 toast.error("Failed to fetch department report.");
             } finally {

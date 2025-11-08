@@ -57,7 +57,7 @@ export interface IEvaluationResponse extends Document {
   targetTeacher: Types.ObjectId; // Teacher being evaluated
   anonymousToken?: string; // Should be optional now
   course: Types.ObjectId;
-  period: string;
+  period: Types.ObjectId;
   answers: {
       questionCode: string;
       response?: string;
@@ -95,7 +95,7 @@ export interface IScheduleWindow extends Document {
 export interface IStatsCache extends Document {
   teacher: Types.ObjectId;
   course?: Types.ObjectId;
-  period: string;
+  period: Types.ObjectId;
   studentScore: number;
   peerScore: number;
   deptHeadScore: number;
