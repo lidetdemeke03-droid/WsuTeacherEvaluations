@@ -10,7 +10,7 @@ const DepartmentHeadDashboard: React.FC = () => {
     const { user } = useAuth();
     const [teachers, setTeachers] = useState<User[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const [analytics, setAnalytics] = useState<any | null>(null);
+    const [analytics, setAnalytics] = useState<number | null>(null);
     const [complaints, setComplaints] = useState<any[]>([]);
 
     useEffect(() => {
@@ -22,7 +22,11 @@ const DepartmentHeadDashboard: React.FC = () => {
                 apiGetComplaints(),
             ]).then(([list, report, complaintsList]) => {
                 setTeachers(list || []);
-                setAnalytics(report || null);
+                // report is an array of StatsCache documents; compute department average finalScore
+                const avg = (report && Array.isArray(report) && report.length)
+                    ? report.reduce((sum: number, r: any) => sum + (r.finalScore || 0), 0) / report.length
+                    : null;
+                setAnalytics(avg);
                 // filter complaints to department if necessary; backend already restricts for department head
                 setComplaints(complaintsList || []);
             }).catch(err => console.error('Error fetching department data:', err))
@@ -53,7 +57,7 @@ const DepartmentHeadDashboard: React.FC = () => {
 
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
                     <h3 className="text-sm text-gray-500">Department Analytics</h3>
-                    <p className="text-2xl font-semibold">{analytics ? analytics.average.toFixed(2) : 'N/A'}</p>
+                    <p className="text-2xl font-semibold">{analytics !== null ? analytics.toFixed(2) : 'N/A'}</p>
                     <p className="text-sm text-gray-400">Average final score</p>
                     <Link to="/reports" className="text-sm text-blue-500 mt-2 inline-block">See analytics</Link>
                 </div>
