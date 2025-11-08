@@ -144,10 +144,16 @@ export const submitPeerEvaluation = asyncHandler(async (req: IRequest, res: Resp
     const totalRatingQuestions = peerEvaluationQuestions.filter(q => q.type === 'rating').length;
     const normalizedScore = calculateNormalizedScore(answers, totalRatingQuestions);
 
+    // Generate anonymous token to avoid null unique-index collisions
+    const hash = createHash('sha256');
+    hash.update(`${courseId}:${teacherId}:${period}:${evaluatorId}`);
+    const anonymousToken = hash.digest('hex');
+
     const response = await EvaluationResponse.create({
         type: EvaluationType.Peer,
         evaluator: evaluatorId,
         targetTeacher: teacherId,
+        anonymousToken,
         course: courseId,
         period,
         answers,
