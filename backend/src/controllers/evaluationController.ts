@@ -106,6 +106,16 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
 
     await recalculateFinalScore(stats._id);
 
+    // Mark the evaluation assignment as completed to prevent re-submission
+    try {
+        await Evaluation.findOneAndUpdate(
+            { student: studentObjectId, course: courseId, teacher: teacherId, period },
+            { $set: { status: 'Completed' } }
+        );
+    } catch (e) {
+        console.error('Failed to mark evaluation assignment as completed', e);
+    }
+
     res.status(201).json({ success: true, data: response });
 });
 
@@ -172,6 +182,18 @@ export const submitPeerEvaluation = asyncHandler(async (req: IRequest, res: Resp
     );
 
     await recalculateFinalScore(stats._id);
+
+    // If there is a PeerAssignment for this evaluator->target, mark it inactive (completed)
+    try {
+        const PeerAssignment = (await import('../models/PeerAssignment')).default;
+        await PeerAssignment.findOneAndUpdate(
+            { evaluator: evaluatorId, targetTeacher: teacherId, course: courseId, active: true },
+            { $set: { active: false } }
+        );
+    } catch (e) {
+        // Non-fatal: assignment may not exist if peer flow wasn't used
+        console.error('Failed to mark peer assignment as completed', e);
+    }
 
     res.status(201).json({ success: true, data: response });
 });

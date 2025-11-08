@@ -12,10 +12,9 @@ export const getComplaints = async (req: IRequest, res: Response) => {
         const limit = parseInt(req.query.limit as string) || 10;
         const skip = (page - 1) * limit;
 
-        // If requester is Admin or DepartmentHead, return all complaints (with pagination)
-        // Otherwise return only complaints submitted by the user
+        // Only Admins can view all complaints. Others see only their own.
         let filter: any = {};
-        if (req.user && (req.user.role === UserRole.Admin || req.user.role === UserRole.DepartmentHead)) {
+        if (req.user && req.user.role === UserRole.Admin) {
             filter = {};
         } else {
             filter = { submitter: req.user!._id };

@@ -105,7 +105,7 @@ const ComplaintsPage: React.FC = () => {
         <div>
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-2xl font-bold">Complaints</h1>
-                {(user.role === UserRole.Student || user.role === UserRole.Teacher) && (
+                {(user.role === UserRole.Teacher) && (
                     <button onClick={() => openModal()} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
                         Submit Complaint
                     </button>
@@ -126,7 +126,7 @@ const ComplaintsPage: React.FC = () => {
                                 <textarea name="message" value={formData.message} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" rows={4} disabled={!!currentComplaint && !(user.role === UserRole.Student || user.role === UserRole.Teacher)} />
                             </div>
 
-                            {(user.role === UserRole.Admin || user.role === UserRole.DepartmentHead) && (
+                            {(user.role === UserRole.Admin) && (
                                 <>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700">Status</label>
@@ -154,7 +154,7 @@ const ComplaintsPage: React.FC = () => {
                 </div>
             )}
 
-            {(user.role === UserRole.Admin || user.role === UserRole.DepartmentHead || user.role === UserRole.Teacher || user.role === UserRole.Student) && (
+            {(user.role === UserRole.Admin || user.role === UserRole.Teacher) && (
                 isLoading ? (
                     <div className="space-y-2">
                         <div className="h-6 bg-gray-200 rounded w-3/4 animate-pulse" />

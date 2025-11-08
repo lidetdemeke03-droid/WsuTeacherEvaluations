@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { apiGetDepartmentTeachers, apiGetDepartmentReport, apiGetComplaints } from '../../services/api';
+import { apiGetDepartmentTeachers, apiGetDepartmentReport } from '../../services/api';
 import { User } from '../../types';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -11,7 +11,6 @@ const DepartmentHeadDashboard: React.FC = () => {
     const [teachers, setTeachers] = useState<User[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [analytics, setAnalytics] = useState<number | null>(null);
-    const [complaints, setComplaints] = useState<any[]>([]);
 
     useEffect(() => {
         const deptId = String((user as any).department || user?.departmentId || '');
@@ -19,16 +18,13 @@ const DepartmentHeadDashboard: React.FC = () => {
             Promise.all([
                 apiGetDepartmentTeachers(deptId),
                 apiGetDepartmentReport(),
-                apiGetComplaints(),
-            ]).then(([list, report, complaintsList]) => {
+            ]).then(([list, report]) => {
                 setTeachers(list || []);
                 // report is an array of StatsCache documents; compute department average finalScore
                 const avg = (report && Array.isArray(report) && report.length)
                     ? report.reduce((sum: number, r: any) => sum + (r.finalScore || 0), 0) / report.length
                     : null;
                 setAnalytics(avg);
-                // filter complaints to department if necessary; backend already restricts for department head
-                setComplaints(complaintsList || []);
             }).catch(err => console.error('Error fetching department data:', err))
             .finally(() => setLoading(false));
         } else {
@@ -48,12 +44,7 @@ const DepartmentHeadDashboard: React.FC = () => {
                     <Link to="/reports" className="text-sm text-blue-500 mt-2 inline-block">View reports</Link>
                 </div>
 
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
-                    <h3 className="text-sm text-gray-500">Complaints</h3>
-                    <p className="text-2xl font-semibold">{complaints.length}</p>
-                    <p className="text-sm text-gray-400">Open / recent complaints</p>
-                    <Link to="/complaints" className="text-sm text-blue-500 mt-2 inline-block">Manage complaints</Link>
-                </div>
+                {/* Complaints are managed by Admins only; Department Heads do not see complaint controls here. */}
 
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
                     <h3 className="text-sm text-gray-500">Department Analytics</h3>

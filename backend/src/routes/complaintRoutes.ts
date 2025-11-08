@@ -11,8 +11,9 @@ const router = Router();
 router.use(protect);
 
 // GET /complaints - Admin/DeptHead see all; others see their own
-router.get('/', authorize(UserRole.Admin, UserRole.DepartmentHead, UserRole.Teacher, UserRole.Student), getComplaints);
-router.post('/', authorize(UserRole.Student, UserRole.Teacher),
+// GET /complaints - Admins see all; others see their own (controller enforces this)
+router.get('/', /* any authenticated user */ (req, res, next) => { return next(); }, getComplaints);
+router.post('/', authorize(UserRole.Teacher),
     [
         body('subject').notEmpty().withMessage('Subject is required').trim().escape(),
         body('message').notEmpty().withMessage('Message is required').trim().escape(),
@@ -20,7 +21,7 @@ router.post('/', authorize(UserRole.Student, UserRole.Teacher),
     validate,
     createComplaint
 );
-router.post('/:id/respond', authorize(UserRole.Admin, UserRole.DepartmentHead), respondToComplaint);
-router.put('/:id', authorize(UserRole.Admin, UserRole.DepartmentHead), updateComplaint);
+router.post('/:id/respond', authorize(UserRole.Admin), respondToComplaint);
+router.put('/:id', authorize(UserRole.Admin), updateComplaint);
 
 export default router;
