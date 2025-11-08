@@ -224,11 +224,17 @@ export const submitDepartmentEvaluation = asyncHandler(async (req: IRequest, res
     const totalRatingQuestions = departmentHeadEvaluationQuestions.filter(q => q.type === 'rating').length;
     const normalizedScore = calculateNormalizedScore(answers, totalRatingQuestions);
 
+    // Generate a token for this evaluation (keeps unique index happy)
+    const hash = createHash('sha256');
+    hash.update(`${courseId}:${teacherId}:${period}:${evaluatorId}`);
+    const anonymousToken = hash.digest('hex');
+
     // Create new evaluation response
     const response = await EvaluationResponse.create({
         type: EvaluationType.DepartmentHead,
         evaluator: evaluatorId,
         targetTeacher: teacherId,
+        anonymousToken,
         course: courseId,
         period,
         answers,
