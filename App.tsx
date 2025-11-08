@@ -9,6 +9,7 @@ import ManageAdminsPage from './pages/superadmin/ManageAdminsPage';
 import AuditLogsPage from './pages/superadmin/AuditLogsPage';
 import ManageDepartmentsPage from './pages/admin/ManageDepartmentsPage';
 import ManageEvaluationPeriodsPage from './pages/admin/ManageEvaluationPeriodsPage';
+import AdminReportsPage from './pages/admin/ReportsPage';
 import StudentEvaluationsPage from './pages/student/StudentEvaluationsPage';
 import ComplaintsPage from './pages/shared/ComplaintsPage';
 import ReportsPage from './pages/shared/ReportsPage';
@@ -84,6 +85,7 @@ const AppContent: React.FC = () => {
                 <Route path="/admin/courses" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageCoursesPage /></RoleProtectedRoute>} />
                 <Route path="/admin/departments" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageDepartmentsPage /></RoleProtectedRoute>} />
                 <Route path="/admin/periods" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageEvaluationPeriodsPage /></RoleProtectedRoute>} />
+                <Route path="/admin/reports" element={<RoleProtectedRoute roles={[UserRole.Admin]}><AdminReportsPage /></RoleProtectedRoute>} />
                 
                 <Route path="/student/evaluations" element={<RoleProtectedRoute roles={[UserRole.Student]}><StudentEvaluationsPage /></RoleProtectedRoute>} />
 

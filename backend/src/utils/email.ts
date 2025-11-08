@@ -5,6 +5,7 @@ interface EmailOptions {
   subject: string;
   text: string;
   html?: string;
+  attachments?: any[];
 }
 
 if (!process.env.MAILTRAP_USER || !process.env.MAILTRAP_PASS) {
@@ -32,6 +33,7 @@ export const sendEmail = async (options: EmailOptions) => {
     subject: options.subject,
     text: options.text,
     html: options.html,
+    attachments: options.attachments,
   };
 
   try {

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getMyPerformance, getDepartmentReport } from '../controllers/reportController';
+import { getMyPerformance, getDepartmentReport, generateReports, listReports, downloadReport } from '../controllers/reportController';
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/role';
 import { UserRole } from '../types';
@@ -15,5 +15,14 @@ router.get('/my-performance', authorize(UserRole.Teacher), getMyPerformance);
 // GET /api/reports/department - Get all reports for the current department head's department
 router.get('/department', authorize(UserRole.DepartmentHead), getDepartmentReport);
 
+// Admin-only: generate reports for teachers
+router.post('/generate', authorize(UserRole.Admin), generateReports);
+
+// Admin: list previous reports (optional filters)
+router.get('/', authorize(UserRole.Admin), listReports);
+
+// Download generated PDF
+router.get('/:id/download', authorize(UserRole.Admin), downloadReport);
 
 export default router;
+
