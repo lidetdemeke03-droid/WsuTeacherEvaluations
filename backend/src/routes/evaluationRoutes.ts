@@ -27,8 +27,7 @@ router.post('/student', evaluationLimiter, authorize(UserRole.Student), audit('E
 router.post('/department', authorize(UserRole.DepartmentHead), submitDepartmentEvaluation);
 
 // POST /api/evaluations/peer - Submit a peer (teacher) evaluation response
-// Disabled: peer-to-peer evaluations are not required. If needed later, re-enable this route.
-// router.post('/peer', evaluationLimiter, authorize(UserRole.Teacher), submitPeerEvaluation);
+router.post('/peer', evaluationLimiter, authorize(UserRole.Teacher), submitPeerEvaluation);
 
 // POST /api/evaluations/assign - Create an evaluation assignment
 router.post('/assign', authorize(UserRole.Admin), createEvaluationAssignment);
