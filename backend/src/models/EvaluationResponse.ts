@@ -27,6 +27,8 @@ const evaluationResponseSchema = new Schema<IEvaluationResponse>({
 }, { timestamps: true });
 
 evaluationResponseSchema.index({ targetTeacher: 1, type: 1, submittedAt: -1 });
+// Prevent duplicate evaluations by the same evaluator for the same teacher/period/type
+evaluationResponseSchema.index({ targetTeacher: 1, period: 1, type: 1, evaluator: 1 }, { unique: true, sparse: true });
 
 const EvaluationResponse = model<IEvaluationResponse>('EvaluationResponse', evaluationResponseSchema);
 

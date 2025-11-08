@@ -33,23 +33,14 @@ export const recalculateFinalScore = async (statsId: any) => {
     const stats = await StatsCache.findById(statsId);
     if (!stats) return;
 
-    let totalWeight = 0;
-    let weightedScoreSum = 0;
+  // Calculate final score using the fixed weights (do not normalize by available weights)
+  const student = typeof stats.studentScore === 'number' ? stats.studentScore : 0;
+  const peer = typeof stats.peerScore === 'number' ? stats.peerScore : 0;
+  const dept = typeof stats.deptHeadScore === 'number' ? stats.deptHeadScore : 0;
 
-    if (stats.studentScore > 0) {
-        totalWeight += WEIGHTS.student;
-        weightedScoreSum += stats.studentScore * WEIGHTS.student;
-    }
-    if (stats.peerScore > 0) {
-        totalWeight += WEIGHTS.peer;
-        weightedScoreSum += stats.peerScore * WEIGHTS.peer;
-    }
-    if (stats.deptHeadScore > 0) {
-        totalWeight += WEIGHTS.deptHead;
-        weightedScoreSum += stats.deptHeadScore * WEIGHTS.deptHead;
-    }
-
-    stats.finalScore = totalWeight > 0 ? weightedScoreSum / totalWeight : 0;
+  const rawFinal = (student * WEIGHTS.student) + (peer * WEIGHTS.peer) + (dept * WEIGHTS.deptHead);
+  // Round to 2 decimals
+  stats.finalScore = Math.round(rawFinal * 100) / 100;
     stats.lastUpdated = new Date();
     await stats.save();
 };

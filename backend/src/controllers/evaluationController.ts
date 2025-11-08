@@ -92,8 +92,9 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
     });
 
     // Atomically find or create the StatsCache document and get the average student score
-    const studentEvals = await EvaluationResponse.find({ teacher: teacherId, course: courseId, period });
-    const avgStudentScore = studentEvals.reduce((sum, ev) => sum + ev.totalScore, 0) / studentEvals.length;
+    // Use the correct field name `targetTeacher` and safely compute the average
+    const studentEvals = await EvaluationResponse.find({ targetTeacher: teacherId, course: courseId, period });
+    const avgStudentScore = studentEvals.length ? studentEvals.reduce((sum, ev) => sum + ev.totalScore, 0) / studentEvals.length : 0;
 
 
     // Update StatsCache and recalculate final score
@@ -162,7 +163,7 @@ export const submitPeerEvaluation = asyncHandler(async (req: IRequest, res: Resp
 
     // Update StatsCache peer score
     const peerEvals = await EvaluationResponse.find({ targetTeacher: teacherId, course: courseId, period, type: EvaluationType.Peer });
-    const avgPeerScore = peerEvals.reduce((sum, ev) => sum + ev.totalScore, 0) / (peerEvals.length || 1);
+    const avgPeerScore = peerEvals.length ? peerEvals.reduce((sum, ev) => sum + ev.totalScore, 0) / peerEvals.length : 0;
 
     const stats = await StatsCache.findOneAndUpdate(
         { teacher: teacherId, course: courseId, period },

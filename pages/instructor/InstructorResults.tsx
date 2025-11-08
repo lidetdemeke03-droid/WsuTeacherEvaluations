@@ -28,7 +28,23 @@ const InstructorResults: React.FC = () => {
                     ...d,
                     period: d.period && typeof d.period === 'object' ? d.period.name : d.period,
                 }));
-                setReportData(mapped);
+
+                // Group by teacher to ensure one bar per instructor (pick the most recently updated record)
+                const groupedByTeacher = mapped.reduce((acc: Record<string, any>, item: any) => {
+                    const teacherId = item.teacher && item.teacher._id ? String(item.teacher._id) : (item.teacher || 'unknown');
+                    if (!acc[teacherId]) {
+                        acc[teacherId] = item;
+                    } else {
+                        // prefer the most recently updated entry
+                        const existing = acc[teacherId];
+                        const existingUpdated = existing.lastUpdated ? new Date(existing.lastUpdated).getTime() : 0;
+                        const itemUpdated = item.lastUpdated ? new Date(item.lastUpdated).getTime() : 0;
+                        if (itemUpdated > existingUpdated) acc[teacherId] = item;
+                    }
+                    return acc;
+                }, {} as Record<string, any>);
+
+                setReportData(Object.values(groupedByTeacher));
             } catch (error) {
                 toast.error("Failed to fetch department report.");
             } finally {

@@ -51,7 +51,8 @@ async function calculateAverageScore(responses: any[]): Promise<number> {
  */
 export const aggregateTeacherScores = async (teacherId: string, period: string) => {
   // 1. Fetch all responses for the given teacher and period, separated by evaluator role
-  const responses = await EvaluationResponse.find({ subject: teacherId, period }).populate('evaluator');
+  // Note: EvaluationResponse stores the teacher under `targetTeacher`
+  const responses = await EvaluationResponse.find({ targetTeacher: teacherId, period }).populate('evaluator');
 
   const studentResponses = responses.filter(r => (r.evaluator as any).role === UserRole.Student);
   const peerResponses = responses.filter(r => (r.evaluator as any).role === UserRole.Teacher); // Assuming peers are other teachers for now
@@ -65,13 +66,14 @@ export const aggregateTeacherScores = async (teacherId: string, period: string) 
   // 3. Calculate the final weighted score
   const finalScore = calculateFinalScore(studentAvg, peerAvg, deptAvg);
 
-  // 4. Update or create the StatsCache entry
+  // 4. Update or create the StatsCache entry using the canonical field names
+  // StatsCache uses studentScore/peerScore/deptHeadScore
   await StatsCache.findOneAndUpdate(
     { teacher: teacherId, period },
     {
-      studentAvg,
-      peerAvg,
-      deptAvg,
+      studentScore: studentAvg,
+      peerScore: peerAvg,
+      deptHeadScore: deptAvg,
       finalScore,
       lastUpdated: new Date(),
     },

@@ -26,9 +26,42 @@ const InstructorDashboard: React.FC = () => {
                 // Normalize period to human-readable name if populated
                 const mapped = data.map((d: any) => ({
                     ...d,
-                    period: d.period && typeof d.period === 'object' ? d.period.name : d.period,
+                    period: d.period && typeof d.period === 'object' ? d.period : d.period,
                 }));
-                setPerformanceData(mapped);
+
+                // Group by period so each period appears once and contains the four scores
+                const groupedByPeriod = mapped.reduce((acc: Record<string, any>, item: any) => {
+                    const periodId = item.period && item.period._id ? String(item.period._id) : (item.period || 'unknown');
+
+                    const record = {
+                        period: item.period && item.period.name ? item.period.name : (typeof item.period === 'string' ? item.period : String(item.period)),
+                        studentScore: item.studentScore || 0,
+                        peerScore: item.peerScore || 0,
+                        deptHeadScore: item.deptHeadScore || 0,
+                        finalScore: item.finalScore || 0,
+                        lastUpdated: item.lastUpdated || item.updatedAt || null,
+                    };
+
+                    if (!acc[periodId]) {
+                        acc[periodId] = record;
+                    } else {
+                        // keep the most recently updated record for the period
+                        const existingUpdated = acc[periodId].lastUpdated ? new Date(acc[periodId].lastUpdated).getTime() : 0;
+                        const itemUpdated = record.lastUpdated ? new Date(record.lastUpdated).getTime() : 0;
+                        if (itemUpdated > existingUpdated) acc[periodId] = record;
+                    }
+
+                    return acc;
+                }, {} as Record<string, any>);
+
+                // Sort by newest period first (by lastUpdated)
+                const ordered = Object.values(groupedByPeriod).sort((a: any, b: any) => {
+                    const ta = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
+                    const tb = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
+                    return tb - ta;
+                });
+
+                setPerformanceData(ordered);
             } catch (error) {
                 toast.error("Failed to fetch performance data.");
             } finally {
