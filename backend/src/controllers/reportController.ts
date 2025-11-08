@@ -146,7 +146,7 @@ export const generateReports = asyncHandler(async (req: IRequest, res: Response)
             { teacherId: tId, period: periodDoc.name },
             {
                 teacherId: tId,
-                departmentId: departmentId ? Types.ObjectId(departmentId) : undefined,
+                departmentId: departmentId ? new Types.ObjectId(departmentId) : undefined,
                 period: periodDoc.name,
                 periodId: periodDoc._id,
                 type,
