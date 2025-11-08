@@ -109,6 +109,12 @@ export enum LogLevel {
   Error = 'error',
 }
 
+export enum ComplaintStatus {
+  New = 'New',
+  InProgress = 'In Progress',
+  Resolved = 'Resolved',
+}
+
 export interface IAuditLog extends Document {
   user?: Types.ObjectId;
   action: string;

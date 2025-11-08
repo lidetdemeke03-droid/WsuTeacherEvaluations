@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Complaint, ComplaintStatus, UserRole } from '../../types';
-import { apiGetComplaints, apiUpdateComplaint, apiCreateComplaint } from '../../services/api';
+import { apiGetComplaints, apiUpdateComplaint, apiCreateComplaint, apiRespondComplaint } from '../../services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import { motion } from 'framer-motion';
 
 const ComplaintsPage: React.FC = () => {
     const { user } = useAuth();
@@ -15,10 +16,12 @@ const ComplaintsPage: React.FC = () => {
         subject: '',
         message: '',
         status: ComplaintStatus.New,
+        responseText: '',
     });
 
     useEffect(() => {
-        if (user?.role === UserRole.Admin || user?.role === UserRole.DepartmentHead) {
+        // Admins/DeptHead fetch all complaints; students and teachers fetch their own
+        if (user) {
             fetchComplaints();
         }
     }, [user]);
@@ -41,12 +44,18 @@ const ComplaintsPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            if (user?.role === UserRole.Student) {
+                if (user?.role === UserRole.Student || user?.role === UserRole.Teacher) {
                 await apiCreateComplaint({ subject: formData.subject, message: formData.message });
                 toast.success('Complaint submitted successfully');
             } else if (currentComplaint) {
-                await apiUpdateComplaint(currentComplaint.id, { status: formData.status as ComplaintStatus });
-                toast.success('Complaint updated successfully');
+                // Admin responding/updating
+                if ((user?.role === UserRole.Admin || user?.role === UserRole.DepartmentHead) && formData.responseText) {
+                    await apiRespondComplaint(currentComplaint._id || currentComplaint.id, { responseText: formData.responseText, status: formData.status });
+                    toast.success('Response saved successfully');
+                } else {
+                    await apiUpdateComplaint(currentComplaint._id || currentComplaint.id, { status: formData.status as ComplaintStatus });
+                    toast.success('Complaint updated successfully');
+                }
             }
             closeModal();
             if (user?.role !== UserRole.Student) {
@@ -64,12 +73,14 @@ const ComplaintsPage: React.FC = () => {
                 subject: complaint.subject,
                 message: complaint.message,
                 status: complaint.status,
+                responseText: (complaint as any).response || '',
             });
         } else {
             setFormData({
                 subject: '',
                 message: '',
                 status: ComplaintStatus.New,
+                responseText: '',
             });
         }
         setIsModalOpen(true);
@@ -94,22 +105,22 @@ const ComplaintsPage: React.FC = () => {
 
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-white p-6 rounded-md">
+                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="bg-white p-6 rounded-md w-full max-w-2xl">
                         <h2 className="text-xl font-bold mb-4">{currentComplaint ? 'Update Complaint' : 'Submit Complaint'}</h2>
-                        <form onSubmit={handleSubmit}>
-                            {user.role === UserRole.Student ? (
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            {(user.role === UserRole.Student || user.role === UserRole.Teacher) ? (
                                 <>
-                                    <div className="mb-4">
+                                    <div>
                                         <label className="block text-sm font-medium text-gray-700">Subject</label>
                                         <input type="text" name="subject" value={formData.subject} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required />
                                     </div>
-                                    <div className="mb-4">
+                                    <div>
                                         <label className="block text-sm font-medium text-gray-700">Message</label>
                                         <textarea name="message" value={formData.message} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required />
                                     </div>
                                 </>
                             ) : (
-                                <div className="mb-4">
+                                <div>
                                     <label className="block text-sm font-medium text-gray-700">Status</label>
                                     <select name="status" value={formData.status} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                                         {Object.values(ComplaintStatus).map(status => (
@@ -118,44 +129,45 @@ const ComplaintsPage: React.FC = () => {
                                     </select>
                                 </div>
                             )}
-                            <div className="flex justify-end">
-                                <button type="button" onClick={closeModal} className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md mr-2">Cancel</button>
-                                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md">{currentComplaint ? 'Update' : 'Submit'}</button>
+                            <div className="flex justify-end space-x-2">
+                                <button type="button" onClick={closeModal} className="btn-secondary">Cancel</button>
+                                <button type="submit" className="btn-primary">{currentComplaint ? 'Update' : 'Submit'}</button>
                             </div>
                         </form>
-                    </div>
+                    </motion.div>
                 </div>
             )}
 
-            {(user.role === UserRole.Admin || user.role === UserRole.DepartmentHead) && (
+            {(user.role === UserRole.Admin || user.role === UserRole.DepartmentHead || user.role === UserRole.Teacher || user.role === UserRole.Student) && (
                 isLoading ? (
                     <p>Loading...</p>
                 ) : (
                     <div className="bg-white shadow-md rounded-lg">
-                        <table className="min-w-full">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submitter</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {complaints.map((c) => (
-                                    <tr key={c.id}>
-                                        <td className="px-6 py-4 whitespace-nowrap">{c.subject}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">{c.submitterName}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">{new Date(c.submissionDate).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">{c.status}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                                            <button onClick={() => openModal(c)} className="text-indigo-600 hover:text-indigo-900">View/Update</button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                        <div className="divide-y">
+                            {complaints.map((c: any) => (
+                                <motion.div key={c._id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="p-4 hover:bg-gray-50">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <div className="font-medium">{c.subject}</div>
+                                            <div className="text-sm text-gray-500">{c.submitter ? `${c.submitter.firstName} ${c.submitter.lastName}` : 'System'} • {new Date(c.createdAt).toLocaleString()}</div>
+                                        </div>
+                                        <div className="text-sm text-gray-700">{c.status}</div>
+                                    </div>
+                                    <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} className="mt-3 text-sm text-gray-700">
+                                        <div>{c.message}</div>
+                                        {c.response && (
+                                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3 p-3 bg-gray-50 rounded">
+                                                <div className="text-sm font-medium">Response</div>
+                                                <div className="text-sm">{c.response}</div>
+                                            </motion.div>
+                                        )}
+                                        <div className="mt-3 text-right">
+                                            <button onClick={() => openModal(c)} className="text-indigo-600 hover:text-indigo-900">View/Respond</button>
+                                        </div>
+                                    </motion.div>
+                                </motion.div>
+                            ))}
+                        </div>
                     </div>
                 )
             )}

@@ -45,7 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
         return [
           { to: "/dashboard", icon: <Home size={20} />, label: "Home" },
           { to: "/evaluation/new", icon: <FilePlus2 size={20} />, label: "Make Evaluation" },
-          { to: "/peer/reviews", icon: <Users size={20} />, label: "Peer Reviews" },
+          { to: "/complaints", icon: <MessageSquare size={20} />, label: "Complaints" },
           { to: "/profile", icon: <UserCircle size={20} />, label: "Manage Profile" },
           { to: "/instructor/performance", icon: <BarChart2 size={20} />, label: "My Performance" },
         ];

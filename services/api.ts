@@ -121,6 +121,11 @@ export const apiDeleteCourse = (courseId: string): Promise<void> => apiRequest<v
 export const apiGetComplaints = (): Promise<Complaint[]> => apiRequest<Complaint[]>('/complaints');
 export const apiCreateComplaint = (complaintData: { subject: string, message: string }): Promise<Complaint> => apiRequest<Complaint>('/complaints', { method: 'POST', body: JSON.stringify(complaintData) });
 export const apiUpdateComplaint = (complaintId: string, complaintData: { status: string, assignedTo?: string }): Promise<Complaint> => apiRequest<Complaint>(`/complaints/${complaintId}`, { method: 'PUT', body: JSON.stringify(complaintData) });
+export const apiRespondComplaint = (complaintId: string, data: { responseText: string, status?: string }): Promise<Complaint> => apiRequest<Complaint>(`/complaints/${complaintId}/respond`, { method: 'POST', body: JSON.stringify(data) });
+
+// Notifications
+export const apiGetNotifications = (): Promise<any[]> => apiRequest<any[]>('/notifications');
+export const apiMarkNotificationRead = (id: string): Promise<any> => apiRequest<any>(`/notifications/${id}/read`, { method: 'PATCH' });
 
 // Evaluation Periods
 export const apiGetEvaluationPeriods = (): Promise<EvaluationPeriod[]> => apiRequest<EvaluationPeriod[]>('/periods');
