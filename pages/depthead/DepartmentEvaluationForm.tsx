@@ -4,7 +4,7 @@ import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { departmentHeadEvaluationQuestions as questions } from '../../constants/forms';
 import { motion, AnimatePresence } from 'framer-motion';
-import { apiGetTeacherCourses } from '../../services/api';
+import { apiGetTeacherCourses, apiGetEvaluationPeriods } from '../../services/api';
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -64,11 +64,31 @@ const DepartmentEvaluationForm: React.FC = () => {
 
         setSubmitting(true);
         try {
+            // Resolve periodId (use active period or most recent) to send the ObjectId to the server
+            let resolvedPeriodId: string | undefined = undefined;
+            try {
+                const periods = await apiGetEvaluationPeriods();
+                const active = periods.find((p: any) => p.status === 'Active');
+                if (active) resolvedPeriodId = active._id;
+                else if (periods.length > 0) {
+                    periods.sort((a: any, b: any) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+                    resolvedPeriodId = periods[0]._id;
+                }
+            } catch (periodErr) {
+                console.error('Failed to resolve evaluation period', periodErr);
+            }
+
+            if (!resolvedPeriodId) {
+                toast.error('Could not determine the evaluation period. Try again later.');
+                setSubmitting(false);
+                return;
+            }
+
             await api.post('/evaluations/department', {
                 evaluatorId: user?.id,
                 teacherId,
                 courseId: selectedCourse || undefined,
-                period: '2025-Spring', // This should be dynamic
+                period: resolvedPeriodId,
                 answers: Object.values(answers),
             });
             toast.success('Evaluation submitted successfully!');

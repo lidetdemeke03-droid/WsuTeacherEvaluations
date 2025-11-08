@@ -151,11 +151,25 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
             // Support cases where API returns nested objects or just IDs
             const courseId = typeof evaluation.course === 'string' ? evaluation.course : (evaluation.course?._id ?? (evaluation.course as any)?.id ?? undefined);
             const teacherId = typeof evaluation.teacher === 'string' ? evaluation.teacher : (evaluation.teacher?._id ?? (evaluation.teacher as any)?.id ?? undefined);
-            // period may be an object or a string id
-            const periodId = typeof evaluation.period === 'string' ? evaluation.period : (evaluation.period?._id ?? (evaluation.period as any)?.id ?? undefined);
+            // period may be an object or a string (could be id or a legacy name)
+            const rawPeriod = typeof evaluation.period === 'string' ? evaluation.period : (evaluation.period?._id ?? (evaluation.period as any)?.id ?? undefined);
 
-            // If periodId is missing, try to resolve an active/current period from the backend as a fallback
-            let resolvedPeriodId = periodId;
+            // If rawPeriod looks like a 24-char ObjectId, use it; otherwise try to resolve by name
+            const isObjectId = (val?: string) => !!val && /^[0-9a-fA-F]{24}$/.test(val);
+            let resolvedPeriodId = isObjectId(rawPeriod) ? rawPeriod : undefined;
+
+            // If we have a string that isn't an ObjectId, attempt to resolve it as a period name
+            if (!resolvedPeriodId && rawPeriod) {
+                try {
+                    const periods = await apiGetEvaluationPeriods();
+                    const match = periods.find((p: any) => p._id === rawPeriod || p.name === rawPeriod);
+                    if (match) resolvedPeriodId = match._id;
+                } catch (e) {
+                    // ignore, will fallback below
+                }
+            }
+
+            // If periodId is still missing, try to resolve an active/current period from the backend as a fallback
             if (!resolvedPeriodId) {
                 try {
                     const periods = await apiGetEvaluationPeriods();
