@@ -51,9 +51,27 @@ const ReportsPage: React.FC = () => {
       // res should be array of results
       const result = res[0];
       if (type === 'print') {
-        // open download url
-        const downloadUrl = `${API_BASE}/reports/${result.reportId}/download`;
-        window.open(downloadUrl, '_blank');
+        // The download endpoint requires Authorization header. Fetch the file with token and open as blob URL.
+        try {
+          const token = sessionStorage.getItem('authToken');
+          if (!token) throw new Error('Not authorized, no token');
+          const resp = await fetch(`${API_BASE}/reports/${result.reportId}/download`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (!resp.ok) {
+            const txt = await resp.text();
+            throw new Error(txt || 'Failed to download report');
+          }
+          const blob = await resp.blob();
+          const url = window.URL.createObjectURL(blob);
+          window.open(url, '_blank');
+        } catch (err: any) {
+          console.error('Download failed', err);
+          setMessage(err.message || 'Failed to download report');
+        }
       } else {
         setMessage('Detailed report sent successfully to the teacher.');
       }
