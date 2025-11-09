@@ -39,32 +39,63 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
   const filePath = path.join(OUTPUT_DIR, fileName);
 
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'A4', margin: 48 });
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
     const stream = fs.createWriteStream(filePath);
     doc.pipe(stream);
 
-    // Header: logo and university name
+    // ============ HEADER STYLING ============
     if (fs.existsSync(LOGO_PATH)) {
       try {
-        doc.image(LOGO_PATH, doc.page.width / 2 - 36, 40, { width: 72 });
-      } catch (e) {
-        // ignore image errors
-      }
+        doc.image(LOGO_PATH, doc.page.width / 2 - 40, 40, { width: 80 });
+      } catch (e) {}
     }
 
-    doc.fontSize(14).font('Helvetica-Bold').text('Wolaita Sodo University', { align: 'center' });
-    doc.moveDown(0.2);
-    doc.fontSize(12).font('Helvetica').text(`Teacher Performance Evaluation Report`, { align: 'center' });
+    doc.moveDown(4);
+    doc
+      .fontSize(20)
+      .fillColor('#1f2937')
+      .font('Helvetica-Bold')
+      .text('Wolaita Sodo University', { align: 'center' });
+
+    doc
+      .moveDown(0.4)
+      .fontSize(14)
+      .fillColor('#2563eb')
+      .text('Teacher Performance Evaluation Report', { align: 'center', underline: true });
+
+    doc.moveDown(1.5);
+
+    // Decorative line
+    const lineY = doc.y;
+    doc
+      .moveTo(60, lineY)
+      .lineTo(doc.page.width - 60, lineY)
+      .lineWidth(1.5)
+      .strokeColor('#2563eb')
+      .stroke();
+    doc.moveDown(1.5);
+
+    // ============ TEACHER DETAILS ============
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(12)
+      .fillColor('#111827')
+      .text(`${data.teacherName}`, { continued: true })
+      .font('Helvetica')
+      .fillColor('#374151')
+      .text(`  •  ${data.departmentName || ''}`);
+
+    doc.font('Helvetica').text(`Period: ${data.periodName}`);
     doc.moveDown(1);
 
-    // Teacher details
-    doc.fontSize(11).font('Helvetica-Bold').text(`${data.teacherName}`, { continued: true }).font('Helvetica').text(`  •  ${data.departmentName || ''}`);
-    doc.text(`Period: ${data.periodName}`);
-    doc.moveDown(0.5);
+    // Background box for metrics
+    doc
+      .rect(50, doc.y, doc.page.width - 100, 120)
+      .fillOpacity(0.05)
+      .fill('#2563eb')
+      .fillOpacity(1);
 
-    // Summary table like layout
-    const startX = doc.x;
-    const tableY = doc.y;
+    doc.moveDown(-0.2).font('Helvetica').fillColor('#111827');
 
     const metrics = [
       { label: 'Student Evaluation (50%)', value: `${Math.round(data.studentAvg)}%` },
@@ -73,63 +104,74 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
       { label: 'Final Weighted Score', value: `${Math.round(data.finalScore * 100) / 100}%` },
     ];
 
-    // Draw simple table
-    const labelX = startX;
-    const valueX = doc.page.width - doc.page.margins.right - 100;
+    const startY = doc.y + 10;
+    const startX = 70;
 
-    metrics.forEach((m) => {
-      doc.font('Helvetica').fontSize(10).text(m.label, labelX, doc.y);
-      doc.font('Helvetica-Bold').text(m.value, valueX, doc.y);
-      doc.moveDown(0.8);
+    metrics.forEach((m, i) => {
+      const y = startY + i * 22;
+      doc.font('Helvetica-Bold').fontSize(10).fillColor('#2563eb').text(m.label, startX, y);
+      doc.font('Helvetica').fontSize(10).fillColor('#111827').text(m.value, doc.page.width - 120, y);
     });
 
-    doc.moveDown(0.5);
-    doc.font('Helvetica').fontSize(10).text(`Total Student Respondents: ${data.studentRespondents}`);
-    doc.text(`Total Peer Respondents: ${data.peerRespondents}`);
-    doc.text(`Evaluation Completed On: ${new Date().toLocaleDateString()}`);
+    doc.moveDown(8);
 
-    doc.moveDown(1);
+    // ============ SUMMARY SECTION ============
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(11)
+      .fillColor('#111827')
+      .text('Summary Metrics', { underline: true });
+    doc.moveDown(0.6);
 
+    doc
+      .font('Helvetica')
+      .fontSize(10)
+      .fillColor('#374151')
+      .text(`Total Student Respondents: ${data.studentRespondents}`)
+      .text(`Total Peer Respondents: ${data.peerRespondents}`)
+      .text(`Evaluation Completed On: ${new Date().toLocaleDateString()}`);
+
+    // ============ EMAIL VERSION (Detailed) ============
     if (type === 'email') {
-      // Add extra sections: comments and simple bar chart
       doc.addPage();
-      doc.fontSize(12).font('Helvetica-Bold').text('📊 Analytics', { underline: true });
-      doc.moveDown(0.5);
 
-      // Simple Bar Chart
-      const chartX = doc.x;
-      const chartY = doc.y;
-      const chartWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-      const barMax = 100;
-      const barHeight = 12;
-      const gap = 10;
-
-      const bars = [
-        { label: 'Student', value: data.studentAvg },
-        { label: 'Peer', value: data.peerAvg },
-        { label: 'Dept', value: data.deptAvg },
-        { label: 'Final', value: data.finalScore }
-      ];
-
-      bars.forEach(b => {
-        doc.font('Helvetica').fontSize(10).text(`${b.label}: ${Math.round(b.value)}%`);
-        const currentY = doc.y + 2;
-        const width = Math.max((b.value / barMax) * (chartWidth - 120), 10);
-        doc.rect(doc.x + 100, currentY, width, barHeight).fill('#3b82f6');
-        doc.fillColor('black');
-        doc.moveDown(1.6);
-      });
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(14)
+        .fillColor('#2563eb')
+        .text('📊 Performance Analytics', { underline: true, align: 'center' });
 
       doc.moveDown(1);
-      doc.fontSize(12).font('Helvetica-Bold').text('💬 Feedback', { underline: true });
-      doc.moveDown(0.5);
+
+      // Draw bars with gradient tones
+      const chartWidth = doc.page.width - 160;
+      const barHeight = 14;
+      const gap = 18;
+      const startYBar = doc.y + 10;
+
+      const bars = [
+        { label: 'Student', value: data.studentAvg, color: '#3b82f6' },
+        { label: 'Peer', value: data.peerAvg, color: '#10b981' },
+        { label: 'Department', value: data.deptAvg, color: '#f59e0b' },
+        { label: 'Final', value: data.finalScore, color: '#ef4444' },
+      ];
+
+      bars.forEach((b, i) => {
+        const y = startYBar + i * (barHeight + gap);
+        doc.fontSize(10).fillColor('#111827').text(`${b.label}: ${Math.round(b.value)}%`, 80, y);
+        doc.rect(180, y, (b.value / 100) * chartWidth, barHeight).fill(b.color);
+      });
+
+      doc.moveDown(4);
+      doc.font('Helvetica-Bold').fontSize(13).fillColor('#2563eb').text('💬 Top Feedback Highlights', { underline: true });
+      doc.moveDown(0.6);
 
       const tc = data.topComments || {};
       const writeComments = (title: string, arr?: string[]) => {
         if (!arr || arr.length === 0) return;
-        doc.font('Helvetica-Bold').fontSize(10).text(title);
-        doc.font('Helvetica').fontSize(10).list(arr.slice(0,5));
-        doc.moveDown(0.5);
+        doc.font('Helvetica-Bold').fontSize(10).fillColor('#111827').text(title);
+        doc.font('Helvetica').fontSize(10).fillColor('#374151').list(arr.slice(0, 5));
+        doc.moveDown(0.8);
       };
 
       writeComments('Student - Strengths', tc.studentStrengths);
@@ -138,12 +180,32 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
       writeComments('Peer - Improvements', tc.peerImprovements);
       writeComments('Department Head Comments', tc.deptComments);
 
-      doc.moveDown(1);
-      doc.fontSize(10).text('Generated by ' + (data.generatedByName || 'Admin') + ' on ' + new Date().toLocaleString());
-    } else {
       doc.moveDown(2);
-      doc.fontSize(10).text('Footer: Generated by ' + (data.generatedByName || 'Admin') + ' on ' + new Date().toLocaleString());
+      doc
+        .fontSize(9)
+        .fillColor('#6b7280')
+        .text(`Generated by ${data.generatedByName || 'Admin'} on ${new Date().toLocaleString()}`, {
+          align: 'right',
+        });
+    } else {
+      doc.moveDown(4);
+      doc
+        .font('Helvetica-Oblique')
+        .fontSize(9)
+        .fillColor('#6b7280')
+        .text(`Generated by ${data.generatedByName || 'Admin'} on ${new Date().toLocaleString()}`, {
+          align: 'center',
+        });
     }
+
+    // ============ FOOTER LINE ============
+    const footerY = doc.page.height - 50;
+    doc
+      .moveTo(60, footerY)
+      .lineTo(doc.page.width - 60, footerY)
+      .strokeColor('#d1d5db')
+      .lineWidth(1)
+      .stroke();
 
     doc.end();
 
