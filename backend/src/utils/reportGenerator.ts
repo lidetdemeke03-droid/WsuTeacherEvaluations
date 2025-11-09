@@ -33,7 +33,7 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 // Try locate logo from frontend HomePage import path
 const LOGO_PATH = path.resolve(__dirname, '../../../pages/logo.png');
 
-export const generatePDF = async (teacherId: string, data: ReportData, type: 'print' | 'email') : Promise<string> => {
+export const generatePDF = async (teacherId: string, data: ReportData, type: 'print' | 'email'): Promise<string> => {
   // File name
   const safeName = `${data.teacherName.replace(/[^a-z0-9]/gi, '_')}_${data.periodName.replace(/[^a-z0-9]/gi, '_')}`;
   const fileName = `${safeName}_${type}_${Date.now()}.pdf`;
@@ -47,18 +47,16 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
     // ============ HEADER STYLING ============
     if (fs.existsSync(LOGO_PATH)) {
       try {
-        // place logo at a fixed top margin and then advance y below it so text doesn't overlap
         const logoWidth = 80;
         const logoX = (doc.page.width - logoWidth) / 2;
         const logoY = 40;
         doc.image(LOGO_PATH, logoX, logoY, { width: logoWidth });
-        // set the document cursor below the logo (use a gap)
-        doc.y = logoY + 80 + 12; // logo height approx equals width for square emblem
+        doc.y = logoY + 100;
       } catch (e) {}
     } else {
-      // if no logo, ensure we still have a top margin
-      doc.y = 60;
+      doc.y = 70;
     }
+
     doc
       .fontSize(20)
       .fillColor('#1f2937')
@@ -84,7 +82,6 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
     doc.moveDown(1.5);
 
     // ============ TEACHER DETAILS ============
-    // Teacher name in uppercase for emphasis
     const teacherDisplayName = (data.teacherName || '').toUpperCase();
     doc
       .font('Helvetica-Bold')
@@ -96,22 +93,27 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
       .text(`  •  ${data.departmentName || ''}`);
 
     doc.font('Helvetica').text(`Period: ${data.periodName}`);
-    // List courses taught by the teacher, if available
     if (data.courses && data.courses.length > 0) {
       doc.moveDown(0.4);
       doc.font('Helvetica-Bold').fontSize(10).fillColor('#111827').text('Courses:');
       doc.font('Helvetica').fontSize(10).fillColor('#374151').list(data.courses.slice(0, 10));
     }
-    doc.moveDown(1);
+    doc.moveDown(1.2);
 
-    // Background box for metrics
+    // ============ METRICS BOX (Clean Layout) ============
+    const boxX = 70;
+    const boxWidth = doc.page.width - 2 * boxX;
+    const boxY = doc.y;
+    const boxHeight = 120;
+
+    // soft background box
     doc
-      .rect(50, doc.y, doc.page.width - 100, 120)
+      .rect(boxX, boxY, boxWidth, boxHeight)
       .fillOpacity(0.05)
       .fill('#2563eb')
       .fillOpacity(1);
 
-    doc.moveDown(-0.2).font('Helvetica').fillColor('#111827');
+    doc.y = boxY + 15;
 
     const metrics = [
       { label: 'Student Evaluation (50%)', value: `${Math.round(data.studentAvg)}%` },
@@ -120,32 +122,44 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
       { label: 'Final Weighted Score', value: `${Math.round(data.finalScore * 100) / 100}%` },
     ];
 
-    const startY = doc.y + 10;
-    const startX = 70;
+    const labelX = boxX + 25;
+    const valueX = boxX + boxWidth / 2 + 40;
 
     metrics.forEach((m, i) => {
-      const y = startY + i * 22;
-      doc.font('Helvetica-Bold').fontSize(10).fillColor('#2563eb').text(m.label, startX, y);
-      doc.font('Helvetica').fontSize(10).fillColor('#111827').text(m.value, doc.page.width - 120, y);
+      const y = doc.y + i * 22;
+      doc.font('Helvetica-Bold').fontSize(10).fillColor('#2563eb').text(m.label, labelX, y);
+      doc.font('Helvetica').fontSize(10).fillColor('#111827').text(m.value, valueX, y);
     });
 
-    doc.moveDown(8);
+    doc.y = boxY + boxHeight + 25;
+
+    // horizontal divider before summary
+    doc
+      .moveTo(boxX, doc.y)
+      .lineTo(doc.page.width - boxX, doc.y)
+      .lineWidth(0.8)
+      .strokeColor('#d1d5db')
+      .stroke();
+    doc.moveDown(1.2);
 
     // ============ SUMMARY SECTION ============
     doc
       .font('Helvetica-Bold')
-      .fontSize(11)
+      .fontSize(12)
       .fillColor('#111827')
-      .text('Summary Metrics', { underline: true });
-    doc.moveDown(0.6);
+      .text('Summary Metrics', { align: 'center', underline: true });
+    doc.moveDown(0.8);
 
+    const summaryStartX = 120;
     doc
       .font('Helvetica')
-      .fontSize(10)
+      .fontSize(10.5)
       .fillColor('#374151')
-      .text(`Total Student Respondents: ${data.studentRespondents}`)
-      .text(`Total Peer Respondents: ${data.peerRespondents}`)
-      .text(`Evaluation Completed On: ${new Date().toLocaleDateString()}`);
+      .text(`Total Student Respondents: ${data.studentRespondents}`, summaryStartX)
+      .text(`Total Peer Respondents: ${data.peerRespondents}`, summaryStartX)
+      .text(`Evaluation Completed On: ${new Date().toLocaleDateString()}`, summaryStartX);
+
+    doc.moveDown(1.8);
 
     // ============ EMAIL VERSION (Detailed) ============
     if (type === 'email') {
@@ -159,7 +173,6 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
 
       doc.moveDown(1);
 
-      // Draw bars with gradient tones
       const chartWidth = doc.page.width - 160;
       const barHeight = 14;
       const gap = 18;

@@ -13,6 +13,8 @@ import { sendEmail } from '../utils/email';
 import { Types } from 'mongoose';
 import path from 'path';
 import Course from '../models/Course';
+import fs from 'fs';
+import crypto from 'crypto';
 
 // @desc    Get performance data for the current instructor
 // @route   GET /api/reports/my-performance
@@ -189,6 +191,10 @@ export const generateReports = asyncHandler(async (req: IRequest, res: Response)
             generatedByName: `${user.firstName} ${user.lastName}`,
         }, type);
 
+        // generate a temporary download token valid for 24 hours
+        const token = crypto.randomBytes(18).toString('hex');
+        reportDoc.downloadToken = token;
+        reportDoc.downloadTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
         reportDoc.path = pdfPath;
         await reportDoc.save();
 
@@ -196,11 +202,18 @@ export const generateReports = asyncHandler(async (req: IRequest, res: Response)
         if (type === 'email') {
             const teacherEmail = (teacher as any).email;
             try {
+                // read file buffer
+                const fileBuffer = fs.readFileSync(pdfPath);
+                // build download URL (public token-based)
+                const host = (req as any).protocol + '://' + (req as any).get('host');
+                const downloadUrl = `${host}/api/reports/download?token=${token}`;
+
                 await sendEmail({
                     to: teacherEmail,
                     subject: `Teacher Performance Evaluation Report – ${(teacher as any).firstName} ${(teacher as any).lastName}, ${periodDoc.name}`,
-                    text: `Please find attached the detailed evaluation report for ${(teacher as any).firstName} ${(teacher as any).lastName}.`,
-                    attachments: [{ filename: path.basename(pdfPath), path: pdfPath }]
+                    text: `Please find attached the detailed evaluation report for ${(teacher as any).firstName} ${(teacher as any).lastName}. You can also download it here: ${downloadUrl}`,
+                    html: `<p>Please find attached the detailed evaluation report for <strong>${(teacher as any).firstName} ${(teacher as any).lastName}</strong>.</p><p><a href="${downloadUrl}">Download report</a></p>`,
+                    attachments: [{ filename: path.basename(pdfPath), content: fileBuffer, contentType: 'application/pdf' }]
                 });
                 reportDoc.status = 'sent';
                 await reportDoc.save();
@@ -243,6 +256,35 @@ export const downloadReport = asyncHandler(async (req: IRequest, res: Response) 
     if (user.role !== UserRole.Admin && String(report.generatedBy) !== String(user._id)) {
         res.status(403);
         throw new Error('Not authorized to download this report');
+    }
+
+    if (!report.path) {
+        res.status(404);
+        throw new Error('Report file not available');
+    }
+
+    return res.sendFile(report.path);
+});
+
+// @desc Download report by token (no auth) - link sent via email
+// @route GET /api/reports/download?token=
+export const downloadReportByToken = asyncHandler(async (req: Request, res: Response) => {
+    const { token } = req.query as any;
+    if (!token) {
+        res.status(400);
+        throw new Error('Token is required');
+    }
+
+    const report = await Report.findOne({ downloadToken: token }).lean();
+    if (!report) {
+        res.status(404);
+        throw new Error('Report not found');
+    }
+
+    const expires = (report as any).downloadTokenExpires;
+    if (!expires || new Date(expires) < new Date()) {
+        res.status(410);
+        throw new Error('Download token expired');
     }
 
     if (!report.path) {

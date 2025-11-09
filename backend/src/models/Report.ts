@@ -25,6 +25,11 @@ const reportSchema = new Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+reportSchema.add({
+  downloadToken: { type: String },
+  downloadTokenExpires: { type: Date }
+});
+
 reportSchema.index({ teacherId: 1, period: 1 }, { unique: true });
 
 const Report = model('Report', reportSchema);

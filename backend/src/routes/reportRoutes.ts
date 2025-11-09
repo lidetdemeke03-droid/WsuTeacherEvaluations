@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getMyPerformance, getDepartmentReport, generateReports, listReports, downloadReport } from '../controllers/reportController';
+import { getMyPerformance, getDepartmentReport, generateReports, listReports, downloadReport, downloadReportByToken } from '../controllers/reportController';
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/role';
 import { UserRole } from '../types';
@@ -23,6 +23,9 @@ router.get('/', authorize(UserRole.Admin), listReports);
 
 // Download generated PDF
 router.get('/:id/download', authorize(UserRole.Admin), downloadReport);
+
+// Public token-based download (used for emailed links)
+router.get('/download', downloadReportByToken);
 
 export default router;
 
