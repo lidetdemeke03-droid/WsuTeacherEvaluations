@@ -193,9 +193,9 @@ export const generateReports = asyncHandler(async (req: IRequest, res: Response)
 
         // generate a temporary download token valid for 24 hours
         const token = crypto.randomBytes(18).toString('hex');
-        reportDoc.downloadToken = token;
-        reportDoc.downloadTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-        reportDoc.path = pdfPath;
+    (reportDoc as any).downloadToken = token;
+    (reportDoc as any).downloadTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    reportDoc.path = pdfPath;
         await reportDoc.save();
 
         // Email if required
