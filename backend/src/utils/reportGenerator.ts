@@ -7,6 +7,7 @@ interface ReportData {
   teacherName: string;
   departmentName?: string;
   periodName: string;
+  courses?: string[];
   studentAvg: number;
   peerAvg: number;
   deptAvg: number;
@@ -83,16 +84,24 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
     doc.moveDown(1.5);
 
     // ============ TEACHER DETAILS ============
+    // Teacher name in uppercase for emphasis
+    const teacherDisplayName = (data.teacherName || '').toUpperCase();
     doc
       .font('Helvetica-Bold')
       .fontSize(12)
       .fillColor('#111827')
-      .text(`${data.teacherName}`, { continued: true })
+      .text(`${teacherDisplayName}`, { continued: true })
       .font('Helvetica')
       .fillColor('#374151')
       .text(`  •  ${data.departmentName || ''}`);
 
     doc.font('Helvetica').text(`Period: ${data.periodName}`);
+    // List courses taught by the teacher, if available
+    if (data.courses && data.courses.length > 0) {
+      doc.moveDown(0.4);
+      doc.font('Helvetica-Bold').fontSize(10).fillColor('#111827').text('Courses:');
+      doc.font('Helvetica').fontSize(10).fillColor('#374151').list(data.courses.slice(0, 10));
+    }
     doc.moveDown(1);
 
     // Background box for metrics

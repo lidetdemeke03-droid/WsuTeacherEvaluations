@@ -12,6 +12,7 @@ import reportGenerator from '../utils/reportGenerator';
 import { sendEmail } from '../utils/email';
 import { Types } from 'mongoose';
 import path from 'path';
+import Course from '../models/Course';
 
 // @desc    Get performance data for the current instructor
 // @route   GET /api/reports/my-performance
@@ -170,10 +171,14 @@ export const generateReports = asyncHandler(async (req: IRequest, res: Response)
         );
 
         // Generate PDF
+        // fetch courses taught by this teacher
+        const courses = await Course.find({ teacher: tId }).select('title code').lean();
+
         const pdfPath = await reportGenerator.generatePDF(String(tId), {
             teacherName: `${(teacher as any).firstName} ${(teacher as any).lastName}`,
             departmentName: (teacher as any).department && (teacher as any).department.name ? (teacher as any).department.name : ((teacher as any).department ? String((teacher as any).department) : undefined),
             periodName: periodDoc.name,
+            courses: courses.map(c => `${c.code ? c.code + ' - ' : ''}${c.title}`),
             studentAvg,
             peerAvg,
             deptAvg,
