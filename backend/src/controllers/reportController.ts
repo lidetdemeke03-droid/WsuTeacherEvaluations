@@ -95,7 +95,7 @@ export const generateReports = asyncHandler(async (req: IRequest, res: Response)
     const results: any[] = [];
 
     for (const tId of teacherIds) {
-        const teacher = await User.findById(tId).select('firstName lastName email department');
+    const teacher = await User.findById(tId).select('firstName lastName email department').populate('department', 'name');
         if (!teacher) continue;
 
         // Try to read StatsCache first
@@ -172,7 +172,7 @@ export const generateReports = asyncHandler(async (req: IRequest, res: Response)
         // Generate PDF
         const pdfPath = await reportGenerator.generatePDF(String(tId), {
             teacherName: `${(teacher as any).firstName} ${(teacher as any).lastName}`,
-            departmentName: (teacher as any).department ? String((teacher as any).department) : undefined,
+            departmentName: (teacher as any).department && (teacher as any).department.name ? (teacher as any).department.name : ((teacher as any).department ? String((teacher as any).department) : undefined),
             periodName: periodDoc.name,
             studentAvg,
             peerAvg,

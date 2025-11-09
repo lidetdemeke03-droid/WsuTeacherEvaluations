@@ -39,7 +39,7 @@ const ReportsPage: React.FC = () => {
     })();
   }, [selectedDept, selectedPeriod]);
 
-  const handleGenerate = async (teacherId: string, type: 'print' | 'email') => {
+  const handleGenerate = async (teacher: any, type: 'print' | 'email') => {
     if (!selectedPeriod) {
       setMessage('Please select a completed evaluation period');
       return;
@@ -47,7 +47,7 @@ const ReportsPage: React.FC = () => {
     setLoading(true);
     setMessage(null);
     try {
-      const res = await api.post<any>('/reports/generate', { teacherIds: [teacherId], departmentId: selectedDept, period: selectedPeriod, type });
+      const res = await api.post<any>('/reports/generate', { teacherIds: [teacher._id], departmentId: selectedDept, period: selectedPeriod, type });
       // res should be array of results
       const result = res[0];
       if (type === 'print') {
@@ -67,7 +67,19 @@ const ReportsPage: React.FC = () => {
           }
           const blob = await resp.blob();
           const url = window.URL.createObjectURL(blob);
-          window.open(url, '_blank');
+          // derive filename from teacher name and selected period
+          const periodObj = periods.find((p: any) => p._id === selectedPeriod);
+          const periodLabel = periodObj ? periodObj.name : '';
+          const filename = `${teacher.firstName || 'teacher'}_${teacher.lastName || ''}_${periodLabel || 'report'}.pdf`.replace(/\s+/g, '_');
+          // create an anchor to trigger download
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          // revoke after a short delay
+          setTimeout(() => window.URL.revokeObjectURL(url), 15000);
         } catch (err: any) {
           console.error('Download failed', err);
           setMessage(err.message || 'Failed to download report');
@@ -118,8 +130,8 @@ const ReportsPage: React.FC = () => {
               <div className="text-sm text-gray-500">{t.email}</div>
             </div>
             <div className="space-x-2">
-              <button disabled={loading} onClick={() => handleGenerate(t._id, 'print')} className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200">🖨 Print Report</button>
-              <button disabled={loading} onClick={() => handleGenerate(t._id, 'email')} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">📧 Send by Email</button>
+              <button disabled={loading} onClick={() => handleGenerate(t, 'print')} className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200">🖨 Print Report</button>
+              <button disabled={loading} onClick={() => handleGenerate(t, 'email')} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">📧 Send by Email</button>
             </div>
           </div>
         ))}

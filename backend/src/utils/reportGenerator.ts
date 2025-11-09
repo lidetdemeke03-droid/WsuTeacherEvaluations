@@ -46,11 +46,18 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
     // ============ HEADER STYLING ============
     if (fs.existsSync(LOGO_PATH)) {
       try {
-        doc.image(LOGO_PATH, doc.page.width / 2 - 40, 40, { width: 80 });
+        // place logo at a fixed top margin and then advance y below it so text doesn't overlap
+        const logoWidth = 80;
+        const logoX = (doc.page.width - logoWidth) / 2;
+        const logoY = 40;
+        doc.image(LOGO_PATH, logoX, logoY, { width: logoWidth });
+        // set the document cursor below the logo (use a gap)
+        doc.y = logoY + 80 + 12; // logo height approx equals width for square emblem
       } catch (e) {}
+    } else {
+      // if no logo, ensure we still have a top margin
+      doc.y = 60;
     }
-
-    doc.moveDown(4);
     doc
       .fontSize(20)
       .fillColor('#1f2937')
