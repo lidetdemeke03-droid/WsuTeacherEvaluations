@@ -6,7 +6,10 @@ import { UserRole } from '../types';
 
 const router = Router();
 
-// Apply protect middleware to all routes in this file
+// Public token-based download (used for emailed links) - must be defined before protect middleware
+router.get('/download', downloadReportByToken);
+
+// Apply protect middleware to all remaining routes in this file
 router.use(protect);
 
 // GET /api/reports/my-performance - Get performance data for the current instructor
@@ -23,9 +26,6 @@ router.get('/', authorize(UserRole.Admin), listReports);
 
 // Download generated PDF
 router.get('/:id/download', authorize(UserRole.Admin), downloadReport);
-
-// Public token-based download (used for emailed links)
-router.get('/download', downloadReportByToken);
 
 export default router;
 
