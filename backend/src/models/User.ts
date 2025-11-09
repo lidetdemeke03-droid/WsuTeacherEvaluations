@@ -16,8 +16,10 @@ const userSchema = new Schema<IUser>({
   isDeptHead: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
   deleted: { type: Boolean, default: false },
-  passwordResetToken: { type: String },
+  passwordResetToken: { type: String, index: true },
   passwordResetExpires: { type: Date },
+  avatar: { type: String },
+  gender: { type: String, enum: ['male', 'female'] },
 }, { timestamps: true });
 
 userSchema.pre<IUser>('save', async function (next) {

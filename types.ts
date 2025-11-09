@@ -15,6 +15,8 @@ export interface User {
   role: UserRole;
   departmentId?: string;
   departmentName?: string;
+  avatar?: string;
+  gender?: 'male' | 'female';
 }
 
 export interface Department {

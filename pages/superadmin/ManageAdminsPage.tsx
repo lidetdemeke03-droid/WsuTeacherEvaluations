@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { User, UserRole } from '../../types';
 import { apiGetAdmins, apiCreateAdmin, apiUpdateAdmin, apiDeleteAdmin } from '../../services/api';
 import toast from 'react-hot-toast';
+import PasswordResetButton from '../../components/PasswordResetButton';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 
 const ManageAdminsPage: React.FC = () => {
@@ -195,12 +196,13 @@ const ManageAdminsPage: React.FC = () => {
                                     <td className="px-6 py-4 whitespace-nowrap">{admin.lastName}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{admin.email}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                                        <button onClick={() => openModal(admin)} className="text-indigo-600 hover:text-indigo-900 mr-4">
-                                            <Edit size={20} />
-                                        </button>
-                                        <button onClick={() => handleDelete(admin.id)} className="text-red-600 hover:text-red-900">
-                                            <Trash2 size={20} />
-                                        </button>
+                                            <PasswordResetButton email={admin.email} />
+                                            <button onClick={() => openModal(admin)} className="text-indigo-600 hover:text-indigo-900 mr-4">
+                                                <Edit size={20} />
+                                            </button>
+                                            <button onClick={() => handleDelete(admin.id)} className="text-red-600 hover:text-red-900">
+                                                <Trash2 size={20} />
+                                            </button>
                                     </td>
                                 </tr>
                             ))}

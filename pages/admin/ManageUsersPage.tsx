@@ -5,6 +5,7 @@ import { User, UserRole } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle, Upload, X, Edit, Trash2 } from 'lucide-react';
+import PasswordResetButton from '../../components/PasswordResetButton';
 import { toast } from 'react-hot-toast';
 
 const ManageUsersPage: React.FC = () => {
@@ -126,6 +127,7 @@ const ManageUsersPage: React.FC = () => {
                                 <td className="td"><span className={`role-badge ${user.role}`}>{user.role}</span></td>
                                 <td className="td">{user.department?.name || 'N/A'}</td>
                                 <td className="td text-right">
+                                    <PasswordResetButton email={user.email} />
                                     <button onClick={() => openEditModal(user)} className="text-blue-500 hover:text-blue-700 mr-2"><Edit size={18}/></button>
                                     <button onClick={() => handleDeleteUser(user._id)} className="text-red-500 hover:text-red-700"><Trash2 size={18}/></button>
                                 </td>

@@ -62,6 +62,18 @@ export const apiResetPassword = async (token: string, password: string): Promise
     return user;
 };
 
+// Request password reset (sends reset email)
+export const apiRequestPasswordReset = (email: string): Promise<{ message?: string }> =>
+    apiRequest<{ message?: string }>('/auth/request-password-reset', { method: 'POST', body: JSON.stringify({ email }) });
+
+// Update current user's profile
+export const apiUpdateProfile = (profileData: Partial<User>): Promise<User> =>
+    apiRequest<User>('/users/me', { method: 'PATCH', body: JSON.stringify(profileData) });
+
+// Change current user's password
+export const apiChangePassword = (currentPassword: string, newPassword: string): Promise<{ message?: string }> =>
+    apiRequest<{ message?: string }>('/users/me/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) });
+
 // Users
 export const apiGetUsers = (): Promise<User[]> => apiRequest<User[]>('/users');
 export const apiUpdateUser = (userId: string, userData: Partial<User>): Promise<User> => apiRequest<User>(`/users/${userId}`, { method: 'PUT', body: JSON.stringify(userData) });

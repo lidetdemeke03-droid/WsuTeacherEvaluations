@@ -23,6 +23,8 @@ export interface IUser extends Document {
   deleted?: boolean;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
+  avatar?: string;
+  gender?: 'male' | 'female';
   comparePassword(password: string): Promise<boolean>;
 }
 

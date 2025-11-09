@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getMe, getUsers, updateUser, deleteUser } from '../controllers/userController';
+import { getMe, getUsers, updateUser, deleteUser, updateProfile, changePassword } from '../controllers/userController';
 import { getTeacherCourses } from '../controllers/studentController';
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/role';
@@ -13,6 +13,12 @@ router.use(protect);
 
 // GET /api/users/me - Get current user's profile
 router.get('/me', getMe);
+
+// PATCH /api/users/me - Update current user's profile
+router.patch('/me', updateProfile);
+
+// POST /api/users/me/change-password - Change current user's password
+router.post('/me/change-password', changePassword);
 
 // GET /api/users - Get all users (Admin, SuperAdmin)
 router.get('/', authorize(UserRole.Admin, UserRole.SuperAdmin), audit('USER_LIST'), getUsers);

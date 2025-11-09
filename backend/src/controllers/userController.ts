@@ -16,6 +16,67 @@ export const getMe = asyncHandler(async (req: IRequest, res: Response) => {
   res.status(200).json({ success: true, data: user });
 });
 
+// @desc    Update current user's profile
+// @route   PATCH /api/users/me
+// @access  Private
+export const updateProfile = asyncHandler(async (req: IRequest, res: Response) => {
+    const user = await User.findById(req.user!._id);
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    const { firstName, lastName, email, department, avatar, gender } = req.body;
+
+    if (email && email !== user.email) {
+        const exists = await User.findOne({ email });
+        if (exists) {
+            res.status(400);
+            throw new Error('Email already in use');
+        }
+        user.email = email;
+    }
+
+    user.firstName = firstName || user.firstName;
+    user.lastName = lastName || user.lastName;
+    user.department = department || user.department;
+    if (typeof avatar !== 'undefined') user.avatar = avatar;
+    if (typeof gender !== 'undefined') user.gender = gender;
+
+    const updated = await user.save();
+    const resp: any = updated.toObject();
+    delete resp.password;
+    res.status(200).json({ success: true, data: resp });
+});
+
+// @desc    Change current user's password
+// @route   POST /api/users/me/change-password
+// @access  Private
+export const changePassword = asyncHandler(async (req: IRequest, res: Response) => {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+        res.status(400);
+        throw new Error('Current and new passwords are required');
+    }
+
+    const user = await User.findById(req.user!._id).select('+password');
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    const match = await user.comparePassword(currentPassword);
+    if (!match) {
+        res.status(400);
+        throw new Error('Current password is incorrect');
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Password changed successfully' });
+});
+
 // @desc    Get all users
 // @route   GET /api/users
 // @access  Private (Admin)

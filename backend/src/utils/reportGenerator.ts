@@ -33,8 +33,11 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 // Try locate logo from frontend HomePage import path
 const LOGO_PATH = path.resolve(__dirname, '../../../pages/logo.png');
 
-export const generatePDF = async (teacherId: string, data: ReportData, type: 'print' | 'email'): Promise<string> => {
-  // File name
+export const generatePDF = async (
+  teacherId: string,
+  data: ReportData,
+  type: 'print' | 'email'
+): Promise<string> => {
   const safeName = `${data.teacherName.replace(/[^a-z0-9]/gi, '_')}_${data.periodName.replace(/[^a-z0-9]/gi, '_')}`;
   const fileName = `${safeName}_${type}_${Date.now()}.pdf`;
   const filePath = path.join(OUTPUT_DIR, fileName);
@@ -44,7 +47,7 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
     const stream = fs.createWriteStream(filePath);
     doc.pipe(stream);
 
-    // ============ HEADER STYLING ============
+    // ======= HEADER =======
     if (fs.existsSync(LOGO_PATH)) {
       try {
         const logoWidth = 80;
@@ -58,30 +61,28 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
     }
 
     doc
+      .font('Helvetica-Bold')
       .fontSize(20)
       .fillColor('#1f2937')
-      .font('Helvetica-Bold')
       .text('Wolaita Sodo University', { align: 'center' });
-
     doc
       .moveDown(0.4)
+      .font('Helvetica')
       .fontSize(14)
       .fillColor('#2563eb')
       .text('Teacher Performance Evaluation Report', { align: 'center', underline: true });
 
-    doc.moveDown(1.5);
-
-    // Decorative line
-    const lineY = doc.y;
+    // Divider line
+    doc.moveDown(1);
     doc
-      .moveTo(60, lineY)
-      .lineTo(doc.page.width - 60, lineY)
-      .lineWidth(1.5)
+      .moveTo(60, doc.y)
+      .lineTo(doc.page.width - 60, doc.y)
+      .lineWidth(1.2)
       .strokeColor('#2563eb')
       .stroke();
-    doc.moveDown(1.5);
+    doc.moveDown(1);
 
-    // ============ TEACHER DETAILS ============
+    // ======= TEACHER INFO =======
     const teacherDisplayName = (data.teacherName || '').toUpperCase();
     doc
       .font('Helvetica-Bold')
@@ -91,30 +92,15 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
       .font('Helvetica')
       .fillColor('#374151')
       .text(`  •  ${data.departmentName || ''}`);
-
     doc.font('Helvetica').text(`Period: ${data.periodName}`);
-    if (data.courses && data.courses.length > 0) {
-      doc.moveDown(0.4);
+    if (data.courses?.length) {
+      doc.moveDown(0.3);
       doc.font('Helvetica-Bold').fontSize(10).fillColor('#111827').text('Courses:');
       doc.font('Helvetica').fontSize(10).fillColor('#374151').list(data.courses.slice(0, 10));
     }
-    doc.moveDown(1.2);
+    doc.moveDown(1);
 
-    // ============ METRICS BOX (Clean Layout) ============
-    const boxX = 70;
-    const boxWidth = doc.page.width - 2 * boxX;
-    const boxY = doc.y;
-    const boxHeight = 120;
-
-    // soft background box
-    doc
-      .rect(boxX, boxY, boxWidth, boxHeight)
-      .fillOpacity(0.05)
-      .fill('#2563eb')
-      .fillOpacity(1);
-
-    doc.y = boxY + 15;
-
+    // ======= METRICS TABLE (CENTERED, NEAT) =======
     const metrics = [
       { label: 'Student Evaluation (50%)', value: `${Math.round(data.studentAvg)}%` },
       { label: 'Peer Evaluation (35%)', value: `${Math.round(data.peerAvg)}%` },
@@ -122,46 +108,55 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
       { label: 'Final Weighted Score', value: `${Math.round(data.finalScore * 100) / 100}%` },
     ];
 
-    const labelX = boxX + 25;
-    const valueX = boxX + boxWidth / 2 + 40;
+    const tableStartY = doc.y + 10;
+    const tableWidth = 360; // fixed central width
+    const tableX = (doc.page.width - tableWidth) / 2;
+    const rowHeight = 22;
 
+    // Background box
+    const boxHeight = rowHeight * metrics.length + 30;
+    doc
+      .rect(tableX - 20, tableStartY - 10, tableWidth + 40, boxHeight)
+      .fillOpacity(0.05)
+      .fill('#2563eb')
+      .fillOpacity(1);
+
+    // Table content
+    doc.font('Helvetica').fontSize(10).fillColor('#111827');
     metrics.forEach((m, i) => {
-      const y = doc.y + i * 22;
-      doc.font('Helvetica-Bold').fontSize(10).fillColor('#2563eb').text(m.label, labelX, y);
-      doc.font('Helvetica').fontSize(10).fillColor('#111827').text(m.value, valueX, y);
+      const y = tableStartY + i * rowHeight;
+      doc
+        .font('Helvetica-Bold')
+        .fillColor('#2563eb')
+        .text(m.label, tableX, y, { width: tableWidth / 1.6 });
+      doc
+        .font('Helvetica')
+        .fillColor('#111827')
+        .text(m.value, tableX + tableWidth / 1.6 + 10, y, { width: 80, align: 'right' });
     });
 
-    doc.y = boxY + boxHeight + 25;
+    doc.y = tableStartY + boxHeight + 15;
 
-    // horizontal divider before summary
-    doc
-      .moveTo(boxX, doc.y)
-      .lineTo(doc.page.width - boxX, doc.y)
-      .lineWidth(0.8)
-      .strokeColor('#d1d5db')
-      .stroke();
-    doc.moveDown(1.2);
-
-    // ============ SUMMARY SECTION ============
+    // ======= SUMMARY METRICS (CENTERED) =======
     doc
       .font('Helvetica-Bold')
       .fontSize(12)
       .fillColor('#111827')
       .text('Summary Metrics', { align: 'center', underline: true });
-    doc.moveDown(0.8);
+    doc.moveDown(0.6);
 
-    const summaryStartX = 120;
     doc
       .font('Helvetica')
       .fontSize(10.5)
       .fillColor('#374151')
-      .text(`Total Student Respondents: ${data.studentRespondents}`, summaryStartX)
-      .text(`Total Peer Respondents: ${data.peerRespondents}`, summaryStartX)
-      .text(`Evaluation Completed On: ${new Date().toLocaleDateString()}`, summaryStartX);
+      .text(
+        `Total Student Respondents: ${data.studentRespondents}\nTotal Peer Respondents: ${data.peerRespondents}\nEvaluation Completed On: ${new Date().toLocaleDateString()}`,
+        { align: 'center' }
+      );
 
-    doc.moveDown(1.8);
+    doc.moveDown(1.5);
 
-    // ============ EMAIL VERSION (Detailed) ============
+    // ======= EMAIL MODE (DETAIL VIEW) =======
     if (type === 'email') {
       doc.addPage();
 
@@ -169,7 +164,7 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
         .font('Helvetica-Bold')
         .fontSize(14)
         .fillColor('#2563eb')
-        .text('📊 Performance Analytics', { underline: true, align: 'center' });
+        .text('📊 Performance Analytics', { align: 'center', underline: true });
 
       doc.moveDown(1);
 
@@ -192,13 +187,17 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
       });
 
       doc.moveDown(4);
-      doc.font('Helvetica-Bold').fontSize(13).fillColor('#2563eb').text('💬 Top Feedback Highlights', { underline: true });
-      doc.moveDown(0.6);
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(13)
+        .fillColor('#2563eb')
+        .text('💬 Top Feedback Highlights', { align: 'center', underline: true });
+      doc.moveDown(0.8);
 
       const tc = data.topComments || {};
       const writeComments = (title: string, arr?: string[]) => {
-        if (!arr || arr.length === 0) return;
-        doc.font('Helvetica-Bold').fontSize(10).fillColor('#111827').text(title);
+        if (!arr?.length) return;
+        doc.font('Helvetica-Bold').fontSize(10).fillColor('#111827').text(title, { align: 'left' });
         doc.font('Helvetica').fontSize(10).fillColor('#374151').list(arr.slice(0, 5));
         doc.moveDown(0.8);
       };
@@ -227,7 +226,7 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
         });
     }
 
-    // ============ FOOTER LINE ============
+    // ======= FOOTER =======
     const footerY = doc.page.height - 50;
     doc
       .moveTo(60, footerY)
@@ -237,7 +236,6 @@ export const generatePDF = async (teacherId: string, data: ReportData, type: 'pr
       .stroke();
 
     doc.end();
-
     stream.on('finish', () => resolve(filePath));
     stream.on('error', (err) => reject(err));
   });
