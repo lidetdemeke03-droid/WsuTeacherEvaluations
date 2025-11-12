@@ -103,7 +103,7 @@ const LoginPage: React.FC = () => {
     type="button"
     onClick={() => setShowPassword((s) => !s)}
     aria-label={showPassword ? 'Hide password' : 'Show password'}
-    className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center justify-center text-gray-500 dark:text-gray-300 hover:text-blue-500"
+    className="absolute inset-y-0 right-2 flex items-center px-2 text-gray-500 dark:text-gray-300 hover:text-blue-500"
   >
     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
   </button>
