@@ -24,12 +24,13 @@ import NewEvaluation from './pages/evaluation/NewEvaluation';
 import DepartmentEvaluationForm from './pages/depthead/DepartmentEvaluationForm';
 import InstructorResults from './pages/instructor/InstructorResults';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 // Peer review pages removed from public routes per request
 
 const ProtectedLayout: React.FC = () => {
     const { user } = useAuth();
     const [sidebarOpen, setSidebarOpen] = React.useState(false);
-
+_
     if (!user) {
         return <Navigate to="/login" replace />;
     }
@@ -73,6 +74,7 @@ const AppContent: React.FC = () => {
             <Route path="/" element={user ? <Navigate to="/dashboard" /> : <HomePage />} />
             <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <LoginPage />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
             {/* Private Routes */}
             <Route element={<ProtectedLayout />}>
@@ -99,7 +101,7 @@ const AppContent: React.FC = () => {
                 <Route path="/evaluation/new" element={<RoleProtectedRoute roles={[UserRole.Teacher, UserRole.DepartmentHead]}><NewEvaluation /></RoleProtectedRoute>} />
                 <Route path="/department/evaluate/:teacherId" element={<RoleProtectedRoute roles={[UserRole.DepartmentHead]}><DepartmentEvaluationForm /></RoleProtectedRoute>} />
                 <Route path="/instructor/results" element={<RoleProtectedRoute roles={[UserRole.DepartmentHead]}><InstructorResults /></RoleProtectedRoute>} />
-            </Route>
+            </route>
             
             <Route path="*" element={<Navigate to="/" />} />
         </Routes>
