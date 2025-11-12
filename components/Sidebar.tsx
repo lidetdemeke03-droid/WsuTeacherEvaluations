@@ -4,6 +4,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import { LayoutDashboard, Users, Building, Calendar, FileText, BarChart2, MessageSquare, FileDown, GraduationCap, ClipboardList, Home, X, UserCircle, FilePlus2, BarChart3 } from 'lucide-react';
+import { motion } from 'framer-motion'; // Import motion
 
 type SidebarProps = {
   isOpen?: boolean;
@@ -12,6 +13,11 @@ type SidebarProps = {
 
 const navLinkClasses = "flex items-center px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200";
 const activeLinkClasses = "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 font-semibold";
+
+const linkVariants = {
+  hidden: { x: -20, opacity: 0 },
+  visible: { x: 0, opacity: 1 }
+};
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
   const { user } = useAuth();
@@ -64,33 +70,54 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
 
   return (
     <>
-      <aside className="hidden md:flex w-64 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 flex flex-col">
+      <motion.aside 
+        initial={{ x: -250 }} 
+        animate={{ x: 0 }} 
+        exit={{ x: -250 }} 
+        transition={{ duration: 0.3 }}
+        className="hidden md:flex w-64 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 flex flex-col"
+      >
         <div className="flex items-center space-x-2 mb-8">
           <GraduationCap className="text-blue-600 dark:text-blue-400" size={32} />
           <span className="text-xl font-bold">WSU</span>
         </div>
         <nav className="flex-1 space-y-2">
-          {links.map(link => (
-            <NavLink
+          {links.map((link, index) => (
+            <motion.div
               key={link.to}
-              to={link.to}
-              className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}
+              variants={linkVariants}
+              initial="hidden"
+              animate="visible"
+              transition={{ delay: index * 0.05 }}
             >
-              {link.icon}
-              <span className="ml-3">{link.label}</span>
-            </NavLink>
+              <NavLink
+                to={link.to}
+                className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}
+              >
+                {link.icon}
+                <span className="ml-3">{link.label}</span>
+              </NavLink>
+            </motion.div>
           ))}
         </nav>
-      </aside>
+      </motion.aside>
 
       <div className={`md:hidden fixed inset-0 z-40 ${isOpen ? '' : 'pointer-events-none'}`} aria-hidden={!isOpen}>
         {/* backdrop */}
-        <div
-          className={`absolute inset-0 bg-black bg-opacity-40 transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isOpen ? 1 : 0 }}
+          transition={{ duration: 0.3 }}
+          className={`absolute inset-0 bg-black bg-opacity-40 ${isOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
           onClick={onClose}
         />
 
-        <aside className={`absolute left-0 top-0 bottom-0 w-64 bg-white dark:bg-gray-800 p-4 transform transition-transform ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <motion.aside 
+          initial={{ x: -250 }} 
+          animate={{ x: isOpen ? 0 : -250 }} 
+          transition={{ duration: 0.3 }}
+          className="absolute left-0 top-0 bottom-0 w-64 bg-white dark:bg-gray-800 p-4 transform"
+        >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-2">
               <GraduationCap className="text-blue-600 dark:text-blue-400" size={28} />
@@ -101,19 +128,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
             </button>
           </div>
           <nav className="flex-1 space-y-2">
-            {links.map(link => (
-              <NavLink
+            {links.map((link, index) => (
+              <motion.div
                 key={link.to}
-                to={link.to}
-                onClick={onClose}
-                className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}
+                variants={linkVariants}
+                initial="hidden"
+                animate="visible"
+                transition={{ delay: index * 0.05 }}
               >
-                {link.icon}
-                <span className="ml-3">{link.label}</span>
-              </NavLink>
+                <NavLink
+                  to={link.to}
+                  onClick={onClose}
+                  className={({ isActive }) => `${navLinkClasses} ${isActive ? activeLinkClasses : ''}`}
+                >
+                  {link.icon}
+                  <span className="ml-3">{link.label}</span>
+                </NavLink>
+              </motion.div>
             ))}
           </nav>
-        </aside>
+        </motion.aside>
       </div>
     </>
   );

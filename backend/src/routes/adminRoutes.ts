@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createUser, importUsers, assignTeacherToCourse, createPeerAssignment, createScheduleWindow, getTeacherReport, recomputeTeacherScores } from '../controllers/adminController';
+import { createUser, importUsers, assignTeacherToCourse, createPeerAssignment, createScheduleWindow, getTeacherReport, recomputeTeacherScores, getDashboardStats, getEvaluationsByDepartment } from '../controllers/adminController';
 import { protect } from '../middleware/auth';
 import multer from 'multer';
 
@@ -34,5 +34,11 @@ router.get('/reports/teacher/:id', audit('REPORT_VIEW_TEACHER'), getTeacherRepor
 
 // POST /api/admin/reports/teacher/:id/recompute - Recompute teacher scores
 router.post('/reports/teacher/:id/recompute', audit('REPORT_RECOMPUTE_TEACHER'), recomputeTeacherScores);
+
+// GET /api/admin/dashboard/stats - Get dashboard statistics
+router.get('/dashboard/stats', audit('DASHBOARD_VIEW_STATS'), getDashboardStats);
+
+// GET /api/admin/dashboard/evaluations-by-department - Get evaluations by department for pie chart
+router.get('/dashboard/evaluations-by-department', audit('DASHBOARD_VIEW_EVAL_BY_DEPT'), getEvaluationsByDepartment);
 
 export default router;
