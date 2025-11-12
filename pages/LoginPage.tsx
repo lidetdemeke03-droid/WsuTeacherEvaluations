@@ -131,20 +131,6 @@ const LoginPage: React.FC = () => {
               'Sign In'
             )}
           </motion.button>
-
-          {/* Footer */}
-          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mt-3">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600" />
-              Remember me
-            </label>
-            <button
-              type="button"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Forgot password?
-            </button>
-          </div>
         </form>
       </motion.div>
     </div>
