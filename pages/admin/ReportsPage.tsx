@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
+import { Printer, Mail } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
@@ -18,7 +20,6 @@ const ReportsPage: React.FC = () => {
         const d = await api.get<any[]>('/departments');
         setDepartments(d || []);
         const p = await api.get<any[]>('/periods');
-        // only show completed periods (endDate in the past)
         const now = new Date();
         setPeriods((p || []).filter((pp: any) => new Date(pp.endDate) < now));
       } catch (e) {
@@ -48,37 +49,26 @@ const ReportsPage: React.FC = () => {
     setMessage(null);
     try {
       const res = await api.post<any>('/reports/generate', { teacherIds: [teacher._id], departmentId: selectedDept, period: selectedPeriod, type });
-      // res should be array of results
       const result = res[0];
       if (type === 'print') {
-        // The download endpoint requires Authorization header. Fetch the file with token and open as blob URL.
         try {
           const token = sessionStorage.getItem('authToken');
           if (!token) throw new Error('Not authorized, no token');
           const resp = await fetch(`${API_BASE}/reports/${result.reportId}/download`, {
             method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
           });
-          if (!resp.ok) {
-            const txt = await resp.text();
-            throw new Error(txt || 'Failed to download report');
-          }
+          if (!resp.ok) throw new Error(await resp.text() || 'Failed to download report');
           const blob = await resp.blob();
           const url = window.URL.createObjectURL(blob);
-          // derive filename from teacher name and selected period
           const periodObj = periods.find((p: any) => p._id === selectedPeriod);
-          const periodLabel = periodObj ? periodObj.name : '';
-          const filename = `${teacher.firstName || 'teacher'}_${teacher.lastName || ''}_${periodLabel || 'report'}.pdf`.replace(/\s+/g, '_');
-          // create an anchor to trigger download
+          const filename = `${teacher.firstName}_${teacher.lastName}_${periodObj?.name || 'report'}.pdf`.replace(/\s+/g, '_');
           const a = document.createElement('a');
           a.href = url;
           a.download = filename;
           document.body.appendChild(a);
           a.click();
           a.remove();
-          // revoke after a short delay
           setTimeout(() => window.URL.revokeObjectURL(url), 15000);
         } catch (err: any) {
           console.error('Download failed', err);
@@ -96,45 +86,69 @@ const ReportsPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Reports</h2>
+    <div className="p-4 sm:p-6">
+      <h2 className="text-2xl font-bold mb-4 text-gray-800">Reports</h2>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div>
-          <label className="block text-sm font-medium">Department</label>
-          <select className="mt-1 block w-full border rounded p-2" onChange={e => setSelectedDept(e.target.value)} value={selectedDept || ''}>
+          <label className="block text-sm font-medium text-gray-700">Department</label>
+          <select className="mt-1 block w-full border rounded-lg p-2 shadow-sm focus:ring-blue-500 focus:border-blue-500" onChange={e => setSelectedDept(e.target.value)} value={selectedDept || ''}>
             <option value="">Select department</option>
             {departments.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium">Evaluation Period (completed)</label>
-          <select className="mt-1 block w-full border rounded p-2" onChange={e => setSelectedPeriod(e.target.value)} value={selectedPeriod || ''}>
+          <label className="block text-sm font-medium text-gray-700">Evaluation Period (completed)</label>
+          <select className="mt-1 block w-full border rounded-lg p-2 shadow-sm focus:ring-blue-500 focus:border-blue-500" onChange={e => setSelectedPeriod(e.target.value)} value={selectedPeriod || ''}>
             <option value="">Select period</option>
             {periods.map(p => <option key={p._id} value={p._id}>{p.name} ({new Date(p.endDate).toLocaleDateString()})</option>)}
           </select>
         </div>
-        <div>
-          <label className="block text-sm font-medium"> </label>
+        <div className="hidden sm:block">
+          <label className="block text-sm font-medium text-transparent">_</label>
           <div className="mt-1 text-sm text-gray-600">Select a department and completed period to list teachers.</div>
         </div>
       </div>
 
-      {message && <div className="mb-4 p-3 bg-green-100 text-green-800 rounded">{message}</div>}
+      <AnimatePresence>
+        {message && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mb-4 p-3 bg-green-100 text-green-800 rounded-lg shadow-sm"
+          >
+            {message}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="space-y-3">
         {teachers.map(t => (
-          <div key={t._id} className="p-4 bg-white rounded shadow flex justify-between items-center">
-            <div>
-              <div className="font-semibold">{t.firstName} {t.lastName}</div>
-              <div className="text-sm text-gray-500">{t.email}</div>
+          <motion.div
+            key={t._id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 bg-white rounded-2xl shadow flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 hover:shadow-md transition-shadow duration-300"
+          >
+            <div className="flex flex-col">
+              <span className="font-semibold text-gray-800">{t.firstName} {t.lastName}</span>
+              <span className="text-sm text-gray-500">{t.email}</span>
             </div>
-            <div className="space-x-2">
-              <button disabled={loading} onClick={() => handleGenerate(t, 'print')} className="px-4 py-2 bg-gray-100 rounded hover:bg-gray-200">🖨 Print Report</button>
-              <button disabled={loading} onClick={() => handleGenerate(t, 'email')} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">📧 Send by Email</button>
+            <div className="flex space-x-2 justify-end">
+              <button disabled={loading} onClick={() => handleGenerate(t, 'print')} className="flex items-center bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-2 rounded-lg transition-colors duration-200">
+                <Printer size={18} className="mr-2" /> Print
+              </button>
+              <button disabled={loading} onClick={() => handleGenerate(t, 'email')} className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors duration-200">
+                <Mail size={18} className="mr-2" /> Send
+              </button>
             </div>
-          </div>
+          </motion.div>
         ))}
+
+        {teachers.length === 0 && !loading && (
+          <div className="text-center text-gray-500 mt-8">No teachers found for the selected department and period.</div>
+        )}
       </div>
     </div>
   );

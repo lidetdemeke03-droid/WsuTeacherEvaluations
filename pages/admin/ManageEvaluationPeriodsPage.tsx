@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { EvaluationPeriod } from '../../types';
 import { apiGetEvaluationPeriods, apiCreateEvaluationPeriod, apiUpdateEvaluationPeriod, apiDeleteEvaluationPeriod } from '../../services/api';
 import toast from 'react-hot-toast';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ManageEvaluationPeriodsPage: React.FC = () => {
     const [periods, setPeriods] = useState<EvaluationPeriod[]>([]);
@@ -85,94 +85,103 @@ const ManageEvaluationPeriodsPage: React.FC = () => {
         } else {
             setIsEditing(false);
             setCurrentPeriod(null);
-            setFormData({
-                name: '',
-                startDate: '',
-                endDate: '',
-                status: 'Inactive',
-            });
+            setFormData({ name: '', startDate: '', endDate: '', status: 'Inactive' });
         }
         setIsModalOpen(true);
     };
 
-    const closeModal = () => {
-        setIsModalOpen(false);
-    };
+    const closeModal = () => setIsModalOpen(false);
 
     return (
-        <div>
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-bold">Manage Evaluation Periods</h1>
+        <div className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-3">
+                <h1 className="text-2xl font-bold text-gray-800">Manage Evaluation Periods</h1>
                 <button
                     onClick={() => openModal()}
-                    className="bg-blue-500 text-white px-4 py-2 rounded-md flex items-center"
+                    className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-xl shadow-md hover:bg-blue-700 transition"
                 >
                     <Plus size={20} className="mr-2" />
                     Add Period
                 </button>
             </div>
 
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-white p-6 rounded-md">
-                        <h2 className="text-xl font-bold mb-4">{isEditing ? 'Edit' : 'Add'} Evaluation Period</h2>
-                        <form onSubmit={handleSubmit}>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">Period Name</label>
-                                <input type="text" name="name" value={formData.name} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required />
-                            </div>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">Start Date</label>
-                                <input type="date" name="startDate" value={formData.startDate} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required />
-                            </div>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">End Date</label>
-                                <input type="date" name="endDate" value={formData.endDate} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required />
-                            </div>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700">Status</label>
-                                <select name="status" value={formData.status} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                    <option value="Active">Active</option>
-                                    <option value="Inactive">Inactive</option>
-                                </select>
-                            </div>
-                            <div className="flex justify-end">
-                                <button type="button" onClick={closeModal} className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md mr-2">Cancel</button>
-                                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md">{isEditing ? 'Update' : 'Create'}</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <AnimatePresence>
+                {isModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white w-11/12 sm:w-2/3 md:w-1/3 p-6 rounded-2xl shadow-xl"
+                        >
+                            <h2 className="text-xl font-semibold mb-4 text-gray-800 text-center">
+                                {isEditing ? 'Edit' : 'Add'} Evaluation Period
+                            </h2>
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Period Name</label>
+                                    <input type="text" name="name" value={formData.name} onChange={handleInputChange} className="w-full p-2 border rounded-lg focus:ring focus:ring-blue-200" required />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                                    <input type="date" name="startDate" value={formData.startDate} onChange={handleInputChange} className="w-full p-2 border rounded-lg focus:ring focus:ring-blue-200" required />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                                    <input type="date" name="endDate" value={formData.endDate} onChange={handleInputChange} className="w-full p-2 border rounded-lg focus:ring focus:ring-blue-200" required />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                    <select name="status" value={formData.status} onChange={handleInputChange} className="w-full p-2 border rounded-lg focus:ring focus:ring-blue-200">
+                                        <option value="Active">Active</option>
+                                        <option value="Inactive">Inactive</option>
+                                    </select>
+                                </div>
+                                <div className="flex justify-end gap-3 pt-3">
+                                    <button type="button" onClick={closeModal} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
+                                    <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                        {isEditing ? 'Update' : 'Create'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {isLoading ? (
-                <p>Loading...</p>
+                <p className="text-center text-gray-500">Loading...</p>
             ) : (
-                <div className="bg-white shadow-md rounded-lg">
-                    <table className="min-w-full">
-                        <thead className="bg-gray-50">
+                <div className="overflow-x-auto bg-white shadow-md rounded-2xl">
+                    <table className="min-w-full text-sm">
+                        <thead className="bg-gray-100 text-gray-600">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">End Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                <th className="px-4 py-3 text-left font-semibold">Name</th>
+                                <th className="px-4 py-3 text-left font-semibold">Start Date</th>
+                                <th className="px-4 py-3 text-left font-semibold">End Date</th>
+                                <th className="px-4 py-3 text-left font-semibold">Status</th>
+                                <th className="px-4 py-3 text-right font-semibold">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="divide-y divide-gray-200">
                             {periods.map((period) => (
-                                <tr key={period.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap">{period.name}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{new Date(period.startDate).toLocaleDateString()}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">{new Date(period.endDate).toLocaleDateString()}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${period.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                <tr key={period.id} className="hover:bg-gray-50 transition">
+                                    <td className="px-4 py-3">{period.name}</td>
+                                    <td className="px-4 py-3">{new Date(period.startDate).toLocaleDateString()}</td>
+                                    <td className="px-4 py-3">{new Date(period.endDate).toLocaleDateString()}</td>
+                                    <td className="px-4 py-3">
+                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${period.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                             {period.status}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                                        <button onClick={() => openModal(period)} className="text-indigo-600 hover:text-indigo-900 mr-4"><Edit size={20} /></button>
-                                        <button onClick={() => handleDelete(period.id)} className="text-red-600 hover:text-red-900"><Trash2 size={20} /></button>
+                                    <td className="px-4 py-3 text-right flex justify-end gap-3">
+                                        <button onClick={() => openModal(period)} className="text-indigo-600 hover:text-indigo-900"><Edit size={18} /></button>
+                                        <button onClick={() => handleDelete(period.id)} className="text-red-600 hover:text-red-900"><Trash2 size={18} /></button>
                                     </td>
                                 </tr>
                             ))}
