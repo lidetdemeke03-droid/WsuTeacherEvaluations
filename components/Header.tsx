@@ -52,7 +52,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
             aria-label="Toggle mobile menu"
           >
-            <Menu size={24} />
+            <User size={24} />
           </motion.button>
           {isMobileMenuOpen && (
             <motion.div 
@@ -80,7 +80,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           )}
         </div>
 
-        <div className="relative hidden md:block">
+        <div className="relative">
           <motion.button onClick={() => setOpen(o => !o)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className={`relative text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white ${unreadCount ? 'animate-pulse' : ''}`}>
             <Bell size={24} />
             {unreadCount > 0 && <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 text-xs flex items-center justify-center bg-red-500 text-white rounded-full">{unreadCount}</span>}
