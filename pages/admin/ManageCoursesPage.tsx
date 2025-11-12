@@ -4,6 +4,7 @@ import { Course, User, Department, UserRole, EvaluationPeriod } from '../../type
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlusCircle, X, UserPlus, BookOpen } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import AssignEvaluatorModal from '../../components/AssignEvaluatorModal';
 
 const ManageCoursesPage: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
