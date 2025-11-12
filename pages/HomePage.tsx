@@ -169,9 +169,16 @@ const HomePage: React.FC = () => {
 
             {/* Footer */}
             <footer className="bg-gray-800 dark:bg-gray-900 text-white py-8">
-                <div className="container mx-auto px-6 text-center">
-                    <p>&copy; {new Date().getFullYear()} Wolaita Sodo University. All Rights Reserved.</p>
-                    <p className="text-sm text-gray-400 mt-2">Teacher Evaluation & Performance Management System</p>
+                <div className="container mx-auto px-6 flex justify-between items-center">
+                    <div>
+                        <Link to="/privacy-policy" className="text-sm text-gray-400 hover:text-white">
+                            Privacy Policy
+                        </Link>
+                    </div>
+                    <div className="text-center">
+                        <p>&copy; {new Date().getFullYear()} Wolaita Sodo University. All Rights Reserved.</p>
+                        <p className="text-sm text-gray-400 mt-2">Teacher Evaluation & Performance Management System</p>
+                    </div>
                 </div>
             </footer>
         </div>
