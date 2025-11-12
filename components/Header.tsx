@@ -16,6 +16,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const fetchNotifications = async () => {
     try {
@@ -43,7 +44,43 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         <h1 className="text-xl font-semibold text-gray-800 dark:text-white">WSU Evaluation System</h1>
       </div>
       <div className="flex items-center space-x-4">
-        <div className="relative">
+        <div className="relative md:hidden">
+          <motion.button 
+            onClick={() => setIsMobileMenuOpen(o => !o)} 
+            whileHover={{ scale: 1.05 }} 
+            whileTap={{ scale: 0.95 }} 
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
+            aria-label="Toggle mobile menu"
+          >
+            <Menu size={24} />
+          </motion.button>
+          {isMobileMenuOpen && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -10 }} 
+              className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border rounded shadow-lg z-50 md:hidden"
+            >
+              <div className="p-2">
+                <div className="flex items-center space-x-2 mb-2">
+                    <User size={20} className="text-gray-500 dark:text-gray-400"/>
+                    <span className="text-sm font-medium text-gray-800 dark:text-white">{user?.name} ({user?.role})</span>
+                </div>
+                <motion.button 
+                  onClick={logout} 
+                  whileHover={{ scale: 1.05 }} 
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 bg-red-100 dark:bg-red-900/50 rounded-lg w-full justify-center"
+                >
+                  <LogOut size={16} />
+                  <span>Logout</span>
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        <div className="relative hidden md:block">
           <motion.button onClick={() => setOpen(o => !o)} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className={`relative text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white ${unreadCount ? 'animate-pulse' : ''}`}>
             <Bell size={24} />
             {unreadCount > 0 && <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 text-xs flex items-center justify-center bg-red-500 text-white rounded-full">{unreadCount}</span>}
@@ -66,15 +103,15 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             </motion.div>
           )}
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="hidden md:flex items-center space-x-2">
             <User size={24} className="text-gray-500 dark:text-gray-400"/>
-            <span className="text-sm font-medium">{user?.name} ({user?.role})</span>
+            <span className="text-sm font-medium text-gray-800 dark:text-white">{user?.name} ({user?.role})</span>
         </div>
         <motion.button 
           onClick={logout} 
           whileHover={{ scale: 1.1 }} 
           whileTap={{ scale: 0.9 }}
-          className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 bg-red-100 dark:bg-red-900/50 rounded-lg"
+          className="hidden md:flex items-center space-x-2 px-3 py-2 text-sm font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 bg-red-100 dark:bg-red-900/50 rounded-lg"
         >
           <LogOut size={16} />
           <span>Logout</span>
