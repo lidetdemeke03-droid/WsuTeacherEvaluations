@@ -6,7 +6,9 @@ import Course from '../models/Course';
 import PeerAssignment from '../models/PeerAssignment';
 import ScheduleWindow from '../models/ScheduleWindow';
 import StatsCache from '../models/StatsCache';
-import { UserRole } from '../types';
+import EvaluationResponse from '../models/EvaluationResponse'; // Added
+import Complaint from '../models/Complaint'; // Added
+import { UserRole, ComplaintStatus } from '../types'; // Modified
 import crypto from 'crypto';
 import { sendEmail } from '../utils/email';
 import { aggregateTeacherScores } from '../services/aggregationService';
@@ -275,6 +277,81 @@ export const assignTeacherToCourse = async (req: Request, res: Response) => {
     await course.save();
 
     res.status(200).json({ success: true, data: course });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// @desc    Get dashboard statistics
+// @route   GET /api/admin/dashboard/stats
+// @access  Admin, SuperAdmin
+export const getDashboardStats = async (req: Request, res: Response) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const totalDepartments = await Department.countDocuments();
+    const totalEvaluations = await EvaluationResponse.countDocuments();
+    const openComplaints = await Complaint.countDocuments({ status: ComplaintStatus.New });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        totalDepartments,
+        totalEvaluations,
+        openComplaints,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// @desc    Get evaluations by department for pie chart
+// @route   GET /api/admin/dashboard/evaluations-by-department
+// @access  Admin, SuperAdmin
+export const getEvaluationsByDepartment = async (req: Request, res: Response) => {
+  try {
+    const evaluationsByDepartment = await EvaluationResponse.aggregate([
+      {
+        $lookup: {
+          from: 'courses',
+          localField: 'course',
+          foreignField: '_id',
+          as: 'courseInfo',
+        },
+      },
+      {
+        $unwind: '$courseInfo',
+      },
+      {
+        $lookup: {
+          from: 'departments',
+          localField: 'courseInfo.department',
+          foreignField: '_id',
+          as: 'departmentInfo',
+        },
+      },
+      {
+        $unwind: '$departmentInfo',
+      },
+      {
+        $group: {
+          _id: '$departmentInfo.name',
+          value: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          name: '$_id',
+          value: 1,
+          _id: 0,
+        },
+      },
+    ]);
+
+    res.status(200).json({ success: true, data: evaluationsByDepartment });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: 'Server Error' });
