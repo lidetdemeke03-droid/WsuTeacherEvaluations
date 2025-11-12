@@ -38,7 +38,7 @@ const ManageDepartmentsPage: React.FC = () => {
     e.preventDefault();
     try {
       if (isEditing && currentDepartment) {
-        await apiUpdateDepartment(currentDepartment.id, { ...formData, head: selectedHead ? [selectedHead] : [] });
+        await apiUpdateDepartment(currentDepartment._id, { ...formData, head: selectedHead ? [selectedHead] : [] });
         toast.success('Department updated successfully');
       } else {
         await apiCreateDepartment({ ...formData, head: selectedHead ? [selectedHead] : [] });
@@ -51,10 +51,10 @@ const ManageDepartmentsPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (deptId: string) => {
+  const handleDelete = async (dept: Department) => {
     if (window.confirm('Are you sure you want to delete this department?')) {
       try {
-        await apiDeleteDepartment(deptId);
+        await apiDeleteDepartment(dept._id);
         toast.success('Department deleted successfully');
         fetchDepartments();
       } catch (error) {
@@ -137,14 +137,14 @@ const ManageDepartmentsPage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {departments.map((dept) => (
-                <motion.tr key={dept.id} whileHover={{ scale: 1.01 }} className="transition-all">
+                <motion.tr key={dept._id} whileHover={{ scale: 1.01 }} className="transition-all">
                   <td className="px-4 py-3 whitespace-nowrap text-gray-800 dark:text-gray-100">{dept.name}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-300">{dept.code}</td>
                   <td className="px-4 py-3 whitespace-nowrap text-right">
                     <button onClick={() => openModal(dept)} className="text-blue-600 hover:text-blue-800 mr-3">
                       <Edit size={18} />
                     </button>
-                    <button onClick={() => handleDelete(dept.id)} className="text-red-600 hover:text-red-800">
+                    <button onClick={() => handleDelete(dept._id)} className="text-red-600 hover:text-red-800">
                       <Trash2 size={18} />
                     </button>
                   </td>
