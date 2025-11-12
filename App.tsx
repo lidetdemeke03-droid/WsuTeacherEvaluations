@@ -30,7 +30,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 const ProtectedLayout: React.FC = () => {
     const { user } = useAuth();
     const [sidebarOpen, setSidebarOpen] = React.useState(false);
-_
+
     if (!user) {
         return <Navigate to="/login" replace />;
     }
