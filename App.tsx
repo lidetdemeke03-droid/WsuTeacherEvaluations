@@ -74,7 +74,7 @@ const AppContent: React.FC = () => {
             <Route path="/" element={user ? <Navigate to="/dashboard" /> : <HomePage />} />
             <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <LoginPage />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            {/* <Route path="/privacy-policy" element={<PrivacyPolicy />} /> */}
 
             {/* Private Routes */}
             <Route element={<ProtectedLayout />}>
