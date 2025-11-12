@@ -74,7 +74,7 @@ const AppContent: React.FC = () => {
             <Route path="/" element={user ? <Navigate to="/dashboard" /> : <HomePage />} />
             <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <LoginPage />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-            {/* <Route path="/privacy-policy" element={<PrivacyPolicy />} /> */}
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
             {/* Private Routes */}
             <Route element={<ProtectedLayout />}>
@@ -101,7 +101,7 @@ const AppContent: React.FC = () => {
                 <Route path="/evaluation/new" element={<RoleProtectedRoute roles={[UserRole.Teacher, UserRole.DepartmentHead]}><NewEvaluation /></RoleProtectedRoute>} />
                 <Route path="/department/evaluate/:teacherId" element={<RoleProtectedRoute roles={[UserRole.DepartmentHead]}><DepartmentEvaluationForm /></RoleProtectedRoute>} />
                 <Route path="/instructor/results" element={<RoleProtectedRoute roles={[UserRole.DepartmentHead]}><InstructorResults /></RoleProtectedRoute>} />
-            </route>
+            </Route>
             
             <Route path="*" element={<Navigate to="/" />} />
         </Routes>
