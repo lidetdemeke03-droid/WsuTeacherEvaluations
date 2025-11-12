@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { UserRole } from '../../types';
 import { studentEvaluationQuestions, peerEvaluationQuestions, departmentHeadEvaluationQuestions } from '../../constants/forms';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Send, CheckCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 interface EvaluationFormProps {
@@ -15,41 +15,29 @@ interface EvaluationFormProps {
 }
 
 const variants = {
-    enter: (direction: number) => ({
-        x: direction > 0 ? 1000 : -1000,
-        opacity: 0
-    }),
-    center: {
-        zIndex: 1,
-        x: 0,
-        opacity: 1
-    },
-    exit: (direction: number) => ({
-        zIndex: 0,
-        x: direction < 0 ? 1000 : -1000,
-        opacity: 0
-    })
+    enter: (direction: number) => ({ x: direction > 0 ? 1000 : -1000, opacity: 0 }),
+    center: { zIndex: 1, x: 0, opacity: 1 },
+    exit: (direction: number) => ({ zIndex: 0, x: direction < 0 ? 1000 : -1000, opacity: 0 }),
 };
 
 const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onComplete }) => {
     const [answers, setAnswers] = useState<Record<string, Answer>>({});
     const [submitting, setSubmitting] = useState(false);
     const [[page, direction], setPage] = useState([0, 0]);
-
-    const questionIndex = page;
-
+    const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const { user } = useAuth();
 
-    // Select question set based on role
-    const questionSet = user?.role === UserRole.Teacher
-        ? peerEvaluationQuestions
-        : user?.role === UserRole.DepartmentHead
+    const questionIndex = page;
+    const questionSet =
+        user?.role === UserRole.Teacher
+            ? peerEvaluationQuestions
+            : user?.role === UserRole.DepartmentHead
             ? departmentHeadEvaluationQuestions
             : studentEvaluationQuestions;
-
     const question = questionSet[questionIndex];
 
     const paginate = (newDirection: number) => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         setPage([page + newDirection, newDirection]);
     };
 
@@ -58,44 +46,30 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
     const draftKey = `evaluation_draft_${evalIdForDraft}_${formType}`;
 
     useEffect(() => {
-        // Load draft from local storage, but only if it matches the current form's question codes
-        const savedDraft = localStorage.getItem(draftKey);
-        if (savedDraft) {
+        const saved = localStorage.getItem(draftKey);
+        if (saved) {
             try {
-                const parsed = JSON.parse(savedDraft) as Record<string, Answer>;
-                const parsedCodes = Object.values(parsed as Record<string, any>).map((a: any) => String(a.questionCode || '').toUpperCase());
-                const expectedCodes = questionSet.map(q => q.code.toUpperCase());
-                const allMatch = parsedCodes.every(c => expectedCodes.includes(c));
-                if (allMatch) {
-                    setAnswers(parsed);
-                    return;
-                } else {
-                    // Drop mismatched draft to avoid cross-form contamination
-                    localStorage.removeItem(draftKey);
-                }
-            } catch (e) {
-                console.error('Invalid draft data, ignoring', e);
+                const parsed = JSON.parse(saved);
+                setAnswers(parsed);
+            } catch {
                 localStorage.removeItem(draftKey);
             }
+        } else {
+            const init: Record<string, Answer> = {};
+            questionSet.forEach(q => {
+                init[q.code] = { questionCode: q.code, score: undefined, response: undefined };
+            });
+            setAnswers(init);
         }
-
-        const initialAnswers: Record<string, Answer> = {};
-        questionSet.forEach(q => {
-            initialAnswers[q.code] = {
-                questionCode: q.code,
-                score: undefined,
-                response: undefined,
-            };
-        });
-        setAnswers(initialAnswers);
-    }, [evaluation._id, draftKey, user?.role, questionSet]);
+    }, [draftKey, evaluation._id, questionSet]);
 
     const saveDraft = useCallback(() => {
         localStorage.setItem(draftKey, JSON.stringify(answers));
+        setLastSaved(new Date());
     }, [answers, draftKey]);
 
     useEffect(() => {
-        const timer = setInterval(saveDraft, 5000); // Auto-save every 5 seconds
+        const timer = setInterval(saveDraft, 5000);
         return () => clearInterval(timer);
     }, [saveDraft]);
 
@@ -107,115 +81,47 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
                 questionCode,
                 ...(score !== undefined && { score }),
                 ...(response !== undefined && { response }),
-            }
+            },
         }));
         saveDraft();
     };
 
-
     const handleSubmit = async () => {
-        // Defensive client-side check: ensure submitted answers match the expected question codes for this form
-    const providedCodes = Object.values(answers as Record<string, any>).map((a: any) => String(a.questionCode || '').toUpperCase());
-        const expectedCodes = questionSet.map(q => q.code.toUpperCase());
-        const looksLikeStudent = providedCodes.some(c => c.startsWith('STU_'));
-        const looksLikePeer = providedCodes.some(c => c.startsWith('PEER_'));
-        const looksLikeDept = providedCodes.some(c => c.startsWith('DEPT_'));
-
-        if (user?.role === UserRole.Teacher && looksLikeStudent) {
-            toast.error('It looks like you filled the student evaluation form. Please use the Peer Evaluation form when evaluating a colleague.');
-            setSubmitting(false);
-            return;
-        }
-        if (user?.role !== UserRole.Teacher && looksLikePeer) {
-            toast.error('It looks like you filled the peer evaluation form. Please use the correct evaluation form for your role.');
-            setSubmitting(false);
+        const unanswered = questionSet.findIndex(q => q.type === 'rating' && !answers[q.code]?.score);
+        if (unanswered !== -1) {
+            toast.error(`Please answer question ${unanswered + 1}`);
+            setPage([unanswered, unanswered > page ? 1 : -1]);
             return;
         }
 
-        const unansweredQuestionIndex = questionSet.findIndex(q => {
-            if (q.type === 'rating') {
-                const answer = answers[q.code];
-                return !answer || answer.score === undefined;
-            }
-            return false;
-        });
-
-        if (unansweredQuestionIndex !== -1) {
-            const unansweredQuestion = questionSet[unansweredQuestionIndex];
-            setPage([unansweredQuestionIndex, unansweredQuestionIndex > page ? 1 : -1]);
-            toast.error(`Please answer question ${unansweredQuestionIndex + 1}: "${unansweredQuestion.text}"`);
-            return;
-        }
         setSubmitting(true);
         try {
-            // Support cases where API returns nested objects or just IDs
-            const courseId = typeof evaluation.course === 'string' ? evaluation.course : (evaluation.course?._id ?? (evaluation.course as any)?.id ?? undefined);
-            const teacherId = typeof evaluation.teacher === 'string' ? evaluation.teacher : (evaluation.teacher?._id ?? (evaluation.teacher as any)?.id ?? undefined);
-            // period may be an object or a string (could be id or a legacy name)
-            const rawPeriod = typeof evaluation.period === 'string' ? evaluation.period : (evaluation.period?._id ?? (evaluation.period as any)?.id ?? undefined);
+            const courseId = typeof evaluation.course === 'string' ? evaluation.course : evaluation.course?._id;
+            const teacherId = typeof evaluation.teacher === 'string' ? evaluation.teacher : evaluation.teacher?._id;
 
-            // If rawPeriod looks like a 24-char ObjectId, use it; otherwise try to resolve by name
-            const isObjectId = (val?: string) => !!val && /^[0-9a-fA-F]{24}$/.test(val);
-            let resolvedPeriodId = isObjectId(rawPeriod) ? rawPeriod : undefined;
+            let periodId;
+            const periods = await apiGetEvaluationPeriods();
+            const active = periods.find((p: any) => p.status === 'Active');
+            periodId = active?._id || periods[0]?._id;
 
-            // If we have a string that isn't an ObjectId, attempt to resolve it as a period name
-            if (!resolvedPeriodId && rawPeriod) {
-                try {
-                    const periods = await apiGetEvaluationPeriods();
-                    const match = periods.find((p: any) => p._id === rawPeriod || p.name === rawPeriod);
-                    if (match) resolvedPeriodId = match._id;
-                } catch (e) {
-                    // ignore, will fallback below
-                }
-            }
-
-            // If periodId is still missing, try to resolve an active/current period from the backend as a fallback
-            if (!resolvedPeriodId) {
-                try {
-                    const periods = await apiGetEvaluationPeriods();
-                    // prefer an Active period, otherwise take the most recent by startDate
-                    const active = periods.find((p: any) => p.status === 'Active');
-                    if (active) resolvedPeriodId = active._id;
-                    else if (periods.length > 0) {
-                        // sort by startDate desc
-                        periods.sort((a: any, b: any) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-                        resolvedPeriodId = periods[0]._id;
-                    }
-                } catch (fetchErr) {
-                    console.error('Failed to fetch periods for fallback', fetchErr);
-                }
-            }
-
-            if (!courseId || !teacherId || !resolvedPeriodId) {
-                console.error('Missing identifiers for submission', { courseId, teacherId, periodId: resolvedPeriodId, evaluation });
-                toast.error('Evaluation data is incomplete. Cannot submit.');
+            if (!courseId || !teacherId || !periodId) {
+                toast.error('Incomplete data — cannot submit.');
                 setSubmitting(false);
                 return;
             }
 
             if (user?.role === UserRole.Teacher) {
-                // Peer evaluation submission
-                await apiSubmitPeerEvaluation({
-                    courseId,
-                    teacherId,
-                    period: resolvedPeriodId,
-                    answers: Object.values(answers),
-                });
+                await apiSubmitPeerEvaluation({ courseId, teacherId, period: periodId, answers: Object.values(answers) });
             } else {
-                await apiSubmitEvaluation({
-                    courseId,
-                    teacherId,
-                    period: resolvedPeriodId,
-                    answers: Object.values(answers),
-                });
+                await apiSubmitEvaluation({ courseId, teacherId, period: periodId, answers: Object.values(answers) });
             }
-            toast.success("Evaluation submitted successfully.");
+
+            toast.success('Evaluation submitted successfully!');
             localStorage.removeItem(draftKey);
             onComplete(evaluation._id);
-        } catch (error: any) {
-            console.error("Failed to submit evaluation", error);
-            const message = error?.message || (typeof error === 'string' ? error : 'Submission failed. Please try again.');
-            toast.error(message);
+        } catch (err) {
+            console.error(err);
+            toast.error('Failed to submit evaluation.');
         } finally {
             setSubmitting(false);
         }
@@ -224,27 +130,58 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
     const progress = Math.round(((questionIndex + 1) / questionSet.length) * 100);
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col h-full">
-            <div className="p-4 sm:p-6">
-                <button onClick={onBack} className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 hover:underline mb-4">
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col h-full max-w-3xl mx-auto px-4 sm:px-6 pb-6"
+        >
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-6 mb-4">
+                <button
+                    onClick={onBack}
+                    className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                >
                     <ArrowLeft size={18} />
-                    <span>Back to Evaluations</span>
+                    <span>Back</span>
                 </button>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white">{evaluation.course.title}</h1>
-                <h2 className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-2">For: {evaluation.teacher.firstName} {evaluation.teacher.lastName}</h2>
-                <h3 className="text-sm text-gray-500 mb-4">Form: {user?.role === UserRole.Teacher ? 'Peer Evaluation' : user?.role === UserRole.DepartmentHead ? 'Department Head Evaluation' : 'Student Evaluation'}</h3>
 
-                {/* Progress Bar */}
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-4">
+                <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {lastSaved && (
+                            <div className="flex items-center space-x-1">
+                                <CheckCircle size={14} className="text-green-500" />
+                                <span>Saved {lastSaved.toLocaleTimeString()}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 sm:p-6 mb-6">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-white mb-2">{evaluation.course.title}</h1>
+                <p className="text-gray-600 dark:text-gray-300">
+                    For: {evaluation.teacher.firstName} {evaluation.teacher.lastName}
+                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    {user?.role === UserRole.Teacher
+                        ? 'Peer Evaluation'
+                        : user?.role === UserRole.DepartmentHead
+                        ? 'Department Head Evaluation'
+                        : 'Student Evaluation'}
+                </p>
+
+                {/* Progress */}
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mt-4">
                     <motion.div
                         className="bg-blue-600 h-2.5 rounded-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${progress}%` }}
-                        transition={{ duration: 0.5 }}
+                        transition={{ duration: 0.4 }}
                     />
                 </div>
             </div>
 
+            {/* Question */}
             <div className="flex-grow overflow-hidden relative">
                 <AnimatePresence initial={false} custom={direction}>
                     <motion.div
@@ -254,48 +191,30 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
                         initial="enter"
                         animate="center"
                         exit="exit"
-                        transition={{
-                            x: { type: "spring", stiffness: 300, damping: 30 },
-                            opacity: { duration: 0.2 }
-                        }}
-                        className="absolute w-full h-full p-4 sm:p-6"
+                        transition={{ x: { type: 'spring', stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }}
+                        className="absolute w-full h-full"
                     >
-                        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md h-full flex flex-col justify-between">
-                            <p className="font-semibold text-lg text-gray-700 dark:text-white mb-4">{questionIndex + 1}. {question.text}</p>
+                        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md flex flex-col justify-between h-full">
+                            <p className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-white mb-4">
+                                {questionIndex + 1}. {question.text}
+                            </p>
 
                             {question.type === 'rating' && (
-                                <div className="flex items-center justify-center space-x-2 sm:space-x-4">
-                                    {[...Array(5)].map((_, i) => {
-                                        const scoreValue = i + 1;
-                                        return (
-                                            <label key={scoreValue} className="flex flex-col items-center space-y-1 cursor-pointer">
-                                                <input
-                                                    type="radio"
-                                                    name={`score-${question.code}`}
-                                                    value={scoreValue}
-                                                    checked={answers[question.code]?.score === scoreValue}
-                                                    onChange={() => handleAnswerChange(question.code, scoreValue)}
-                                                    className="sr-only"
-                                                />
-                                                <span className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 transition-all ${answers[question.code]?.score === scoreValue ? 'bg-blue-500 text-white border-blue-600' : 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-blue-400'}`}>
-                                                    {scoreValue}
-                                                </span>
-                                            </label>
-                                        );
-                                    })}
-                                    <label className="flex flex-col items-center space-y-1 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name={`score-${question.code}`}
-                                            value={-1} // Using -1 to represent NA
-                                            checked={answers[question.code]?.score === -1}
-                                            onChange={() => handleAnswerChange(question.code, -1)}
-                                            className="sr-only"
-                                        />
-                                        <span className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 transition-all ${answers[question.code]?.score === -1 ? 'bg-gray-500 text-white border-gray-600' : 'bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:border-gray-400'}`}>
-                                            NA
-                                        </span>
-                                    </label>
+                                <div className="flex justify-center flex-wrap gap-3 sm:gap-4">
+                                    {[1, 2, 3, 4, 5].map(score => (
+                                        <motion.button
+                                            key={score}
+                                            whileTap={{ scale: 0.9 }}
+                                            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 font-medium transition-all ${
+                                                answers[question.code]?.score === score
+                                                    ? 'bg-blue-600 text-white border-blue-600'
+                                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white border-gray-300 dark:border-gray-600 hover:border-blue-400'
+                                            }`}
+                                            onClick={() => handleAnswerChange(question.code, score)}
+                                        >
+                                            {score}
+                                        </motion.button>
+                                    ))}
                                 </div>
                             )}
 
@@ -303,9 +222,8 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
                                 <textarea
                                     placeholder="Your comments..."
                                     value={answers[question.code]?.response || ''}
-                                    onChange={(e) => handleAnswerChange(question.code, undefined, e.target.value)}
-                                    className="w-full h-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:ring-blue-500 focus:border-blue-500"
-                                    rows={5}
+                                    onChange={e => handleAnswerChange(question.code, undefined, e.target.value)}
+                                    className="w-full mt-2 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-transparent focus:ring-blue-500 focus:border-blue-500 resize-none h-32 sm:h-40"
                                 />
                             )}
                         </div>
@@ -314,30 +232,30 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
             </div>
 
             {/* Navigation */}
-            <div className="p-4 sm:p-6 flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 mt-6">
                 <motion.button
-                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => paginate(-1)}
                     disabled={questionIndex === 0}
-                    className="flex items-center space-x-2 px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 disabled:opacity-50"
+                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white w-full sm:w-auto disabled:opacity-50"
                 >
                     <ArrowLeft size={18} /> <span>Previous</span>
                 </motion.button>
 
                 {questionIndex < questionSet.length - 1 ? (
                     <motion.button
-                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={() => paginate(1)}
-                        className="flex items-center space-x-2 px-4 py-2 rounded-md bg-blue-600 text-white"
+                        className="flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-blue-600 text-white w-full sm:w-auto"
                     >
                         <span>Next</span> <ArrowRight size={18} />
                     </motion.button>
                 ) : (
                     <motion.button
-                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={handleSubmit}
                         disabled={submitting}
-                        className="flex items-center space-x-2 px-4 py-2 rounded-md bg-green-600 text-white disabled:bg-green-300"
+                        className="flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-green-600 text-white w-full sm:w-auto disabled:bg-green-400"
                     >
                         <Send size={18} /> <span>{submitting ? 'Submitting...' : 'Submit'}</span>
                     </motion.button>
