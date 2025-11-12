@@ -83,31 +83,32 @@ const LoginPage: React.FC = () => {
                 placeholder="Enter your email"
               />
             </div>
-
-            {/* Password */}
-            <div className="relative">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Password
-              </label>
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-3 pr-10 rounded-lg border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
-                placeholder="Enter your password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((s) => !s)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="absolute inset-y-0 right-3 flex items-center text-gray-500 dark:text-gray-300 hover:text-blue-500"
-              >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
-            </div>
-          </div>
+<div className="relative">
+  <label
+    htmlFor="password"
+    className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+  >
+    Password
+  </label>
+  <input
+    id="password"
+    type={showPassword ? 'text' : 'password'}
+    required
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    className="w-full px-3 py-3 pr-10 rounded-lg border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+    placeholder="Enter your password"
+  />
+  <button
+    type="button"
+    onClick={() => setShowPassword((s) => !s)}
+    aria-label={showPassword ? 'Hide password' : 'Show password'}
+    className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center justify-center text-gray-500 dark:text-gray-300 hover:text-blue-500"
+  >
+    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+  </button>
+</div>
+</div>
 
           {error && (
             <p className="text-sm text-center text-red-500 font-medium">
