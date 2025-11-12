@@ -7,12 +7,6 @@ const WEIGHTS = {
   deptHead: 0.15,
 };
 
-/**
- * Calculates the normalized score for a set of answers.
- * @param answers - The array of answers from an evaluation.
- * @param totalQuestions - The total number of rating questions in the form.
- * @returns The normalized score (0-100).
- */
 export const calculateNormalizedScore = (answers: any[], totalQuestions: number): number => {
   const ratedAnswers = answers.filter(a => typeof a.score === 'number' && a.score !== -1);
   if (ratedAnswers.length === 0) {
