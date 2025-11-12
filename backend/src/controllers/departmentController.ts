@@ -72,13 +72,18 @@ export const createDepartment = async (req: Request, res: Response) => {
 
 export const updateDepartment = async (req: Request, res: Response) => {
     try {
+        const departmentId = req.params.id;
+        if (!departmentId) {
+            return res.status(400).json({ success: false, error: 'Department ID is required' });
+        }
+
         const { name, code, head } = req.body;
         const headArray: string[] = !head ? [] : Array.isArray(head) ? head : [head];
 
-        const prevDept = await Department.findById(req.params.id);
+        const prevDept = await Department.findById(departmentId);
         const prevHeads: string[] = (prevDept && prevDept.head) ? prevDept.head.map((h: any) => String(h)) : [];
 
-        const department = await Department.findByIdAndUpdate(req.params.id, { name, code, head: headArray }, { new: true, runValidators: true });
+        const department = await Department.findByIdAndUpdate(departmentId, { name, code, head: headArray }, { new: true, runValidators: true });
         if (!department) {
             return res.status(404).json({ success: false, error: 'Department not found' });
         }
