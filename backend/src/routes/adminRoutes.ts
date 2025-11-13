@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createUser, importUsers, assignTeacherToCourse, createPeerAssignment, createScheduleWindow, getTeacherReport, recomputeTeacherScores, getDashboardStats, getEvaluationsByDepartment } from '../controllers/adminController';
+import { createUser, importUsers, assignTeacherToCourse, createPeerAssignment, getTeacherReport, recomputeTeacherScores, getDashboardStats, getEvaluationsByDepartment } from '../controllers/adminController';
 import { protect } from '../middleware/auth';
 import multer from 'multer';
 
@@ -25,9 +25,6 @@ router.put('/courses/:id/assign-teacher', audit('COURSE_ASSIGN_TEACHER'), assign
 
 // POST /api/admin/assignments/peer - Create a peer assignment
 router.post('/assignments/peer', audit('PEER_ASSIGNMENT_CREATE'), createPeerAssignment);
-
-// POST /api/admin/schedule - Create a new schedule window
-router.post('/schedule', audit('SCHEDULE_WINDOW_CREATE'), createScheduleWindow);
 
 // GET /api/admin/reports/teacher/:id - Get teacher report
 router.get('/reports/teacher/:id', audit('REPORT_VIEW_TEACHER'), getTeacherReport);

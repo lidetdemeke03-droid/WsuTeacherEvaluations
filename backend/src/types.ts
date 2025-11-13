@@ -76,10 +76,18 @@ export interface IEvaluationResponse extends Document {
   };
 }
 
+export interface IEvaluationPeriod extends Document {
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  status: 'active' | 'inactive' | 'archived';
+}
+
 export interface IPeerAssignment extends Document {
   evaluator: Types.ObjectId; // Teacher
   targetTeacher: Types.ObjectId; // Teacher
   course: Types.ObjectId;
+  period: Types.ObjectId;
   active: boolean;
   window: {
     start: Date;
