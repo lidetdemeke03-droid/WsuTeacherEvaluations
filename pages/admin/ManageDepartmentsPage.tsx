@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Department, User, UserRole } from '../../types';
 import { apiGetDepartments, apiCreateDepartment, apiUpdateDepartment, apiDeleteDepartment, apiGetUsers } from '../../services/api';
 import toast from 'react-hot-toast';
-import { Plus, Edit, Trash2, Building2 } from 'lucide-react';
+import Plus from 'lucide-react/dist/esm/icons/plus';
+import Edit from 'lucide-react/dist/esm/icons/edit';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
+import Building2 from 'lucide-react/dist/esm/icons/building-2';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const ManageDepartmentsPage: React.FC = () => {
