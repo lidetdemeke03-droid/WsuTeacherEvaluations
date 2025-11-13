@@ -44,7 +44,7 @@ export interface EvaluationPeriod {
   name: string;
   startDate: string;
   endDate: string;
-  status: 'Active' | 'Inactive';
+  status: 'active' | 'inactive';
 }
 
 export interface EvaluationSubmission {

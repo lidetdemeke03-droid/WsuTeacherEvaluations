@@ -6,6 +6,13 @@ import { PlusCircle, X, UserPlus, BookOpen } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AssignEvaluatorModal from '../../components/AssignEvaluatorModal';
 
+interface CourseCreationData {
+  title: string;
+  code: string;
+  teacher?: string;
+  department?: string;
+}
+
 const ManageCoursesPage: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -39,9 +46,9 @@ const ManageCoursesPage: React.FC = () => {
     fetchDepartments();
   }, []);
 
-  const handleCreateCourse = async (courseData: Partial<Course>) => {
+  const handleCreateCourse = async (courseData: CourseCreationData) => {
     try {
-      const newCourse = await apiCreateCourse(courseData);
+      const newCourse = await apiCreateCourse(courseData as Partial<Course>);
       setCourses([...courses, newCourse]);
       setIsCreateModalOpen(false);
       toast.success('Course created successfully!');
@@ -126,7 +133,6 @@ const ManageCoursesPage: React.FC = () => {
           isOpen={isAssignModalOpen}
           onClose={() => setIsAssignModalOpen(false)}
           course={selectedCourse}
-          departments={departments}
           onAssignmentSuccess={fetchCourses}
         />
       )}
@@ -134,7 +140,7 @@ const ManageCoursesPage: React.FC = () => {
   );
 };
 
-const CreateCourseModal: React.FC<{ isOpen: boolean; onClose: () => void; onCreate: (courseData: Partial<Course>) => void }> = ({ isOpen, onClose, onCreate }) => {
+const CreateCourseModal: React.FC<{ isOpen: boolean; onClose: () => void; onCreate: (courseData: CourseCreationData) => void }> = ({ isOpen, onClose, onCreate }) => {
   const [title, setTitle] = useState('');
   const [code, setCode] = useState('');
   const [teacherId, setTeacherId] = useState('');

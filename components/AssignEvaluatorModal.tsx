@@ -9,13 +9,12 @@ interface AssignEvaluatorModalProps {
   isOpen: boolean;
   onClose: () => void;
   course: Course;
-  departments: Department[];
   onAssignmentSuccess: () => void;
 }
 
 
 
-const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onClose, course, departments, onAssignmentSuccess }) => {
+const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onClose, course, onAssignmentSuccess }) => {
   const [evaluators, setEvaluators] = useState<User[]>([]);
   const [evaluationPeriods, setEvaluationPeriods] = useState<EvaluationPeriod[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<string>('');
@@ -94,6 +93,10 @@ const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onC
     if (evaluationPeriods.length === 0) {
       toast.error('Cannot assign: No active evaluation period.');
       return;
+    }
+    if (!course.teacher) {
+        toast.error('This course has no assigned teacher and cannot be evaluated.');
+        return;
     }
 
     try {

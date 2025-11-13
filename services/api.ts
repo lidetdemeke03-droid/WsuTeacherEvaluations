@@ -120,10 +120,7 @@ interface AssignEvaluationPayload {
   evaluationType: EvaluationType;
 }
 
-export const apiAssignEvaluation = async (payload: AssignEvaluationPayload): Promise<any> => {
-  const response = await api.post('/evaluations/assign', payload);
-  return response.data;
-};
+
 
 
 // Departments
