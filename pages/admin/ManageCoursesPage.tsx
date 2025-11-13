@@ -48,7 +48,7 @@ const ManageCoursesPage: React.FC = () => {
 
   const handleCreateCourse = async (courseData: CourseCreationData) => {
     try {
-      const newCourse = await apiCreateCourse(courseData as Partial<Course>);
+      const newCourse = await apiCreateCourse(courseData as unknown as Partial<Course>);
       setCourses([...courses, newCourse]);
       setIsCreateModalOpen(false);
       toast.success('Course created successfully!');
