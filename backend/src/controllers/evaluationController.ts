@@ -202,7 +202,7 @@ export const submitPeerEvaluation = asyncHandler(async (req: IRequest, res: Resp
 // @route   POST /api/evaluations/assign
 // @access  Private (Admin)
 export const createEvaluationAssignment = asyncHandler(async (req: Request, res: Response) => {
-    const { evaluatorIds, courseId, teacherId, periodId, evaluationType } = req.body;
+    const { evaluatorIds, courseId, teacherId, periodId, evaluationType, window } = req.body;
 
     if (!Array.isArray(evaluatorIds) || evaluatorIds.length === 0) {
         res.status(400);
@@ -210,6 +210,10 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
     }
 
     if (evaluationType === EvaluationType.Peer) {
+        if (!window || !window.start || !window.end) {
+            res.status(400);
+            throw new Error('Window start and end dates are required for peer assignments.');
+        }
         const PeerAssignment = (await import('../models/PeerAssignment')).default;
         const assignments = [];
         for (const evaluatorId of evaluatorIds) {
@@ -231,6 +235,10 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
                 course: courseId,
                 period: periodId,
                 active: true,
+                window: {
+                    start: window.start,
+                    end: window.end,
+                },
             });
         }
         if (assignments.length > 0) {

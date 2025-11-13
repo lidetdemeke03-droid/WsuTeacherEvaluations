@@ -84,38 +84,47 @@ const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onC
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedEvaluatorIds.length === 0 || !selectedPeriod) {
-      toast.error('Please select at least one evaluator and an evaluation period.');
-      return;
-    }
-    if (evaluationPeriods.length === 0) {
-      toast.error('Cannot assign: No active evaluation period.');
-      return;
-    }
-    if (!course.teacher) {
-        toast.error('This course has no assigned teacher and cannot be evaluated.');
-        return;
-    }
-
-    try {
-      await apiAssignEvaluation({
-        evaluatorIds: selectedEvaluatorIds,
-        courseId: course._id,
-        teacherId: course.teacher ? course.teacher._id : '',
-        periodId: selectedPeriod,
-        evaluationType: evaluatorType === 'student' ? EvaluationType.Student : EvaluationType.Peer,
-      });
-      toast.success('Evaluators assigned successfully!');
-      onClose();
-      onAssignmentSuccess(); // Refresh courses in parent component
-    } catch (error) {
-      toast.error('Failed to assign evaluators.');
-      console.error('Error assigning evaluators:', error);
-    }
-  };
-
+      const handleSubmit = async (e: React.FormEvent) => {
+          e.preventDefault();
+          if (selectedEvaluatorIds.length === 0 || !selectedPeriod) {
+              toast.error('Please select at least one evaluator and an evaluation period.');
+              return;
+          }
+          if (evaluationPeriods.length === 0) {
+              toast.error('Cannot assign: No active evaluation period.');
+              return;
+          }
+          if (!course.teacher) {
+              toast.error('This course has no assigned teacher and cannot be evaluated.');
+              return;
+          }
+  
+          const period = evaluationPeriods.find(p => p._id === selectedPeriod);
+          if (!period) {
+              toast.error('Selected evaluation period not found.');
+              return;
+          }
+  
+          try {
+              await apiAssignEvaluation({
+                  evaluatorIds: selectedEvaluatorIds,
+                  courseId: course._id,
+                  teacherId: course.teacher ? course.teacher._id : '',
+                  periodId: selectedPeriod,
+                  evaluationType: evaluatorType === 'student' ? EvaluationType.Student : EvaluationType.Peer,
+                  window: {
+                      start: period.startDate,
+                      end: period.endDate,
+                  },
+              });
+              toast.success('Evaluators assigned successfully!');
+              onClose();
+              onAssignmentSuccess(); // Refresh courses in parent component
+          } catch (error) {
+              toast.error('Failed to assign evaluators.');
+              console.error('Error assigning evaluators:', error);
+          }
+      };
   if (!isOpen) return null;
 
   return (
