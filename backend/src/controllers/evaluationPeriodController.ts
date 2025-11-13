@@ -57,12 +57,20 @@ export const updateEvaluationPeriod = async (req: Request, res: Response) => {
 
         let { name, startDate, endDate, status } = req.body;
         name = typeof name === 'string' ? name.trim().toLowerCase() : name;
+
+        console.log(`Attempting to update period: ${periodId}`);
+        console.log('Request body:', { name, startDate, endDate, status });
+
         const period = await EvaluationPeriod.findByIdAndUpdate(periodId, { name, startDate, endDate, status }, { new: true, runValidators: true });
+        
+        console.log('Result of findByIdAndUpdate:', period);
+
         if (!period) {
             return res.status(404).json({ success: false, error: 'Evaluation period not found' });
         }
         res.status(200).json({ success: true, data: period });
     } catch (error: any) {
+        console.error('Error updating evaluation period:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 };
