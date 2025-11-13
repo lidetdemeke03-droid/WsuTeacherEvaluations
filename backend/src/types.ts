@@ -18,7 +18,6 @@ export interface IUser extends Document {
   employeeId?: string;
   studentId?: string;
   courses: Types.ObjectId[];
-  isDeptHead: boolean;
   isActive: boolean;
   deleted?: boolean;
   passwordResetToken?: string;

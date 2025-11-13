@@ -13,7 +13,6 @@ const userSchema = new Schema<IUser>({
   department: { type: Schema.Types.ObjectId, ref: 'Department' },
   employeeId: { type: String },
   studentId: { type: String },
-  isDeptHead: { type: Boolean, default: false },
   isActive: { type: Boolean, default: true },
   deleted: { type: Boolean, default: false },
   passwordResetToken: { type: String, index: true },

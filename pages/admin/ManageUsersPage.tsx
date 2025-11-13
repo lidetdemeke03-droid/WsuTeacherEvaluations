@@ -182,11 +182,10 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onCr
     const [role, setRole] = useState<UserRole>(UserRole.Student);
     const [departmentId, setDepartmentId] = useState('');
     const [departments, setDepartments] = useState<any[]>([]);
-    const [isDeptHead, setIsDeptHead] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onCreate({ firstName, lastName, email, password, role, department: departmentId || undefined, isDeptHead });
+        onCreate({ firstName, lastName, email, password, role, department: departmentId || undefined });
     };
 
     useEffect(() => {
@@ -218,11 +217,6 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onCr
                                 {departments.map(d => <option key={d._id || d.id} value={d._id || d.id}>{d.name}</option>)}
                             </select>
 
-                            <label className="flex items-center space-x-2 text-sm">
-                                <input type="checkbox" checked={isDeptHead} onChange={e => setIsDeptHead(e.target.checked)} />
-                                <span>Make this user a department head</span>
-                            </label>
-
                             <div className="flex justify-end space-x-2">
                                 <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
                                 <button type="submit" className="btn-primary">Create</button>
@@ -244,13 +238,12 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
     const [role, setRole] = useState<UserRole>(user.role);
     const [departments, setDepartments] = useState<any[]>([]);
     const [departmentId, setDepartmentId] = useState<string | undefined>(user.department?._id || user.departmentId);
-    const [isDeptHead, setIsDeptHead] = useState<boolean>(user.isDeptHead || false);
 
     useEffect(() => { apiGetDepartments().then(setDepartments).catch(() => setDepartments([])); }, []);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onUpdate(user._id, { firstName, lastName, email, role, department: departmentId, isDeptHead });
+        onUpdate(user._id, { firstName, lastName, email, role, department: departmentId });
     };
 
     return (
@@ -275,10 +268,6 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
                                 <option value="">-- Select Department (optional) --</option>
                                 {departments.map(d => <option key={d._id || d.id} value={d._id || d.id}>{d.name}</option>)}
                             </select>
-                            <label className="flex items-center space-x-2 text-sm">
-                                <input type="checkbox" checked={isDeptHead} onChange={e => setIsDeptHead(e.target.checked)} />
-                                <span>Department head</span>
-                            </label>
 
                             <div className="flex justify-end space-x-2">
                                 <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>

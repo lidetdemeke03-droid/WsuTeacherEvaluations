@@ -42,24 +42,8 @@ export const createUser = async (req: IRequest, res: Response) => {
       department,
       employeeId,
       studentId,
-      isDeptHead,
       isActive: true, // Default to active
     });
-
-    // Create password reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-    user.passwordResetExpires = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
-    await user.save();
-
-    // If user is created as a department head, ensure the department references the user
-    if (isDeptHead && department) {
-      try {
-        await Department.findByIdAndUpdate(department, { $addToSet: { head: user._id } });
-      } catch (e) {
-        console.error('Failed to add user to department head list', e);
-      }
-    }
 
     // Send welcome email
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
