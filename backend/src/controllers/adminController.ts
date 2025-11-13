@@ -4,7 +4,6 @@ import User from '../models/User';
 import Department from '../models/Department';
 import Course from '../models/Course';
 import PeerAssignment from '../models/PeerAssignment';
-import ScheduleWindow from '../models/ScheduleWindow';
 import StatsCache from '../models/StatsCache';
 import EvaluationResponse from '../models/EvaluationResponse'; // Added
 import Complaint from '../models/Complaint'; // Added
@@ -147,29 +146,6 @@ export const getTeacherReport = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Create a new schedule window
-// @route   POST /api/admin/schedule
-// @access  Admin, SuperAdmin
-export const createScheduleWindow = async (req: Request, res: Response) => {
-  const { period, startDate, endDate, remindersEnabled } = req.body;
-
-  try {
-    const window = await ScheduleWindow.create({
-      period,
-      startDate,
-      endDate,
-      remindersEnabled,
-    });
-
-    res.status(201).json({ success: true, data: window });
-  } catch (error: any) {
-    console.error(error);
-    if (error.code === 11000) {
-      return res.status(400).json({ success: false, error: 'A schedule window for this period already exists.' });
-    }
-    res.status(500).json({ success: false, error: 'Server Error' });
-  }
-};
 
 // @desc    Create a peer assignment
 // @route   POST /api/admin/assignments/peer
