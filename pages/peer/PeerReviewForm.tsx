@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api, apiGetPeerAssignments } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -7,10 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
-const variants = {
-  enter: (direction: number) => ({ x: direction > 0 ? '100%' : '-100%', opacity: 0 }),
+const pageVariants = {
+  enter: (direction: number) => ({ x: direction > 0 ? 300 : -300, opacity: 0 }),
   center: { x: 0, opacity: 1 },
-  exit: (direction: number) => ({ x: direction < 0 ? '100%' : '-100%', opacity: 0 }),
+  exit: (direction: number) => ({ x: direction < 0 ? 300 : -300, opacity: 0 }),
 };
 
 const PeerReviewForm: React.FC = () => {
@@ -29,19 +29,7 @@ const PeerReviewForm: React.FC = () => {
   const question = questions[questionIndex];
   const progress = Math.round(((questionIndex + 1) / questions.length) * 100);
 
-  const paginate = (newDirection: number) => setPage([page + newDirection, newDirection]);
-
-  const handleAnswerChange = (questionCode: string, value: string | number, type: string) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionCode]: {
-        ...prev[questionCode],
-        questionCode,
-        [type === 'text' ? 'response' : 'score']: value,
-      },
-    }));
-  };
-
+  // load assignment data
   useEffect(() => {
     const loadAssignment = async () => {
       if (!assignmentId || !user) return;
@@ -56,12 +44,31 @@ const PeerReviewForm: React.FC = () => {
     loadAssignment();
   }, [assignmentId, user]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const paginate = (newDirection: number) => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setPage([Math.max(0, page + newDirection), newDirection]);
+  };
+
+  const handleAnswerChange = (questionCode: string, value: string | number, type: string) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionCode]: {
+        ...prev[questionCode],
+        questionCode,
+        [type === 'text' ? 'response' : 'score']: value,
+      },
+    }));
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
 
     if (!conflict) {
-      const allScored = questions.filter(q => q.type === 'rating').every(q => answers[q.code]?.score);
-      if (!allScored) return toast.error('Please provide a score for all rating questions.');
+      const allScored = questions.filter(q => q.type === 'rating').every(q => answers[q.code]?.score !== undefined);
+      if (!allScored) {
+        toast.error('Please provide a score for all rating questions.');
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -82,132 +89,179 @@ const PeerReviewForm: React.FC = () => {
     }
   };
 
+  // small helper to render rating buttons (consistent with EvaluationForm)
+  const RatingButtons: React.FC<{ qCode: string }> = ({ qCode }) => (
+    <div className="flex justify-center flex-wrap gap-3 sm:gap-4 mt-2 w-full px-1">
+      {[1, 2, 3, 4, 5].map(score => {
+        const selected = answers[qCode]?.score === score;
+        return (
+          <motion.button
+            key={score}
+            whileTap={{ scale: 0.92 }}
+            onClick={() => handleAnswerChange(qCode, score, 'rating')}
+            className={`
+              w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 font-medium text-base sm:text-lg
+              flex items-center justify-center transition-all
+              ${selected ? 'bg-blue-600 text-white border-blue-600' : 'bg-blue-900/40 border-blue-700 text-gray-200 hover:bg-blue-800/60'}
+            `}
+            aria-pressed={selected}
+          >
+            {score}
+          </motion.button>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 to-blue-800 text-white flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white/10 backdrop-blur-lg rounded-2xl shadow-xl p-6 md:p-10">
-        <h1 className="text-2xl md:text-3xl font-bold text-center mb-6 text-white">Peer Evaluation</h1>
+      <motion.form
+        initial={{ opacity: 0, y: 20, scale: 0.995 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        onSubmit={handleSubmit}
+        className="w-full max-w-2xl bg-white/10 backdrop-blur-lg rounded-2xl shadow-xl p-5 md:p-8"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition"
+            aria-label="Back"
+          >
+            <ArrowLeft size={18} />
+          </button>
+          <div className="text-sm text-white/85">Peer Evaluation</div>
+        </div>
 
+        {/* Conflict toggle */}
         <div className="mb-4">
-          <label className="flex items-center space-x-2 text-gray-200">
+          <label className="flex items-center space-x-3 text-white">
             <input
               type="checkbox"
-              id="conflict"
               checked={conflict}
               onChange={e => setConflict(e.target.checked)}
-              className="w-5 h-5 accent-blue-500"
+              className="w-5 h-5 accent-blue-400 bg-white/5 rounded"
             />
-            <span>Declare Conflict of Interest</span>
+            <span className="select-none">Declare Conflict of Interest</span>
           </label>
         </div>
 
-        <div className="w-full bg-blue-950 rounded-full h-2.5 mb-6">
-          <motion.div
-            className="bg-blue-500 h-2.5 rounded-full"
-            style={{ width: `${progress}%` }}
-            transition={{ duration: 0.4 }}
-          />
+        {/* Progress bar (visible and compact) */}
+        <div className="mb-4">
+          <div className="w-full bg-blue-950 rounded-full h-2.5 overflow-hidden">
+            <motion.div
+              className="bg-blue-500 h-2.5 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.4 }}
+            />
+          </div>
+          <div className="text-xs text-white/80 mt-2 text-right">{progress}%</div>
         </div>
 
-        <div className="flex-grow overflow-hidden relative min-h-[200px]">
+        {/* Question container */}
+        <div className="relative overflow-visible">
           <AnimatePresence initial={false} custom={direction}>
             <motion.div
               key={page}
               custom={direction}
-              variants={variants}
+              variants={pageVariants}
               initial="enter"
               animate="center"
               exit="exit"
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="absolute w-full"
+              className="absolute inset-0"
             >
-              <div className="p-4 md:p-6 bg-blue-950/60 rounded-lg shadow-lg border border-blue-700">
-                {conflict ? (
-                  <>
-                    <label htmlFor="reason" className="block text-lg font-semibold mb-3 text-white">
-                      Reason for conflict:
-                    </label>
-                    <textarea
-                      id="reason"
-                      value={reason}
-                      onChange={e => setReason(e.target.value)}
-                      className="w-full h-32 p-3 rounded-lg bg-blue-900/60 text-white border border-blue-500 focus:ring-2 focus:ring-blue-400 outline-none"
-                      placeholder="Please explain the reason for conflict..."
-                      required
-                    />
-                  </>
-                ) : (
-                  <>
-                    <label className="block text-lg font-semibold mb-3 text-white">
-                      {questionIndex + 1}. {question.text}
-                    </label>
-                    {question.type === 'rating' ? (
-                      <div className="flex justify-between flex-wrap gap-2">
-                        {[1, 2, 3, 4, 5].map(score => (
-                          <label key={score} className="cursor-pointer flex-1 min-w-[50px]">
-                            <input
-                              type="radio"
-                              name={`score-${question.code}`}
-                              value={score}
-                              checked={answers[question.code]?.score === score}
-                              onChange={() => handleAnswerChange(question.code, score, 'rating')}
-                              className="sr-only"
-                            />
-                            <span
-                              className={`w-full h-12 flex items-center justify-center rounded-full border-2 transition-all ${
-                                answers[question.code]?.score === score
-                                  ? 'bg-blue-500 text-white border-blue-400 scale-110'
-                                  : 'bg-blue-900/40 border-blue-700 text-gray-300 hover:bg-blue-800/70'
-                              }`}
-                            >
-                              {score}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    ) : (
+              <div className="bg-blue-950/60 rounded-lg shadow-lg border border-blue-700 p-4 sm:p-6 max-h-[72vh] overflow-y-auto scrollbar-thin scrollbar-thumb-blue-700">
+                {/* Question or conflict area */}
+                <AnimatePresence>
+                  {conflict ? (
+                    <motion.div
+                      key="conflict"
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                    >
+                      <label htmlFor="reason" className="block text-lg font-semibold mb-3 text-white">
+                        Reason for Conflict
+                      </label>
                       <textarea
-                        className="w-full h-32 p-3 rounded-lg bg-blue-900/60 text-white border border-blue-500 focus:ring-2 focus:ring-blue-400 outline-none"
-                        placeholder="Comments..."
-                        value={answers[question.code]?.response || ''}
-                        onChange={e => handleAnswerChange(question.code, e.target.value, 'text')}
+                        id="reason"
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        className="w-full h-40 p-3 rounded-lg bg-blue-900/60 text-white border border-blue-500 focus:ring-2 focus:ring-blue-400 outline-none"
+                        placeholder="Explain why you have a conflict of interest..."
+                        required
                       />
-                    )}
-                  </>
-                )}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="question"
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                    >
+                      <div className="mb-4">
+                        <div className="text-lg sm:text-xl font-semibold text-white mb-3 leading-snug">
+                          {questionIndex + 1}. {question.text}
+                        </div>
+
+                        {question.type === 'rating' ? (
+                          <RatingButtons qCode={question.code} />
+                        ) : (
+                          <textarea
+                            value={answers[question.code]?.response || ''}
+                            onChange={(e) => handleAnswerChange(question.code, e.target.value, 'text')}
+                            className="w-full p-3 rounded-lg bg-blue-900/60 text-white border border-blue-500 focus:ring-2 focus:ring-blue-400 outline-none resize-none h-36"
+                            placeholder="Your comments..."
+                          />
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           </AnimatePresence>
         </div>
 
-        <div className="flex justify-between items-center mt-8">
+        {/* Navigation */}
+        <div className="mt-6 flex items-center justify-between gap-4">
           <button
+            type="button"
             onClick={() => paginate(-1)}
             disabled={questionIndex === 0}
-            className="p-3 bg-blue-700 hover:bg-blue-600 rounded-full transition disabled:opacity-40"
+            className="flex-1 sm:flex-none px-4 py-2 rounded-full bg-white/6 hover:bg-white/10 transition disabled:opacity-40"
           >
-            <ArrowLeft size={20} />
+            <div className="flex items-center justify-center gap-2">
+              <ArrowLeft size={16} />
+              <span className="text-white">Previous</span>
+            </div>
           </button>
 
           {questionIndex < questions.length - 1 && !conflict ? (
             <button
+              type="button"
               onClick={() => paginate(1)}
-              className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-medium flex items-center space-x-2 transition"
+              className="flex-1 sm:flex-none px-5 py-2 rounded-full bg-blue-500 hover:bg-blue-600 transition flex items-center justify-center gap-2"
             >
-              <ArrowRight size={20} />
-              <span>Next</span>
+              <span className="text-white">Next</span>
+              <ArrowRight size={16} />
             </button>
           ) : (
             <button
-              onClick={handleSubmit}
+              type="submit"
               disabled={submitting}
-              className="px-6 py-2 bg-green-600 hover:bg-green-500 text-white rounded-full font-semibold flex items-center space-x-2 transition disabled:opacity-50"
+              className="flex-1 sm:flex-none px-5 py-2 rounded-full bg-green-600 hover:bg-green-500 transition flex items-center justify-center gap-2"
             >
-              <Send size={20} />
+              <Send size={16} />
               <span>{submitting ? 'Submitting...' : 'Submit'}</span>
             </button>
           )}
         </div>
-      </div>
+      </motion.form>
     </div>
   );
 };
