@@ -150,6 +150,9 @@ export const apiMarkNotificationRead = (id: string): Promise<any> => apiRequest<
 
 // Evaluation Periods
 export const apiGetEvaluationPeriods = (): Promise<EvaluationPeriod[]> => apiRequest<EvaluationPeriod[]>('/periods');
+export const apiCreateEvaluationPeriod = (periodData: Partial<EvaluationPeriod>): Promise<EvaluationPeriod> => apiRequest<EvaluationPeriod>('/periods', { method: 'POST', body: JSON.stringify(periodData) });
+export const apiUpdateEvaluationPeriod = (periodId: string, periodData: Partial<EvaluationPeriod>): Promise<EvaluationPeriod> => apiRequest<EvaluationPeriod>(`/periods/${periodId}`, { method: 'PUT', body: JSON.stringify(periodData) });
+export const apiDeleteEvaluationPeriod = (periodId: string): Promise<void> => apiRequest<void>(`/periods/${periodId}`, { method: 'DELETE' });
 
 export const apiGetActiveEvaluationPeriods = (): Promise<EvaluationPeriod[]> => apiRequest<EvaluationPeriod[]>('/periods/active');
 
