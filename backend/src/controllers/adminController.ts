@@ -45,6 +45,12 @@ export const createUser = async (req: IRequest, res: Response) => {
       isActive: true, // Default to active
     });
 
+    // Create password reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.passwordResetExpires = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+    await user.save();
+
     // Send welcome email
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
     const setPasswordUrl = `${frontendUrl}/reset-password/${resetToken}`;
