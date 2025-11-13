@@ -6,6 +6,10 @@ export interface IPeerAssignment extends Document {
   course: Schema.Types.ObjectId;
   period: Schema.Types.ObjectId;
   active: boolean;
+  window: {
+    start: Date;
+    end: Date;
+  };
 }
 
 const peerAssignmentSchema = new Schema<IPeerAssignment>({
@@ -14,6 +18,10 @@ const peerAssignmentSchema = new Schema<IPeerAssignment>({
   course: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
   period: { type: Schema.Types.ObjectId, ref: 'EvaluationPeriod', required: true },
   active: { type: Boolean, default: true },
+  window: {
+    start: { type: Date, required: true },
+    end: { type: Date, required: true },
+  },
 }, { timestamps: true });
 
 peerAssignmentSchema.index({ evaluator: 1, targetTeacher: 1, course: 1, period: 1 }, { unique: true });
