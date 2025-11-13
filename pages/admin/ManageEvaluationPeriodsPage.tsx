@@ -47,7 +47,7 @@ const ManageEvaluationPeriodsPage: React.FC = () => {
             };
 
             if (isEditing && currentPeriod) {
-                await apiUpdateEvaluationPeriod(currentPeriod.id, periodData);
+                await apiUpdateEvaluationPeriod(currentPeriod._id, periodData);
                 toast.success('Evaluation period updated successfully');
             } else {
                 await apiCreateEvaluationPeriod(periodData);
@@ -168,20 +168,20 @@ const ManageEvaluationPeriodsPage: React.FC = () => {
                                 <th className="px-4 py-3 text-right font-semibold">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-200">
+                        <tbody className="divide-y divide-gray-700 bg-gray-800 text-gray-100">
                             {periods.map((period) => (
-                                <tr key={period.id} className="hover:bg-gray-50 transition">
+                                <tr key={period._id} className="hover:bg-blue-900 transition">
                                     <td className="px-4 py-3">{period.name}</td>
                                     <td className="px-4 py-3">{new Date(period.startDate).toLocaleDateString()}</td>
                                     <td className="px-4 py-3">{new Date(period.endDate).toLocaleDateString()}</td>
                                     <td className="px-4 py-3">
-                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${period.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${period.status === 'Active' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
                                             {period.status}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-right flex justify-end gap-3">
-                                        <button onClick={() => openModal(period)} className="text-indigo-600 hover:text-indigo-900"><Edit size={18} /></button>
-                                        <button onClick={() => handleDelete(period.id)} className="text-red-600 hover:text-red-900"><Trash2 size={18} /></button>
+                                        <button onClick={() => openModal(period)} className="text-blue-400 hover:text-blue-200"><Edit size={18} /></button>
+                                        <button onClick={() => handleDelete(period._id)} className="text-red-400 hover:text-red-200"><Trash2 size={18} /></button>
                                     </td>
                                 </tr>
                             ))}
