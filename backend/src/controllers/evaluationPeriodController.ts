@@ -50,9 +50,14 @@ export const createEvaluationPeriod = async (req: Request, res: Response) => {
 
 export const updateEvaluationPeriod = async (req: Request, res: Response) => {
     try {
+        const periodId = req.params.id;
+        if (!periodId) {
+            return res.status(400).json({ success: false, error: 'Evaluation Period ID is required' });
+        }
+
         let { name, startDate, endDate, status } = req.body;
         name = typeof name === 'string' ? name.trim().toLowerCase() : name;
-        const period = await EvaluationPeriod.findByIdAndUpdate(req.params.id, { name, startDate, endDate, status }, { new: true, runValidators: true });
+        const period = await EvaluationPeriod.findByIdAndUpdate(periodId, { name, startDate, endDate, status }, { new: true, runValidators: true });
         if (!period) {
             return res.status(404).json({ success: false, error: 'Evaluation period not found' });
         }
