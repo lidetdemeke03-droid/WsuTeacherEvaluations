@@ -34,7 +34,11 @@ const ManageEvaluationPeriodsPage: React.FC = () => {
     };
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: name === 'status' ? value.toLowerCase() : value
+        }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
