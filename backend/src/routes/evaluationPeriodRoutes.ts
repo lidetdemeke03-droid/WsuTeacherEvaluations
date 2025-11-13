@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getEvaluationPeriods, getEvaluationPeriod, createEvaluationPeriod, updateEvaluationPeriod, deleteEvaluationPeriod } from '../controllers/evaluationPeriodController';
+import { getEvaluationPeriods, getEvaluationPeriod, createEvaluationPeriod, updateEvaluationPeriod, deleteEvaluationPeriod, getActiveEvaluationPeriods } from '../controllers/evaluationPeriodController';
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/role';
 import { UserRole } from '../types';
@@ -11,6 +11,7 @@ const router = Router();
 router.use(protect);
 
 router.get('/', getEvaluationPeriods);
+router.get('/active', getActiveEvaluationPeriods);
 router.get('/:id', getEvaluationPeriod);
 router.post('/', authorize(UserRole.Admin),
     [

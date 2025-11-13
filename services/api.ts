@@ -112,7 +112,18 @@ export const apiGetStudentCourses = (studentId: string): Promise<Course[]> => ap
 export const apiGetStudentEvaluations = (studentId: string): Promise<Evaluation[]> => apiRequest<Evaluation[]>(`/evaluations/assigned?studentId=${studentId}`);
 export const apiSubmitEvaluation = (submission: EvaluationSubmission): Promise<any> => apiRequest<any>('/evaluations/student', { method: 'POST', body: JSON.stringify(submission) });
 export const apiSubmitPeerEvaluation = (submission: EvaluationSubmission): Promise<any> => apiRequest<any>('/evaluations/peer', { method: 'POST', body: JSON.stringify(submission) });
-export const apiAssignEvaluation = (assignData: { student: string, courseId: string, teacherId: string, periodId: string }): Promise<any> => apiRequest<any>('/evaluations/assign', { method: 'POST', body: JSON.stringify(assignData) });
+interface AssignEvaluationPayload {
+  evaluatorIds: string[];
+  courseId: string;
+  teacherId: string;
+  periodId: string;
+  evaluationType: EvaluationType;
+}
+
+export const apiAssignEvaluation = async (payload: AssignEvaluationPayload): Promise<any> => {
+  const response = await api.post('/evaluations/assign', payload);
+  return response.data;
+};
 
 
 // Departments
@@ -141,7 +152,26 @@ export const apiGetNotifications = (): Promise<any[]> => apiRequest<any[]>('/not
 export const apiMarkNotificationRead = (id: string): Promise<any> => apiRequest<any>(`/notifications/${id}/read`, { method: 'PATCH' });
 
 // Evaluation Periods
-export const apiGetEvaluationPeriods = (): Promise<EvaluationPeriod[]> => apiRequest<EvaluationPeriod[]>('/periods');
+export const apiGetEvaluationPeriods = async (): Promise<EvaluationPeriod[]> => {
+  const response = await api.get('/evaluation-periods');
+  return response.data.data;
+};
+
+export const apiGetActiveEvaluationPeriods = async (): Promise<EvaluationPeriod[]> => {
+  const response = await api.get('/evaluation-periods/active');
+  return response.data.data;
+};
+
+export const apiGetUsersByRoleAndDepartment = async (
+  role: UserRole,
+  departmentId: string,
+  excludeUserId?: string
+): Promise<User[]> => {
+  const response = await api.get('/users/by-role-department', {
+    params: { role, departmentId, excludeUserId },
+  });
+  return response.data.data;
+};
 export const apiCreateEvaluationPeriod = (periodData: Partial<EvaluationPeriod>): Promise<EvaluationPeriod> => apiRequest<EvaluationPeriod>('/periods', { method: 'POST', body: JSON.stringify(periodData) });
 export const apiUpdateEvaluationPeriod = (periodId: string, periodData: Partial<EvaluationPeriod>): Promise<EvaluationPeriod> => apiRequest<EvaluationPeriod>(`/periods/${periodId}`, { method: 'PUT', body: JSON.stringify(periodData) });
 export const apiDeleteEvaluationPeriod = (periodId: string): Promise<void> => apiRequest<void>(`/periods/${periodId}`, { method: 'DELETE' });

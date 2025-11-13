@@ -8,6 +8,7 @@ import AssignEvaluatorModal from '../../components/AssignEvaluatorModal';
 
 const ManageCoursesPage: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -24,8 +25,18 @@ const ManageCoursesPage: React.FC = () => {
     }
   };
 
+  const fetchDepartments = async () => {
+    try {
+      const data = await apiGetDepartments();
+      setDepartments(data);
+    } catch (error) {
+      toast.error('Failed to fetch departments.');
+    }
+  };
+
   useEffect(() => {
     fetchCourses();
+    fetchDepartments();
   }, []);
 
   const handleCreateCourse = async (courseData: Partial<Course>) => {
@@ -61,33 +72,64 @@ const ManageCoursesPage: React.FC = () => {
         </motion.button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {courses.map((course) => (
-          <motion.div
-            key={course._id}
-            whileHover={{ scale: 1.02 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-5 flex flex-col justify-between transition-all"
-          >
-            <div>
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">{course.title}</h2>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">{course.code}</p>
-              <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-                Teacher: {course.teacher ? `${course.teacher.firstName} ${course.teacher.lastName}` : 'N/A'}
-              </p>
-            </div>
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => openAssignModal(course)}
-              className="mt-4 flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow-md"
-            >
-              <UserPlus size={18} className="mr-2" /> Assign Evaluator
-            </motion.button>
-          </motion.div>
+      <div className="space-y-6">
+        {departments.map((department) => (
+          <div key={department._id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+            <details className="group">
+              <summary className="flex justify-between items-center p-5 cursor-pointer bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors rounded-t-2xl">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-white">{department.name}</h2>
+                <span className="group-open:rotate-180 transition-transform">
+                  <svg fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6 text-gray-600 dark:text-gray-300">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
+                </span>
+              </summary>
+              <div className="p-5 border-t border-gray-200 dark:border-gray-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {courses
+                    .filter((course) => course.department && course.department._id === department._id)
+                    .map((course) => (
+                      <motion.div
+                        key={course._id}
+                        whileHover={{ scale: 1.02 }}
+                        className="bg-gray-50 dark:bg-gray-700 rounded-xl shadow-md p-4 flex flex-col justify-between transition-all"
+                      >
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-800 dark:text-white">{course.title}</h3>
+                          <p className="text-gray-600 dark:text-gray-400 text-sm">{course.code}</p>
+                          <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                            Teacher: {course.teacher ? `${course.teacher.firstName} ${course.teacher.lastName}` : 'N/A'}
+                          </p>
+                        </div>
+                        <motion.button
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => openAssignModal(course)}
+                          className="mt-4 flex items-center justify-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 shadow-md"
+                        >
+                          <UserPlus size={18} className="mr-2" /> Assign Evaluator
+                        </motion.button>
+                      </motion.div>
+                    ))}
+                </div>
+                {courses.filter((course) => course.department && course.department._id === department._id).length === 0 && (
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-4">No courses in this department.</p>
+                )}
+              </div>
+            </details>
+          </div>
         ))}
       </div>
 
       <CreateCourseModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onCreate={handleCreateCourse} />
-      {selectedCourse && <AssignEvaluatorModal isOpen={isAssignModalOpen} onClose={() => setIsAssignModalOpen(false)} course={selectedCourse} />}
+      {selectedCourse && (
+        <AssignEvaluatorModal
+          isOpen={isAssignModalOpen}
+          onClose={() => setIsAssignModalOpen(false)}
+          course={selectedCourse}
+          departments={departments}
+          onAssignmentSuccess={fetchCourses}
+        />
+      )}
     </motion.div>
   );
 };
