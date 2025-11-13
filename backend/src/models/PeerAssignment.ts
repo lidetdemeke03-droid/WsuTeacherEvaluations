@@ -14,7 +14,7 @@ export interface IPeerAssignment extends Document {
 
 const peerAssignmentSchema = new Schema<IPeerAssignment>({
   evaluator: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  targetTeacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  targetTeacher: { type: Types.ObjectId, ref: 'User', required: true },
   course: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
   period: { type: Schema.Types.ObjectId, ref: 'EvaluationPeriod', required: true },
   active: { type: Boolean, default: true },

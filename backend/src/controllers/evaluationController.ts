@@ -235,8 +235,8 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
                 period: periodId,
                 active: true,
                 window: {
-                    start: window.start,
-                    end: window.end,
+                    start: new Date(window.start),
+                    end: new Date(window.end),
                 },
             });
         }

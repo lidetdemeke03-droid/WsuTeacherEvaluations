@@ -118,6 +118,10 @@ interface AssignEvaluationPayload {
   teacherId: string;
   periodId: string;
   evaluationType: EvaluationType;
+  window: {
+    start: string;
+    end: string;
+  };
 }
 
 

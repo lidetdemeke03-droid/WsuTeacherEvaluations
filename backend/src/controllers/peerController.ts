@@ -63,7 +63,7 @@ export const submitPeerEvaluation = asyncHandler(async (req: IRequest, res: Resp
         evaluator: evaluatorId,
         targetTeacher: teacherId,
         course: courseId,
-        period: assignment.window.start.toISOString().substring(0, 7), // e.g., "2025-10"
+        period: assignment.period,
         answers,
         totalScore: normalizedScore,
     });
@@ -75,7 +75,7 @@ export const submitPeerEvaluation = asyncHandler(async (req: IRequest, res: Resp
         const avgPeerScore = peerEvals.reduce((sum, ev) => sum + ev.totalScore, 0) / peerEvals.length;
 
         const stats = await StatsCache.findOneAndUpdate(
-            { teacher: teacherId, course: courseId, period: assignment.window.start.toISOString().substring(0, 7) },
+            { teacher: teacherId, course: courseId, period: assignment.period },
             { $set: { peerScore: avgPeerScore } },
             { upsert: true, new: true }
         );
