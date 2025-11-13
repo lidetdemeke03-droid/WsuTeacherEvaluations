@@ -1,4 +1,4 @@
-import { User, Evaluation, EvaluationSubmission, Department, Course, Complaint, EvaluationPeriod, UserRole } from '../types';
+import { User, Evaluation, EvaluationSubmission, Department, Course, Complaint, EvaluationPeriod, UserRole, EvaluationType } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
@@ -152,29 +152,28 @@ export const apiGetNotifications = (): Promise<any[]> => apiRequest<any[]>('/not
 export const apiMarkNotificationRead = (id: string): Promise<any> => apiRequest<any>(`/notifications/${id}/read`, { method: 'PATCH' });
 
 // Evaluation Periods
-export const apiGetEvaluationPeriods = async (): Promise<EvaluationPeriod[]> => {
-  const response = await api.get('/evaluation-periods');
-  return response.data.data;
-};
+export const apiGetEvaluationPeriods = (): Promise<EvaluationPeriod[]> => apiRequest<EvaluationPeriod[]>('/periods');
 
-export const apiGetActiveEvaluationPeriods = async (): Promise<EvaluationPeriod[]> => {
-  const response = await api.get('/evaluation-periods/active');
-  return response.data.data;
-};
+export const apiGetActiveEvaluationPeriods = (): Promise<EvaluationPeriod[]> => apiRequest<EvaluationPeriod[]>('/periods/active');
 
-export const apiGetUsersByRoleAndDepartment = async (
+export const apiGetUsersByRoleAndDepartment = (
   role: UserRole,
   departmentId: string,
   excludeUserId?: string
 ): Promise<User[]> => {
-  const response = await api.get('/users/by-role-department', {
-    params: { role, departmentId, excludeUserId },
-  });
-  return response.data.data;
+  const params = new URLSearchParams({ role, departmentId });
+  if (excludeUserId) {
+    params.append('excludeUserId', excludeUserId);
+  }
+  return apiRequest<User[]>(`/users/by-role-department?${params.toString()}`);
 };
-export const apiCreateEvaluationPeriod = (periodData: Partial<EvaluationPeriod>): Promise<EvaluationPeriod> => apiRequest<EvaluationPeriod>('/periods', { method: 'POST', body: JSON.stringify(periodData) });
-export const apiUpdateEvaluationPeriod = (periodId: string, periodData: Partial<EvaluationPeriod>): Promise<EvaluationPeriod> => apiRequest<EvaluationPeriod>(`/periods/${periodId}`, { method: 'PUT', body: JSON.stringify(periodData) });
-export const apiDeleteEvaluationPeriod = (periodId: string): Promise<void> => apiRequest<void>(`/periods/${periodId}`, { method: 'DELETE' });
+
+export const apiAssignEvaluation = (payload: AssignEvaluationPayload): Promise<any> => {
+    return apiRequest<any>('/evaluations/assign', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+};
 
 // Reports
 export const apiGetMyPerformance = (): Promise<any[]> => apiRequest<any[]>('/reports/my-performance');
