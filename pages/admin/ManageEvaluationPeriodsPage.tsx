@@ -142,8 +142,8 @@ const ManageEvaluationPeriodsPage: React.FC = () => {
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                                     <select name="status" value={formData.status} onChange={handleInputChange} className="w-full p-2 border rounded-lg focus:ring focus:ring-blue-200">
-                                        <option value="Active">Active</option>
-                                        <option value="Inactive">Inactive</option>
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
                                     </select>
                                 </div>
                                 <div className="flex justify-end gap-3 pt-3">
