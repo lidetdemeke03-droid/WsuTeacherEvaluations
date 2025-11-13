@@ -1,4 +1,9 @@
 
+export enum EvaluationType {
+  Student = 'student',
+  Peer = 'peer',
+}
+
 export enum UserRole {
   Student = 'student',
   Teacher = 'teacher',

@@ -81,11 +81,7 @@ export const deleteEvaluationPeriod = async (req: Request, res: Response) => {
 
 export const getActiveEvaluationPeriods = async (req: Request, res: Response) => {
     try {
-        const now = new Date();
-        const activePeriods = await EvaluationPeriod.find({
-            startDate: { $lte: now },
-            endDate: { $gte: now },
-        });
+        const activePeriods = await EvaluationPeriod.find({ status: 'active' });
         res.status(200).json({ success: true, data: activePeriods });
     } catch (error: any) {
         res.status(500).json({ success: false, error: error.message });

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { apiAssignEvaluation, apiGetActiveEvaluationPeriods, apiGetUsersByRoleAndDepartment } from '../services/api'; // Assuming EvaluationType is now imported from here or defined locally
-import { Course, User, Department, EvaluationPeriod, UserRole, Evaluation } from '../types';
+import { apiAssignEvaluation, apiGetActiveEvaluationPeriods, apiGetUsersByRoleAndDepartment } from '../services/api';
+import { Course, User, Department, EvaluationPeriod, UserRole, Evaluation, EvaluationType } from '../types';
 
 interface AssignEvaluatorModalProps {
   isOpen: boolean;
@@ -13,7 +13,7 @@ interface AssignEvaluatorModalProps {
   onAssignmentSuccess: () => void;
 }
 
-type EvaluationType = 'student' | 'peer'; // Define EvaluationType locally if not exported from types
+
 
 const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onClose, course, departments, onAssignmentSuccess }) => {
   const [evaluators, setEvaluators] = useState<User[]>([]);
@@ -102,7 +102,7 @@ const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onC
         courseId: course._id,
         teacherId: course.teacher ? course.teacher._id : '',
         periodId: selectedPeriod,
-        evaluationType: evaluatorType === 'student' ? 'student' : 'peer', // Use string literals if EvaluationType enum is not available
+        evaluationType: evaluatorType === 'student' ? EvaluationType.Student : EvaluationType.Peer,
       });
       toast.success('Evaluators assigned successfully!');
       onClose();
