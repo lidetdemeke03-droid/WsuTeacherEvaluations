@@ -146,3 +146,24 @@ export const deleteUser = asyncHandler(async (req: IRequest, res: Response) => {
     await user.save();
     res.json({ success: true, message: 'User removed' });
 });
+
+// @desc    Get users by role and department, optionally excluding a specific user
+// @route   GET /api/users/by-role-department?role=<role>&departmentId=<departmentId>&excludeUserId=<userId>
+// @access  Private (Admin, DepartmentHead)
+export const getUsersByRoleAndDepartment = asyncHandler(async (req: IRequest, res: Response) => {
+    const { role, departmentId, excludeUserId } = req.query;
+
+    if (!role || !departmentId) {
+        res.status(400);
+        throw new Error('Role and Department ID are required query parameters');
+    }
+
+    const filter: any = { role, department: departmentId, deleted: { $ne: true } };
+
+    if (excludeUserId) {
+        filter._id = { $ne: excludeUserId };
+    }
+
+    const users = await User.find(filter).populate('department', 'name');
+    res.status(200).json({ success: true, data: users });
+});

@@ -2,35 +2,61 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { apiGetUsers, apiGetEvaluationPeriods, apiAssignEvaluation } from '../services/api';
-import { Course, User, EvaluationPeriod, UserRole } from '../types';
+import { apiAssignEvaluation, apiGetActiveEvaluationPeriods, apiGetUsersByRoleAndDepartment } from '../services/api'; // Assuming EvaluationType is now imported from here or defined locally
+import { Course, User, Department, EvaluationPeriod, UserRole, Evaluation } from '../types';
 
 interface AssignEvaluatorModalProps {
   isOpen: boolean;
   onClose: () => void;
   course: Course;
+  departments: Department[];
+  onAssignmentSuccess: () => void;
 }
 
-const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onClose, course }) => {
+type EvaluationType = 'student' | 'peer'; // Define EvaluationType locally if not exported from types
+
+const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onClose, course, departments, onAssignmentSuccess }) => {
   const [evaluators, setEvaluators] = useState<User[]>([]);
   const [evaluationPeriods, setEvaluationPeriods] = useState<EvaluationPeriod[]>([]);
-  const [selectedEvaluator, setSelectedEvaluator] = useState<string>('');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [evaluatorType, setEvaluatorType] = useState<'teacher' | 'student'>('student');
+  const [selectedEvaluatorIds, setSelectedEvaluatorIds] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       const fetchInitialData = async () => {
         try {
           setLoading(true);
-          const [usersData, periodsData] = await Promise.all([
-            apiGetUsers(),
-            apiGetEvaluationPeriods(),
-          ]);
-          // Filter users who can be evaluators (e.g., students, department heads, or even other teachers if applicable)
-          // For now, let's assume students can evaluate. Adjust as per actual requirements.
-          setEvaluators(usersData.filter(u => u.role === UserRole.Student || u.role === UserRole.DepartmentHead));
-          setEvaluationPeriods(periodsData.filter(p => p.status === 'Active'));
+          setSelectedEvaluatorIds([]); // Clear selections on modal open
+          setSelectAll(false); // Reset select all
+
+          const activePeriods = await apiGetActiveEvaluationPeriods();
+          setEvaluationPeriods(activePeriods);
+          if (activePeriods.length === 0) {
+            toast.error('There is no active evaluation period.');
+          } else {
+            setSelectedPeriod(activePeriods[0]._id); // Pre-select the first active period
+          }
+
+          // Fetch evaluators based on type
+          let fetchedEvaluators: User[] = [];
+          if (course.department && course.department._id) {
+            if (evaluatorType === 'teacher') {
+              fetchedEvaluators = await apiGetUsersByRoleAndDepartment(
+                UserRole.Teacher,
+                course.department._id,
+                course.teacher?._id // Exclude the course owner
+              );
+            } else if (evaluatorType === 'student') {
+              fetchedEvaluators = await apiGetUsersByRoleAndDepartment(
+                UserRole.Student,
+                course.department._id
+              );
+            }
+          }
+          setEvaluators(fetchedEvaluators);
         } catch (error) {
           toast.error('Failed to load data for evaluator assignment.');
           console.error('Error loading evaluator assignment data:', error);
@@ -40,27 +66,50 @@ const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onC
       };
       fetchInitialData();
     }
-  }, [isOpen]);
+  }, [isOpen, evaluatorType, course.department, course.teacher]);
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectAll(e.target.checked);
+    if (e.target.checked) {
+      setSelectedEvaluatorIds(evaluators.map((evaluator) => evaluator._id));
+    } else {
+      setSelectedEvaluatorIds([]);
+    }
+  };
+
+  const handleEvaluatorToggle = (evaluatorId: string) => {
+    setSelectedEvaluatorIds((prev) =>
+      prev.includes(evaluatorId)
+        ? prev.filter((id) => id !== evaluatorId)
+        : [...prev, evaluatorId]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedEvaluator || !selectedPeriod) {
-      toast.error('Please select both an evaluator and an evaluation period.');
+    if (selectedEvaluatorIds.length === 0 || !selectedPeriod) {
+      toast.error('Please select at least one evaluator and an evaluation period.');
+      return;
+    }
+    if (evaluationPeriods.length === 0) {
+      toast.error('Cannot assign: No active evaluation period.');
       return;
     }
 
     try {
       await apiAssignEvaluation({
-        student: selectedEvaluator, // Assuming student is the evaluator for now
+        evaluatorIds: selectedEvaluatorIds,
         courseId: course._id,
-        teacherId: course.teacher ? course.teacher._id : '', // Assuming course.teacher is populated
+        teacherId: course.teacher ? course.teacher._id : '',
         periodId: selectedPeriod,
+        evaluationType: evaluatorType === 'student' ? 'student' : 'peer', // Use string literals if EvaluationType enum is not available
       });
-      toast.success('Evaluator assigned successfully!');
+      toast.success('Evaluators assigned successfully!');
       onClose();
+      onAssignmentSuccess(); // Refresh courses in parent component
     } catch (error) {
-      toast.error('Failed to assign evaluator.');
-      console.error('Error assigning evaluator:', error);
+      toast.error('Failed to assign evaluators.');
+      console.error('Error assigning evaluators:', error);
     }
   };
 
@@ -88,29 +137,41 @@ const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onC
               </button>
             </div>
             {loading ? (
-              <div className="text-center text-gray-500">Loading evaluators and periods...</div>
+              <div className="text-center text-gray-500 dark:text-gray-400">Loading evaluators and periods...</div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Evaluator Type Selection */}
                 <div>
-                  <label htmlFor="evaluator" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Select Evaluator
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Select Evaluator Type
                   </label>
-                  <select
-                    id="evaluator"
-                    value={selectedEvaluator}
-                    onChange={(e) => setSelectedEvaluator(e.target.value)}
-                    className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-                    required
-                  >
-                    <option value="">-- Select an Evaluator --</option>
-                    {evaluators.map((user) => (
-                      <option key={user._id} value={user._id}>
-                        {user.firstName} {user.lastName} ({user.role})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex gap-4">
+                    <label className="inline-flex items-center">
+                      <input
+                        type="radio"
+                        className="form-radio text-blue-600"
+                        name="evaluatorType"
+                        value="teacher"
+                        checked={evaluatorType === 'teacher'}
+                        onChange={() => setEvaluatorType('teacher')}
+                      />
+                      <span className="ml-2 text-gray-700 dark:text-gray-300">Teacher</span>
+                    </label>
+                    <label className="inline-flex items-center">
+                      <input
+                        type="radio"
+                        className="form-radio text-blue-600"
+                        name="evaluatorType"
+                        value="student"
+                        checked={evaluatorType === 'student'}
+                        onChange={() => setEvaluatorType('student')}
+                      />
+                      <span className="ml-2 text-gray-700 dark:text-gray-300">Student</span>
+                    </label>
+                  </div>
                 </div>
 
+                {/* Evaluation Period Selection */}
                 <div>
                   <label htmlFor="period" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Select Evaluation Period
@@ -121,14 +182,61 @@ const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onC
                     onChange={(e) => setSelectedPeriod(e.target.value)}
                     className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
                     required
+                    disabled={evaluationPeriods.length === 0}
                   >
-                    <option value="">-- Select a Period --</option>
-                    {evaluationPeriods.map((period) => (
-                      <option key={period._id} value={period._id}>
-                        {period.name} ({period.startDate.substring(0, 10)} to {period.endDate.substring(0, 10)})
-                      </option>
-                    ))}
+                    {evaluationPeriods.length === 0 ? (
+                      <option value="">No active periods</option>
+                    ) : (
+                      <>
+                        <option value="">-- Select a Period --</option>
+                        {evaluationPeriods.map((period) => (
+                          <option key={period._id} value={period._id}>
+                            {period.name} ({new Date(period.startDate).toLocaleDateString()} to {new Date(period.endDate).toLocaleDateString()})
+                          </option>
+                        ))}
+                      </>
+                    )}
                   </select>
+                  {evaluationPeriods.length === 0 && (
+                    <p className="text-red-500 text-xs mt-1">No active evaluation periods available.</p>
+                  )}
+                </div>
+
+                {/* Evaluator List */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Select Evaluator(s)
+                    </label>
+                    <label className="inline-flex items-center">
+                      <input
+                        type="checkbox"
+                        className="form-checkbox text-blue-600"
+                        checked={selectAll}
+                        onChange={handleSelectAll}
+                      />
+                      <span className="ml-2 text-gray-700 dark:text-gray-300">Select All</span>
+                    </label>
+                  </div>
+                  <div className="border rounded-xl p-3 max-h-48 overflow-y-auto dark:border-gray-700">
+                    {evaluators.length === 0 ? (
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">No {evaluatorType}s found in this department.</p>
+                    ) : (
+                      evaluators.map((user) => (
+                        <label key={user._id} className="flex items-center py-1">
+                          <input
+                            type="checkbox"
+                            className="form-checkbox text-blue-600"
+                            checked={selectedEvaluatorIds.includes(user._id)}
+                            onChange={() => handleEvaluatorToggle(user._id)}
+                          />
+                          <span className="ml-2 text-gray-700 dark:text-gray-300">
+                            {user.firstName} {user.lastName}
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
@@ -142,6 +250,7 @@ const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onC
                   <button
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700"
+                    disabled={selectedEvaluatorIds.length === 0 || evaluationPeriods.length === 0}
                   >
                     Assign
                   </button>

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getMe, getUsers, updateUser, deleteUser, updateProfile, changePassword } from '../controllers/userController';
+import { getMe, getUsers, updateUser, deleteUser, updateProfile, changePassword, getUsersByRoleAndDepartment } from '../controllers/userController';
 import { getTeacherCourses } from '../controllers/studentController';
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/role';
@@ -32,4 +32,8 @@ router.put('/:id', authorize(UserRole.Admin, UserRole.SuperAdmin), audit('USER_U
 // DELETE /api/users/:id - Delete a user (Admin only)
 router.delete('/:id', authorize(UserRole.Admin, UserRole.SuperAdmin), audit('USER_DELETE'), deleteUser);
 
+// GET /api/users/by-role-department - Get users by role and department (Admin, DepartmentHead)
+router.get('/by-role-department', authorize(UserRole.Admin, UserRole.DepartmentHead), getUsersByRoleAndDepartment);
+
 export default router;
+

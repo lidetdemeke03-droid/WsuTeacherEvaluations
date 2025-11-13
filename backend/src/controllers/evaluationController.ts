@@ -198,35 +198,76 @@ export const submitPeerEvaluation = asyncHandler(async (req: IRequest, res: Resp
     res.status(201).json({ success: true, data: response });
 });
 
-// @desc    Create an evaluation assignment
+// @desc    Create evaluation assignments for multiple evaluators
 // @route   POST /api/evaluations/assign
 // @access  Private (Admin)
 export const createEvaluationAssignment = asyncHandler(async (req: Request, res: Response) => {
-    const { student, courseId, teacherId, periodId } = req.body;
+    const { evaluatorIds, courseId, teacherId, periodId, evaluationType } = req.body;
 
-    // Check if an evaluation assignment already exists for this combination
-    const existingAssignment = await Evaluation.findOne({
-        student,
-        course: courseId,
-        teacher: teacherId,
-    });
-
-    if (existingAssignment) {
-        res.status(409).json({
-            success: false,
-            error: 'This evaluation has already been assigned to this student.',
-        });
-        return;
+    if (!Array.isArray(evaluatorIds) || evaluatorIds.length === 0) {
+        res.status(400);
+        throw new Error('At least one evaluator ID is required.');
     }
 
-    const assignment = await Evaluation.create({
-        student,
-        course: courseId,
-        teacher: teacherId,
-        period: periodId,
-    });
+    if (evaluationType === EvaluationType.Peer) {
+        const PeerAssignment = (await import('../models/PeerAssignment')).default;
+        const assignments = [];
+        for (const evaluatorId of evaluatorIds) {
+            const existingAssignment = await PeerAssignment.findOne({
+                evaluator: evaluatorId,
+                targetTeacher: teacherId,
+                course: courseId,
+                period: periodId,
+            });
 
-    res.status(201).json({ success: true, data: assignment });
+            if (existingAssignment) {
+                console.warn(`Peer assignment already exists for evaluator ${evaluatorId}, teacher ${teacherId}, course ${courseId}, period ${periodId}. Skipping.`);
+                continue;
+            }
+
+            assignments.push({
+                evaluator: evaluatorId,
+                targetTeacher: teacherId,
+                course: courseId,
+                period: periodId,
+                active: true,
+            });
+        }
+        if (assignments.length > 0) {
+            await PeerAssignment.insertMany(assignments);
+        }
+        res.status(201).json({ success: true, message: `${assignments.length} peer assignments created successfully.` });
+
+    } else if (evaluationType === EvaluationType.Student) {
+        const assignments = [];
+        for (const evaluatorId of evaluatorIds) {
+            const existingAssignment = await Evaluation.findOne({
+                student: evaluatorId,
+                course: courseId,
+                teacher: teacherId,
+                period: periodId,
+            });
+
+            if (existingAssignment) {
+                console.warn(`Student assignment already exists for student ${evaluatorId}, teacher ${teacherId}, course ${courseId}, period ${periodId}. Skipping.`);
+                continue;
+            }
+
+            assignments.push({
+                student: evaluatorId,
+                course: courseId,
+                teacher: teacherId,
+                period: periodId,
+            });
+        }
+        if (assignments.length > 0) {
+            await Evaluation.insertMany(assignments);
+        }
+        res.status(201).json({ success: true, message: `${assignments.length} student assignments created successfully.` });
+    } else {
+        res.status(400);
+        throw new Error('Invalid evaluation type provided.');
+    }
 });
 
 // @desc    Submit a department head evaluation response
