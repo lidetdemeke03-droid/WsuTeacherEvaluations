@@ -35,7 +35,10 @@ const DepartmentHeadDashboard: React.FC = () => {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
             <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-white">Department Head Dashboard</h1>
-            <p className="mb-8 text-lg text-gray-600 dark:text-gray-300">Welcome, {user?.name}!</p>
+            <p className="mb-8 text-lg text-gray-600 dark:text-gray-300">Welcome, {user?.firstName} {user?.lastName}!</p>
+            {user?.departmentName && (
+                <p className="mb-8 text-lg text-gray-600 dark:text-gray-300">Department: {user.departmentName}</p>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
                     <h3 className="text-sm text-gray-500">Teachers</h3>

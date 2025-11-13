@@ -22,14 +22,28 @@ const DepartmentEvaluationForm: React.FC = () => {
   const [answers, setAnswers] = useState<Record<string, { questionCode: string; score?: number; response?: string }>>({});
   const [[page, direction], setPage] = useState([0, 0]);
   const [submitting, setSubmitting] = useState(false);
+  const [teacher, setTeacher] = useState<User | null>(null);
   const [courses, setCourses] = useState<any[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('');
 
   useEffect(() => {
     if (teacherId) {
-      apiGetTeacherCourses(teacherId)
-        .then(setCourses)
-        .catch(() => setCourses([]));
+      Promise.all([
+        apiGetTeacherCourses(teacherId),
+        api.get<User>(`/users/${teacherId}`)
+      ])
+        .then(([teacherCourses, teacherDetails]) => {
+          setCourses(teacherCourses);
+          setTeacher(teacherDetails);
+          if (teacherCourses.length === 1) {
+            setSelectedCourse(teacherCourses[0]._id);
+          }
+        })
+        .catch(err => {
+          console.error('Error fetching teacher data:', err);
+          setCourses([]);
+          setTeacher(null);
+        });
     }
   }, [teacherId]);
 
@@ -93,21 +107,41 @@ const DepartmentEvaluationForm: React.FC = () => {
           Department Head Evaluation
         </h1>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2 text-gray-200">Select Course (required)</label>
-          <select
-            value={selectedCourse}
-            onChange={e => setSelectedCourse(e.target.value)}
-            className="w-full p-2 rounded-lg bg-blue-950/60 text-white border border-blue-400 focus:ring-2 focus:ring-blue-500 outline-none"
-          >
-            <option value="">-- Select course --</option>
-            {courses.map(c => (
-              <option key={c._id} value={c._id} className="text-gray-900">
-                {c.title} ({c.code})
-              </option>
-            ))}
-          </select>
-        </div>
+        {teacher && (
+          <div className="mb-6 p-4 bg-blue-950/60 rounded-lg shadow-md border border-blue-700">
+            <h2 className="text-xl font-semibold text-white mb-2">Evaluating: {teacher.firstName} {teacher.lastName}</h2>
+            {courses.length > 0 ? (
+              <div>
+                <p className="text-gray-200">Courses Taught:</p>
+                <ul className="list-disc list-inside ml-4 text-gray-200">
+                  {courses.map(course => (
+                    <li key={course._id}>{course.title} ({course.code})</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="text-gray-200">No courses found for this teacher.</p>
+            )}
+          </div>
+        )}
+
+        {courses.length > 1 && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2 text-gray-200">Select Course (required)</label>
+            <select
+              value={selectedCourse}
+              onChange={e => setSelectedCourse(e.target.value)}
+              className="w-full p-2 rounded-lg bg-blue-950/60 text-white border border-blue-400 focus:ring-2 focus:ring-blue-500 outline-none"
+            >
+              <option value="">-- Select course --</option>
+              {courses.map(c => (
+                <option key={c._id} value={c._id} className="text-gray-900">
+                  {c.title} ({c.code})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="w-full bg-blue-950 rounded-full h-2.5 mb-6">
           <motion.div
