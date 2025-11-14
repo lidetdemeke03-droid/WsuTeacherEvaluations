@@ -11,6 +11,8 @@ const courseSchema = new Schema<ICourse>({
   students: [{ type: Schema.Types.ObjectId, ref: 'User' }],
 }, { timestamps: true });
 
+courseSchema.index({ teacher: 1 });
+
 const Course = model<ICourse>('Course', courseSchema);
 
 export default Course;
