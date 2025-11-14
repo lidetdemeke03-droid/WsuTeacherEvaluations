@@ -52,29 +52,32 @@ const NewEvaluation: React.FC = () => {
   }, [user, departmentId]);
 
   // Fetch courses for selected teacher
-  useEffect(() => {
-    const fetchCourses = async () => {
-      if (selectedTeacher) {
-        try {
-          const courses = await apiGetTeacherCourses(String(selectedTeacher._id));
-          setCoursesForSelectedTeacher(courses);
-          if (courses.length === 1) {
-            setSelectedCourse(courses[0]); // Auto-select if only one course
-          } else {
-            setSelectedCourse(null); // Reset if multiple or none
-          }
-        } catch (err: any) {
-          setError(err.message || 'Failed to fetch courses for teacher.');
-          setCoursesForSelectedTeacher([]);
-          setSelectedCourse(null);
+  const fetchCourses = useCallback(async () => {
+    if (selectedTeacher) {
+      try {
+        const courses = await apiGetTeacherCourses(String(selectedTeacher._id));
+        setCoursesForSelectedTeacher(courses);
+        if (courses.length === 1) {
+          setSelectedCourse(courses[0]); // Auto-select if only one course
+        } else {
+          setSelectedCourse(null); // Reset if multiple courses are available
         }
-      } else {
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch courses for teacher.');
         setCoursesForSelectedTeacher([]);
         setSelectedCourse(null);
       }
-    };
-    fetchCourses();
+    } else {
+      setCoursesForSelectedTeacher([]);
+      setSelectedCourse(null);
+    }
   }, [selectedTeacher]);
+
+  useEffect(() => {
+    if (selectedTeacher) {
+      fetchCourses();
+    }
+  }, [selectedTeacher, fetchCourses]);
 
   // Fetch previous evaluations by the current department head
   useEffect(() => {
@@ -179,7 +182,7 @@ const NewEvaluation: React.FC = () => {
             </div>
 
             {/* Course Selection */}
-            {coursesForSelectedTeacher.length > 0 && (
+            {coursesForSelectedTeacher.length > 1 ? (
               <div>
                 <label htmlFor="course-select" className="block text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Select Course:
@@ -197,6 +200,13 @@ const NewEvaluation: React.FC = () => {
                     </option>
                   ))}
                 </select>
+              </div>
+            ) : coursesForSelectedTeacher.length === 1 && (
+              <div>
+                <p className="text-lg font-medium text-gray-700 dark:text-gray-300">Course:</p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                  {coursesForSelectedTeacher[0].title} ({coursesForSelectedTeacher[0].code})
+                </p>
               </div>
             )}
 
