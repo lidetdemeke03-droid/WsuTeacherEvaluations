@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { apiGetUsersByRoleAndDepartment, apiGetTeacherCourses, apiGetActiveEvaluationPeriods, apiGetDepartmentHeadEvaluations } from '../../services/api';
 import { User, UserRole, Course, EvaluationPeriod, Evaluation } from '../../types';
@@ -14,16 +14,16 @@ const NewEvaluation: React.FC = () => {
   const [selectedTeacher, setSelectedTeacher] = useState<User | null>(null);
   const [coursesForSelectedTeacher, setCoursesForSelectedTeacher] = useState<Course[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [activePeriods, setActivePeriods] = useState<EvaluationPeriod[]>([]); // This should be EvaluationPeriod[]
+  const [activePeriods, setActivePeriods] = useState<EvaluationPeriod[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<EvaluationPeriod | null>(null);
   const [previousEvaluations, setPreviousEvaluations] = useState<Evaluation[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const [loadingCourses, setLoadingCourses] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const departmentId = user?.department;
 
-  // Fetch active periods and teachers in the department
   useEffect(() => {
     const fetchData = async () => {
       if (!user || user.role !== UserRole.DepartmentHead || !departmentId) {
@@ -44,6 +44,7 @@ const NewEvaluation: React.FC = () => {
         }
       } catch (err: any) {
         setError(err.message || 'Failed to fetch initial data.');
+        toast.error(err.message || 'Failed to fetch initial data.');
       } finally {
         setLoading(false);
       }
@@ -51,22 +52,29 @@ const NewEvaluation: React.FC = () => {
     fetchData();
   }, [user, departmentId]);
 
-  // Fetch courses for selected teacher
   useEffect(() => {
     const fetchCourses = async () => {
       if (selectedTeacher) {
+        setLoadingCourses(true);
+        setCoursesForSelectedTeacher([]);
+        setSelectedCourse(null);
         try {
-          const courses = await apiGetTeacherCourses(String(selectedTeacher._id));
-          setCoursesForSelectedTeacher(courses);
-          if (courses.length === 1) {
-            setSelectedCourse(courses[0]); // Auto-select if only one course
+          const coursesData = await apiGetTeacherCourses(String(selectedTeacher._id));
+          if (Array.isArray(coursesData)) {
+            setCoursesForSelectedTeacher(coursesData);
+            if (coursesData.length === 1) {
+              setSelectedCourse(coursesData[0]);
+            }
           } else {
-            setSelectedCourse(null); // Reset if multiple or none
+            console.error("Expected an array of courses, but received:", coursesData);
+            toast.error('Received an invalid format for courses.');
+            setCoursesForSelectedTeacher([]);
           }
         } catch (err: any) {
-          setError(err.message || 'Failed to fetch courses for teacher.');
+          toast.error(err.message || 'Failed to fetch courses for teacher.');
           setCoursesForSelectedTeacher([]);
-          setSelectedCourse(null);
+        } finally {
+          setLoadingCourses(false);
         }
       } else {
         setCoursesForSelectedTeacher([]);
@@ -76,7 +84,6 @@ const NewEvaluation: React.FC = () => {
     fetchCourses();
   }, [selectedTeacher]);
 
-  // Fetch previous evaluations by the current department head
   useEffect(() => {
     const fetchPreviousEvaluations = async () => {
       if (user && user.role === UserRole.DepartmentHead) {
@@ -93,7 +100,7 @@ const NewEvaluation: React.FC = () => {
 
   const handleTeacherSelect = (teacher: User) => {
     setSelectedTeacher(teacher);
-    setSelectedCourse(null); // Reset course selection
+    setSelectedCourse(null);
   };
 
   const handleStartEvaluation = () => {
@@ -112,8 +119,10 @@ const NewEvaluation: React.FC = () => {
     navigate(`/department/evaluate/${selectedTeacher._id}/${selectedCourse._id}/${selectedPeriod._id}`);
   };
 
+  const isEvaluationDisabled = !selectedTeacher || !selectedCourse || !selectedPeriod;
+
   if (loading) return <div className="text-center py-8">Loading...</div>;
-  if (error) return <div className="text-center py-8 text-red-500">Error: {error}</div>;
+  if (error && !loading) return <div className="text-center py-8 text-red-500">Error: {error}</div>;
 
   if (user?.role !== UserRole.DepartmentHead) {
     return <div className="text-center py-8 text-red-500">Access Denied: Only Department Heads can access this page.</div>;
@@ -123,9 +132,8 @@ const NewEvaluation: React.FC = () => {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="container mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6 text-gray-800 dark:text-white">New Department Head Evaluation</h1>
 
-      {/* Teacher Selection */}
       <div className="mb-8 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-        <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">Select Teacher</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">1. Select Teacher</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {teachers.length === 0 ? (
             <p className="text-gray-600 dark:text-gray-400">No teachers found in your department.</p>
@@ -136,8 +144,8 @@ const NewEvaluation: React.FC = () => {
                 onClick={() => handleTeacherSelect(teacher)}
                 className={`p-4 rounded-lg text-left transition-all duration-200
                   ${selectedTeacher?._id === teacher._id
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-blue-100 dark:hover:bg-blue-900'
+                    ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-blue-100 dark:hover:bg-gray-600'
                   }`}
               >
                 <p className="font-medium">{teacher.firstName} {teacher.lastName}</p>
@@ -149,16 +157,9 @@ const NewEvaluation: React.FC = () => {
       </div>
 
       {selectedTeacher && (
-        <div className="mb-8 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-          <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">Evaluation Details</h2>
-          <div className="space-y-4">
-            {/* Selected Teacher Info */}
-            <div>
-              <p className="text-lg font-medium text-gray-700 dark:text-gray-300">Teacher:</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{selectedTeacher.firstName} {selectedTeacher.lastName}</p>
-            </div>
-
-            {/* Evaluation Period Selection */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+          <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">2. Evaluation Details</h2>
+          <div className="space-y-6">
             <div>
               <label htmlFor="period-select" className="block text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Select Evaluation Period:
@@ -168,6 +169,7 @@ const NewEvaluation: React.FC = () => {
                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 value={selectedPeriod?._id || ''}
                 onChange={(e) => setSelectedPeriod(activePeriods.find(p => p._id === e.target.value) || null)}
+                disabled={activePeriods.length <= 1}
               >
                 <option value="">-- Select Period --</option>
                 {activePeriods.map((period) => (
@@ -178,12 +180,13 @@ const NewEvaluation: React.FC = () => {
               </select>
             </div>
 
-            {/* Course Selection */}
-            {coursesForSelectedTeacher.length > 0 && (
-              <div>
-                <label htmlFor="course-select" className="block text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Select Course:
-                </label>
+            <div>
+              <label htmlFor="course-select" className="block text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Select Course for {selectedTeacher.firstName} {selectedTeacher.lastName}:
+              </label>
+              {loadingCourses ? (
+                <p className="text-gray-600 dark:text-gray-400">Loading courses...</p>
+              ) : coursesForSelectedTeacher.length > 0 ? (
                 <select
                   id="course-select"
                   className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
@@ -197,30 +200,36 @@ const NewEvaluation: React.FC = () => {
                     </option>
                   ))}
                 </select>
-              </div>
-            )}
-
-            {/* Current Selection Summary */}
-            {(selectedTeacher && selectedCourse && selectedPeriod) && (
-              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900 rounded-md">
-                <p className="text-blue-800 dark:text-blue-200 font-semibold">Ready to Evaluate:</p>
-                <p className="text-blue-700 dark:text-blue-300">Teacher: {selectedTeacher.firstName} {selectedTeacher.lastName}</p>
-                <p className="text-blue-700 dark:text-blue-300">Course: {selectedCourse.title} ({selectedCourse.code})</p>
-                <p className="text-blue-700 dark:text-blue-300">Period: {selectedPeriod.name}</p>
-              </div>
-            )}
-
-            <button
-              onClick={handleStartEvaluation}
-              className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-            >
-              Start Evaluation
-            </button>
+              ) : (
+                <p className="text-gray-600 dark:text-gray-400">No courses found for this teacher.</p>
+              )}
+            </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* Previous Evaluations Section */}
+      {selectedTeacher && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+          <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">3. Start Evaluation</h2>
+          {isEvaluationDisabled && (
+            <div className="mb-4 p-4 bg-yellow-50 dark:bg-gray-700 rounded-md">
+              <p className="text-yellow-800 dark:text-yellow-200 font-medium">Please select a teacher, period, and course to proceed.</p>
+            </div>
+          )}
+          <button
+            onClick={handleStartEvaluation}
+            className={`w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white transition-colors ${
+              isEvaluationDisabled
+                ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'
+            }`}
+            disabled={isEvaluationDisabled}
+          >
+            Start Evaluation
+          </button>
+        </motion.div>
+      )}
+
       <div className="mt-8 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
         <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-white">Previous Evaluations</h2>
         {previousEvaluations.length === 0 ? (
