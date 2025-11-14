@@ -5,8 +5,8 @@ import { motion } from 'framer-motion';
 import { GraduationCap, ArrowLeft, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('admin@wsu.edu');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();

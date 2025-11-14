@@ -277,6 +277,32 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
     }
 });
 
+
+// @desc    Get previous department head evaluations
+// @route   GET /api/evaluations/department-head-evaluations
+// @access  Private (DepartmentHead)
+export const getDepartmentHeadEvaluations = asyncHandler(async (req: IRequest, res: Response) => {
+    const departmentHeadId = req.user!._id;
+    const { teacherId } = req.query; // Optional: filter by target teacher
+
+    const filter: any = {
+        evaluator: departmentHeadId,
+        type: EvaluationType.DepartmentHead,
+    };
+
+    if (teacherId) {
+        filter.targetTeacher = teacherId;
+    }
+
+    const evaluations = await EvaluationResponse.find(filter)
+        .populate('targetTeacher', 'firstName lastName')
+        .populate('course', 'title code')
+        .populate('period', 'name')
+        .sort({ submittedAt: -1 }); // Sort by most recent first
+
+    res.status(200).json({ success: true, data: evaluations });
+});
+
 // @desc    Submit a department head evaluation response
 // @route   POST /api/evaluations/department
 // @access  Private (DepartmentHead)

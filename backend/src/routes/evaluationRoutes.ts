@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { submitEvaluation, getAssignedForms, createEvaluationAssignment, submitDepartmentEvaluation, submitPeerEvaluation } from '../controllers/evaluationController';
+import { submitEvaluation, getAssignedForms, createEvaluationAssignment, submitDepartmentEvaluation, submitPeerEvaluation, getDepartmentHeadEvaluations } from '../controllers/evaluationController';
 import { protect } from '../middleware/auth';
 import { audit } from '../middleware/audit';
 import { authorize } from '../middleware/role';
@@ -25,6 +25,9 @@ router.post('/student', evaluationLimiter, authorize(UserRole.Student), audit('E
 
 // POST /api/evaluations/department - Submit a department head evaluation response
 router.post('/department', authorize(UserRole.DepartmentHead), submitDepartmentEvaluation);
+
+// GET /api/evaluations/department-head-evaluations - Get previous department head evaluations
+router.get('/department-head-evaluations', authorize(UserRole.DepartmentHead), getDepartmentHeadEvaluations);
 
 // POST /api/evaluations/peer - Submit a peer (teacher) evaluation response
 router.post('/peer', evaluationLimiter, authorize(UserRole.Teacher), submitPeerEvaluation);
