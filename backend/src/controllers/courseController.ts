@@ -9,16 +9,28 @@ export const getCoursesByTeacher = asyncHandler(async (req: Request, res: Respon
     const { teacherId } = req.params;
     console.log(`[CourseController] Fetching courses for teacher ID: ${teacherId}`);
 
-    const courses = await Course.find({ teacher: teacherId })
-        .populate('department', 'name')
-        .populate('teacher', 'firstName lastName');
+    try {
+        const courses = await Course.find({ teacher: teacherId })
+            .populate('department', 'name')
+            .populate('teacher', 'firstName lastName');
 
-    console.log(`[CourseController] Found ${courses.length} courses for teacher ID: ${teacherId}`);
+        console.log(`[CourseController] Found ${courses.length} courses for teacher ID: ${teacherId}`);
 
-    res.status(200).json({
-        success: true,
-        data: courses,
-    });
+        if (courses.length === 0) {
+            console.warn(`[CourseController] No courses found for teacher ID: ${teacherId}. Check if the teacher is assigned to any courses.`);
+        }
+
+        res.status(200).json({
+            success: true,
+            data: courses,
+        });
+    } catch (error) {
+        console.error(`[CourseController] Error fetching courses for teacher ID: ${teacherId}`, error);
+        res.status(500).json({
+            success: false,
+            error: 'Server error while fetching courses.',
+        });
+    }
 });
 
 
