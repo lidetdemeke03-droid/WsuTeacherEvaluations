@@ -1,5 +1,26 @@
 import { Request, Response } from 'express';
 import Course from '../models/Course';
+import asyncHandler from 'express-async-handler';
+
+// @desc    Get courses taught by a specific teacher
+// @route   GET /api/courses/by-teacher/:teacherId
+// @access  Private
+export const getCoursesByTeacher = asyncHandler(async (req: Request, res: Response) => {
+    const { teacherId } = req.params;
+    console.log(`[CourseController] Fetching courses for teacher ID: ${teacherId}`);
+
+    const courses = await Course.find({ teacher: teacherId })
+        .populate('department', 'name')
+        .populate('teacher', 'firstName lastName');
+
+    console.log(`[CourseController] Found ${courses.length} courses for teacher ID: ${teacherId}`);
+
+    res.status(200).json({
+        success: true,
+        data: courses,
+    });
+});
+
 
 export const getCourses = async (req: Request, res: Response) => {
     try {

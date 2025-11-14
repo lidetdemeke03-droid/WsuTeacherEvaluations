@@ -5,6 +5,7 @@ import { User, UserRole, Course, EvaluationPeriod, Evaluation } from '../../type
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 
 const NewEvaluation: React.FC = () => {
   const { user } = useAuth();
@@ -96,11 +97,19 @@ const NewEvaluation: React.FC = () => {
   };
 
   const handleStartEvaluation = () => {
-    if (selectedTeacher && selectedCourse && selectedPeriod) {
-      navigate(`/department/evaluate/${selectedTeacher._id}/${selectedCourse._id}/${selectedPeriod._id}`);
-    } else {
-      setError('Please select a teacher, course, and evaluation period.');
+    if (!selectedTeacher) {
+      toast.error('Please select a teacher first.');
+      return;
     }
+    if (!selectedPeriod) {
+      toast.error('Please select an evaluation period.');
+      return;
+    }
+    if (!selectedCourse) {
+      toast.error('Please select a course for the chosen teacher.');
+      return;
+    }
+    navigate(`/department/evaluate/${selectedTeacher._id}/${selectedCourse._id}/${selectedPeriod._id}`);
   };
 
   if (loading) return <div className="text-center py-8">Loading...</div>;
@@ -203,12 +212,7 @@ const NewEvaluation: React.FC = () => {
 
             <button
               onClick={handleStartEvaluation}
-              disabled={!selectedTeacher || !selectedCourse || !selectedPeriod}
-              className={`w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white
-                ${selectedTeacher && selectedCourse && selectedPeriod
-                  ? 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'
-                  : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
-                }`}
+              className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
             >
               Start Evaluation
             </button>
