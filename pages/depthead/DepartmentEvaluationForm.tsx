@@ -4,9 +4,10 @@ import { api } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { departmentHeadEvaluationQuestions as questions } from '../../constants/forms';
 import { motion, AnimatePresence } from 'framer-motion';
-import { apiGetTeacherCourses, apiGetEvaluationPeriods } from '../../services/api';
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
+import { User, Course, EvaluationPeriod } from '../../types';
+import { format } from 'date-fns';
 
 const variants = {
   enter: (direction: number) => ({ x: direction > 0 ? '100%' : '-100%', opacity: 0 }),
@@ -15,7 +16,7 @@ const variants = {
 };
 
 const DepartmentEvaluationForm: React.FC = () => {
-  const { teacherId } = useParams<{ teacherId: string }>();
+  const { teacherId, courseId, periodId } = useParams<{ teacherId: string; courseId: string; periodId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -23,29 +24,36 @@ const DepartmentEvaluationForm: React.FC = () => {
   const [[page, direction], setPage] = useState([0, 0]);
   const [submitting, setSubmitting] = useState(false);
   const [teacher, setTeacher] = useState<User | null>(null);
-  const [courses, setCourses] = useState<any[]>([]);
-  const [selectedCourse, setSelectedCourse] = useState<string>('');
+  const [course, setCourse] = useState<Course | null>(null);
+  const [period, setPeriod] = useState<EvaluationPeriod | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(true);
 
   useEffect(() => {
-    if (teacherId) {
-      Promise.all([
-        apiGetTeacherCourses(teacherId),
-        api.get<User>(`/users/${teacherId}`)
-      ])
-        .then(([teacherCourses, teacherDetails]) => {
-          setCourses(teacherCourses);
-          setTeacher(teacherDetails);
-          if (teacherCourses.length === 1) {
-            setSelectedCourse(teacherCourses[0]._id);
-          }
-        })
-        .catch(err => {
-          console.error('Error fetching teacher data:', err);
-          setCourses([]);
-          setTeacher(null);
-        });
-    }
-  }, [teacherId]);
+    const fetchDetails = async () => {
+      if (!teacherId || !courseId || !periodId) {
+        toast.error('Missing evaluation parameters.');
+        navigate('/department/new-evaluation');
+        return;
+      }
+      try {
+        const [teacherDetails, courseDetails, periodDetails] = await Promise.all([
+          api.get<User>(`/users/${teacherId}`),
+          api.get<Course>(`/courses/${courseId}`),
+          api.get<EvaluationPeriod>(`/periods/${periodId}`),
+        ]);
+        setTeacher(teacherDetails);
+        setCourse(courseDetails);
+        setPeriod(periodDetails);
+      } catch (err) {
+        console.error('Error fetching evaluation details:', err);
+        toast.error('Failed to load evaluation details.');
+        navigate('/department/new-evaluation');
+      } finally {
+        setLoadingDetails(false);
+      }
+    };
+    fetchDetails();
+  }, [teacherId, courseId, periodId, navigate]);
 
   const questionIndex = page;
   const question = questions[questionIndex];
@@ -67,38 +75,51 @@ const DepartmentEvaluationForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const allScored = questions.filter(q => q.type === 'rating').every(q => answers[q.code]?.score);
-    if (!allScored) return toast.error('Please provide a score for all rating questions.');
+    if (!teacherId || !courseId || !periodId) {
+      toast.error('Evaluation details are missing. Please go back and select them again.');
+      return;
+    }
 
-    if (!selectedCourse) return toast.error('Please select a course for this evaluation.');
+    const allScored = questions.filter(q => q.type === 'rating').every(q => answers[q.code]?.score);
+    if (!allScored) {
+      toast.error('Please provide a score for all rating questions.');
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const periods = await apiGetEvaluationPeriods();
-      const active = periods.find((p: any) => p.status === 'Active');
-      const resolvedPeriodId =
-        active?._id ||
-        periods.sort((a: any, b: any) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())[0]?._id;
-
-      if (!resolvedPeriodId) throw new Error('No evaluation period found');
-
       await api.post('/evaluations/department', {
-        evaluatorId: user?.id,
         teacherId,
-        courseId: selectedCourse,
-        period: resolvedPeriodId,
+        courseId,
+        period: periodId, // Use the periodId from URL params
         answers: Object.values(answers),
       });
 
       toast.success('Evaluation submitted successfully!');
-      navigate('/dashboard');
-    } catch (err) {
+      navigate('/department/new-evaluation'); // Navigate back to the new evaluation page
+    } catch (err: any) {
       console.error(err);
-      toast.error('Failed to submit evaluation.');
+      toast.error(err.message || 'Failed to submit evaluation.');
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (loadingDetails) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-900 to-blue-800 text-white flex items-center justify-center p-4">
+        <p>Loading evaluation details...</p>
+      </div>
+    );
+  }
+
+  if (!teacher || !course || !period) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-900 to-blue-800 text-white flex items-center justify-center p-4">
+        <p className="text-red-500">Error: Could not load all evaluation details.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-900 to-blue-800 text-white flex items-center justify-center p-4">
@@ -107,41 +128,19 @@ const DepartmentEvaluationForm: React.FC = () => {
           Department Head Evaluation
         </h1>
 
-        {teacher && (
-          <div className="mb-6 p-4 bg-blue-950/60 rounded-lg shadow-md border border-blue-700">
-            <h2 className="text-xl font-semibold text-white mb-2">Evaluating: {teacher.firstName} {teacher.lastName}</h2>
-            {courses.length > 0 ? (
-              <div>
-                <p className="text-gray-200">Courses Taught:</p>
-                <ul className="list-disc list-inside ml-4 text-gray-200">
-                  {courses.map(course => (
-                    <li key={course._id}>{course.title} ({course.code})</li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <p className="text-gray-200">No courses found for this teacher.</p>
-            )}
-          </div>
-        )}
-
-        {courses.length > 1 && (
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2 text-gray-200">Select Course (required)</label>
-            <select
-              value={selectedCourse}
-              onChange={e => setSelectedCourse(e.target.value)}
-              className="w-full p-2 rounded-lg bg-blue-950/60 text-white border border-blue-400 focus:ring-2 focus:ring-blue-500 outline-none"
-            >
-              <option value="">-- Select course --</option>
-              {courses.map(c => (
-                <option key={c._id} value={c._id} className="text-gray-900">
-                  {c.title} ({c.code})
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        {/* Display Evaluation Details */}
+        <div className="mb-6 p-4 bg-blue-950/60 rounded-lg shadow-md border border-blue-700">
+          <h2 className="text-xl font-semibold text-white mb-2">Evaluation for:</h2>
+          <p className="text-gray-200">
+            <span className="font-medium">Teacher:</span> {teacher.firstName} {teacher.lastName}
+          </p>
+          <p className="text-gray-200">
+            <span className="font-medium">Course:</span> {course.title} ({course.code})
+          </p>
+          <p className="text-gray-200">
+            <span className="font-medium">Period:</span> {period.name} ({format(new Date(period.startDate), 'MMM yyyy')} - {format(new Date(period.endDate), 'MMM yyyy')})
+          </p>
+        </div>
 
         <div className="w-full bg-blue-950 rounded-full h-2.5 mb-6">
           <motion.div

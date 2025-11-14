@@ -25,6 +25,8 @@ export const getStudentCourses = asyncHandler(async (req: Request, res: Response
 // @access  Private (Admin, DepartmentHead, Teacher)
 export const getTeacherCourses = asyncHandler(async (req: Request, res: Response) => {
     const teacherId = req.params.id;
-    const courses = await Course.find({ teacher: teacherId });
+    const courses = await Course.find({ teacher: teacherId })
+        .populate('department')
+        .populate('teacher', 'firstName lastName');
     res.json({ success: true, data: courses });
 });

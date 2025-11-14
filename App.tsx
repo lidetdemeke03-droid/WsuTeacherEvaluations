@@ -99,7 +99,7 @@ const AppContent: React.FC = () => {
 
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/evaluation/new" element={<RoleProtectedRoute roles={[UserRole.Teacher, UserRole.DepartmentHead]}><NewEvaluation /></RoleProtectedRoute>} />
-                <Route path="/department/evaluate/:teacherId" element={<RoleProtectedRoute roles={[UserRole.DepartmentHead]}><DepartmentEvaluationForm /></RoleProtectedRoute>} />
+                <Route path="/department/evaluate/:teacherId/:courseId/:periodId" element={<RoleProtectedRoute roles={[UserRole.DepartmentHead]}><DepartmentEvaluationForm /></RoleProtectedRoute>} />
                 <Route path="/instructor/results" element={<RoleProtectedRoute roles={[UserRole.DepartmentHead]}><InstructorResults /></RoleProtectedRoute>} />
             </Route>
             
