@@ -38,6 +38,9 @@ const NewEvaluation: React.FC = () => {
 
         setActivePeriods(periodsData);
         setTeachers(teachersData);
+        if (periodsData.length === 1) {
+          setSelectedPeriod(periodsData[0]);
+        }
       } catch (err: any) {
         setError(err.message || 'Failed to fetch initial data.');
       } finally {
