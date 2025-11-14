@@ -76,14 +76,24 @@ const NewEvaluation: React.FC = () => {
         } finally {
           setLoadingCourses(false);
         }
-      } else {
+      } catch (err: any) {
+        setError(err.message || 'Failed to fetch courses for teacher.');
         setCoursesForSelectedTeacher([]);
         setSelectedCourse(null);
       }
-    };
-    fetchCourses();
+    } else {
+      setCoursesForSelectedTeacher([]);
+      setSelectedCourse(null);
+    }
   }, [selectedTeacher]);
 
+  useEffect(() => {
+    if (selectedTeacher) {
+      fetchCourses();
+    }
+  }, [selectedTeacher, fetchCourses]);
+
+  // Fetch previous evaluations by the current department head
   useEffect(() => {
     const fetchPreviousEvaluations = async () => {
       if (user && user.role === UserRole.DepartmentHead) {
