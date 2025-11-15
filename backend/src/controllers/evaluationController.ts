@@ -9,6 +9,7 @@ import StatsCache from '../models/StatsCache';
 import { EvaluationType } from '../types';
 import { calculateNormalizedScore, recalculateFinalScore } from '../services/scoreService';
 import { studentEvaluationQuestions, departmentHeadEvaluationQuestions, peerEvaluationQuestions } from '../constants/forms';
+import Course from '../models/Course';
 
 
 // @desc    Get assigned evaluation forms for a student
@@ -246,6 +247,12 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
         res.status(201).json({ success: true, message: `${assignments.length} peer assignments created successfully.` });
 
     } else if (evaluationType === EvaluationType.Student) {
+        // Add students to the course
+        await Course.updateOne(
+            { _id: courseId },
+            { $addToSet: { students: { $each: evaluatorIds } } }
+        );
+
         const assignments = [];
         for (const evaluatorId of evaluatorIds) {
             const existingAssignment = await Evaluation.findOne({
@@ -270,7 +277,7 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
         if (assignments.length > 0) {
             await Evaluation.insertMany(assignments);
         }
-        res.status(201).json({ success: true, message: `${assignments.length} student assignments created successfully.` });
+        res.status(201).json({ success: true, message: `${evaluatorIds.length} students assigned and ${assignments.length} evaluation assignments created.` });
     } else {
         res.status(400);
         throw new Error('Invalid evaluation type provided.');
