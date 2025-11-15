@@ -1,4 +1,4 @@
-import { User, Evaluation, EvaluationSubmission, Department, Course, Complaint, EvaluationPeriod, UserRole, EvaluationType } from '../types';
+import { User, Evaluation, EvaluationSubmission, Department, Course, Complaint, EvaluationPeriod, UserRole, EvaluationType, PeerAssignment } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
@@ -128,9 +128,6 @@ interface AssignEvaluationPayload {
   };
 }
 
-
-
-
 // Departments
 export const apiGetDepartments = (): Promise<Department[]> => apiRequest<Department[]>('/departments');
 export const apiCreateDepartment = (data: { name: string, code: string, head?: string[] | string }): Promise<Department> => apiRequest<Department>('/departments', { method: 'POST', body: JSON.stringify(data) });
@@ -142,6 +139,8 @@ export const apiGetTeacherCourses = (teacherId: string, departmentId?: string): 
     return apiRequest<Course[]>(url);
 };
 export const apiGetPeerAssignments = (teacherId: string): Promise<any[]> => apiRequest<any[]>(`/peers/${teacherId}/assignments`);
+export const apiGetPeerAssignmentDetails = (assignmentId: string): Promise<PeerAssignment> =>
+    apiRequest<PeerAssignment>(`/peers/assignments/${assignmentId}`);
 
 // Courses
 export const apiGetCourses = (): Promise<Course[]> => apiRequest<Course[]>('/courses');
