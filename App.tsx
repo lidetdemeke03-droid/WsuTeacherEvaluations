@@ -25,7 +25,8 @@ import DepartmentEvaluationForm from './pages/depthead/DepartmentEvaluationForm'
 import InstructorResults from './pages/instructor/InstructorResults';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
-// Peer review pages removed from public routes per request
+import PeerReviewPage from './pages/peer/PeerReviewPage';
+import PeerReviewForm from './pages/peer/PeerReviewForm';
 
 const ProtectedLayout: React.FC = () => {
     const { user } = useAuth();
@@ -92,7 +93,8 @@ const AppContent: React.FC = () => {
                 <Route path="/student/evaluations" element={<RoleProtectedRoute roles={[UserRole.Student]}><StudentEvaluationsPage /></RoleProtectedRoute>} />
 
                 <Route path="/instructor/performance" element={<RoleProtectedRoute roles={[UserRole.Teacher]}><InstructorDashboard /></RoleProtectedRoute>} />
-                {/* Peer review routes disabled - not needed */}
+                <Route path="/peer/reviews" element={<RoleProtectedRoute roles={[UserRole.Teacher]}><PeerReviewPage /></RoleProtectedRoute>} />
+                <Route path="/peer/evaluate/:assignmentId" element={<RoleProtectedRoute roles={[UserRole.Teacher]}><PeerReviewForm /></RoleProtectedRoute>} />
 
                 <Route path="/complaints" element={<RoleProtectedRoute roles={[UserRole.Admin, UserRole.DepartmentHead, UserRole.Teacher, UserRole.Student]}><ComplaintsPage /></RoleProtectedRoute>} />
                 <Route path="/reports" element={<RoleProtectedRoute roles={[UserRole.Admin, UserRole.DepartmentHead]}><ReportsPage /></RoleProtectedRoute>} />
