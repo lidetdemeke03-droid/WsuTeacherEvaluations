@@ -22,17 +22,21 @@ const NewEvaluation: React.FC = () => {
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const departmentId = user?.department;
+  // Safely get the department ID, whether it's a string or an object
+  const departmentId = typeof user?.department === 'object'
+    ? user?.department?._id
+    : user?.department;
 
   useEffect(() => {
-                    const fetchData = async () => {
-                      if (!user || user.role !== UserRole.DepartmentHead || !departmentId) {
-                        setLoading(false);
-                        return;
-                      }      try {
+    const fetchData = async () => {
+      if (!user || user.role !== UserRole.DepartmentHead || !departmentId) {
+        setLoading(false);
+        return;
+      }
+      try {
         const [periodsData, teachersData] = await Promise.all([
           apiGetActiveEvaluationPeriods(),
-          apiGetUsersByRoleAndDepartment(UserRole.Teacher, String(departmentId._id)),
+          apiGetUsersByRoleAndDepartment(UserRole.Teacher, departmentId),
         ]);
 
         setActivePeriods(periodsData);
@@ -57,7 +61,12 @@ const NewEvaluation: React.FC = () => {
         setCoursesForSelectedTeacher([]);
         setSelectedCourse(null);
         try {
-          const coursesData = await apiGetTeacherCourses(String(selectedTeacher._id), departmentId._id);
+          if (!departmentId) {
+            toast.error('Department ID is missing.');
+            setLoadingCourses(false);
+            return;
+          }
+          const coursesData = await apiGetTeacherCourses(String(selectedTeacher._id), departmentId);
           if (Array.isArray(coursesData)) {
             setCoursesForSelectedTeacher(coursesData);
             if (coursesData.length === 1) {
