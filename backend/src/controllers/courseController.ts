@@ -7,10 +7,16 @@ import asyncHandler from 'express-async-handler';
 // @access  Private
 export const getCoursesByTeacher = asyncHandler(async (req: Request, res: Response) => {
     const { teacherId } = req.params;
-    console.log(`[CourseController] Fetching courses for teacher ID: ${teacherId}`);
+    const { departmentId } = req.query;
+    console.log(`[CourseController] Fetching courses for teacher ID: ${teacherId}, Department ID: ${departmentId || 'N/A'}`);
 
     try {
-        const courses = await Course.find({ teacher: teacherId })
+        const filter: any = { teacher: teacherId };
+        if (departmentId) {
+            filter.department = departmentId;
+        }
+
+        const courses = await Course.find(filter)
             .populate('department', 'name')
             .populate('teacher', 'firstName lastName');
 

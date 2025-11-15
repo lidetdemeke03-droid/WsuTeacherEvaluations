@@ -137,7 +137,10 @@ export const apiCreateDepartment = (data: { name: string, code: string, head?: s
 export const apiUpdateDepartment = (deptId: string, data: { name: string, code: string, head?: string[] }): Promise<Department> => apiRequest<Department>(`/departments/${deptId}`, { method: 'PUT', body: JSON.stringify(data) });
 export const apiDeleteDepartment = (deptId: string): Promise<void> => apiRequest<void>(`/departments/${deptId}`, { method: 'DELETE' });
 export const apiGetDepartmentTeachers = (deptId: string, periodId?: string): Promise<User[]> => apiRequest<User[]>(`/departments/${deptId}/teachers${periodId ? `?period=${periodId}` : ''}`);
-export const apiGetTeacherCourses = (teacherId: string): Promise<Course[]> => apiRequest<Course[]>(`/courses/by-teacher/${teacherId}`);
+export const apiGetTeacherCourses = (teacherId: string, departmentId?: string): Promise<Course[]> => {
+    const url = departmentId ? `/courses/by-teacher/${teacherId}?departmentId=${departmentId}` : `/courses/by-teacher/${teacherId}`;
+    return apiRequest<Course[]>(url);
+};
 export const apiGetPeerAssignments = (teacherId: string): Promise<any[]> => apiRequest<any[]>(`/peers/${teacherId}/assignments`);
 
 // Courses
