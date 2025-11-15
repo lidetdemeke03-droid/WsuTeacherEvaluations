@@ -13,7 +13,7 @@ import { peerEvaluationQuestions } from '../constants/forms';
 // @access  Private (Teacher)
 export const getPeerAssignments = asyncHandler(async (req: Request, res: Response) => {
     const assignments = await PeerAssignment.find({ evaluator: req.params.teacherId }).populate('targetTeacher', 'firstName lastName').populate('course', 'title code');
-    res.json(assignments);
+    res.json({ success: true, data: assignments });
 });
 
 // @desc    Get details of a specific peer assignment
