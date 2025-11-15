@@ -16,6 +16,29 @@ export const getPeerAssignments = asyncHandler(async (req: Request, res: Respons
     res.json(assignments);
 });
 
+// @desc    Get details of a specific peer assignment
+// @route   GET /api/peers/assignments/:assignmentId
+// @access  Private (Teacher)
+export const getPeerAssignmentDetails = asyncHandler(async (req: IRequest, res: Response) => {
+    const assignment = await PeerAssignment.findById(req.params.assignmentId)
+        .populate('targetTeacher', 'firstName lastName')
+        .populate('course', 'title code');
+
+    if (!assignment) {
+        res.status(404);
+        throw new Error('Assignment not found');
+    }
+
+    // Security check: ensure the logged-in user is the assigned evaluator
+    if (assignment.evaluator.toString() !== req.user!._id.toString()) {
+        res.status(403);
+        throw new Error('You are not authorized to view this assignment');
+    }
+
+    res.json(assignment);
+});
+
+
 // @desc    Submit a peer evaluation
 // @route   POST /api/peers/evaluations
 // @access  Private (Teacher)
