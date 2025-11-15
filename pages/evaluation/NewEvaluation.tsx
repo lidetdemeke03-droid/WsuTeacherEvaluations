@@ -59,7 +59,7 @@ const NewEvaluation: React.FC = () => {
         setCoursesForSelectedTeacher([]);
         setSelectedCourse(null);
         try {
-          const coursesData = await apiGetTeacherCourses(String(selectedTeacher._id));
+          const coursesData = await apiGetTeacherCourses(String(selectedTeacher._id), departmentId);
           if (Array.isArray(coursesData)) {
             setCoursesForSelectedTeacher(coursesData);
             if (coursesData.length === 1) {
