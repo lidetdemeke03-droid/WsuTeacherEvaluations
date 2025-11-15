@@ -4,6 +4,15 @@ import { IRequest } from '../middleware/auth';
 import User from '../models/User';
 import { UserRole } from '../types';
 
+export const getUserById = asyncHandler(async (req: IRequest, res: Response) => {
+    const user = await User.findById(req.params.id).populate('department');
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+    res.status(200).json({ success: true, data: user });
+});
+
 // @desc    Get current user's profile
 // @route   GET /api/users/me
 // @access  Private
@@ -153,8 +162,6 @@ export const deleteUser = asyncHandler(async (req: IRequest, res: Response) => {
 export const getUsersByRoleAndDepartment = asyncHandler(async (req: IRequest, res: Response) => {
     const { role, departmentId, excludeUserId } = req.query;
 
-    console.log(`[getUsersByRoleAndDepartment] Received role: ${role}, departmentId: ${departmentId}, excludeUserId: ${excludeUserId}`);
-
     if (!role || !departmentId) {
         res.status(400);
         throw new Error('Role and Department ID are required query parameters');
@@ -166,9 +173,6 @@ export const getUsersByRoleAndDepartment = asyncHandler(async (req: IRequest, re
         filter._id = { $ne: excludeUserId };
     }
 
-    console.log('[getUsersByRoleAndDepartment] Constructed filter:', filter);
-
     const users = await User.find(filter).populate('department', 'name');
-    console.log(`[getUsersByRoleAndDepartment] Found ${users.length} users.`);
     res.status(200).json({ success: true, data: users });
 });

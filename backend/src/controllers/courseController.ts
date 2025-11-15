@@ -8,7 +8,6 @@ import asyncHandler from 'express-async-handler';
 export const getCoursesByTeacher = asyncHandler(async (req: Request, res: Response) => {
     const { teacherId } = req.params;
     const { departmentId } = req.query;
-    console.log(`[CourseController] Fetching courses for teacher ID: ${teacherId}, Department ID: ${departmentId || 'N/A'}`);
 
     try {
         const filter: any = { teacher: teacherId };
@@ -19,9 +18,6 @@ export const getCoursesByTeacher = asyncHandler(async (req: Request, res: Respon
         const courses = await Course.find(filter)
             .populate('department', 'name')
             .populate('teacher', 'firstName lastName');
-
-        console.log(`[CourseController] Found ${courses.length} courses for teacher ID: ${teacherId}`);
-        console.log('[CourseController] Full courses data:', JSON.stringify(courses, null, 2));
 
         if (courses.length === 0) {
             console.warn(`[CourseController] No courses found for teacher ID: ${teacherId}. Check if the teacher is assigned to any courses.`);

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getMe, getUsers, updateUser, deleteUser, updateProfile, changePassword, getUsersByRoleAndDepartment } from '../controllers/userController';
+import { getMe, getUsers, updateUser, deleteUser, updateProfile, changePassword, getUsersByRoleAndDepartment, getUserById } from '../controllers/userController';
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/role';
 import { UserRole } from '../types';
@@ -21,6 +21,9 @@ router.post('/me/change-password', changePassword);
 
 // GET /api/users - Get all users (Admin, SuperAdmin)
 router.get('/', authorize(UserRole.Admin, UserRole.SuperAdmin), audit('USER_LIST'), getUsers);
+
+// GET /api/users/:id - Get a single user by ID (Admin, DepartmentHead)
+router.get('/:id', authorize(UserRole.Admin, UserRole.DepartmentHead), getUserById);
 
 // PUT /api/users/:id - Update a user (Admin only)
 router.put('/:id', authorize(UserRole.Admin, UserRole.SuperAdmin), audit('USER_UPDATE'), updateUser);
