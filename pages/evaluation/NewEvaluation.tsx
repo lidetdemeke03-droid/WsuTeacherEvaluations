@@ -25,14 +25,11 @@ const NewEvaluation: React.FC = () => {
   const departmentId = user?.department;
 
   useEffect(() => {
-            const fetchData = async () => {
-              console.log('NewEvaluation: user object before API call:', user);
-              console.log('NewEvaluation: departmentId before API call:', departmentId);
-              if (!user || user.role !== UserRole.DepartmentHead || !departmentId || !departmentId._id) {
-                setLoading(false);
-                return;
-              }
-      try {
+                    const fetchData = async () => {
+                      if (!user || user.role !== UserRole.DepartmentHead || !departmentId) {
+                        setLoading(false);
+                        return;
+                      }      try {
         const [periodsData, teachersData] = await Promise.all([
           apiGetActiveEvaluationPeriods(),
           apiGetUsersByRoleAndDepartment(UserRole.Teacher, String(departmentId._id)),
@@ -60,7 +57,7 @@ const NewEvaluation: React.FC = () => {
         setCoursesForSelectedTeacher([]);
         setSelectedCourse(null);
         try {
-          const coursesData = await apiGetTeacherCourses(String(selectedTeacher._id), departmentId);
+          const coursesData = await apiGetTeacherCourses(String(selectedTeacher._id), departmentId._id);
           if (Array.isArray(coursesData)) {
             setCoursesForSelectedTeacher(coursesData);
             if (coursesData.length === 1) {
