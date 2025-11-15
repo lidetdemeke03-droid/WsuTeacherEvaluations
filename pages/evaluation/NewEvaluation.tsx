@@ -34,7 +34,7 @@ const NewEvaluation: React.FC = () => {
       try {
         const [periodsData, teachersData] = await Promise.all([
           apiGetActiveEvaluationPeriods(),
-          apiGetUsersByRoleAndDepartment(UserRole.Teacher, String(departmentId)),
+          apiGetUsersByRoleAndDepartment(UserRole.Teacher, String(departmentId._id)),
         ]);
 
         setActivePeriods(periodsData);
