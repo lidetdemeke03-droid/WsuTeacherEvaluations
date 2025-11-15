@@ -15,6 +15,7 @@ export const getCoursesByTeacher = asyncHandler(async (req: Request, res: Respon
             .populate('teacher', 'firstName lastName');
 
         console.log(`[CourseController] Found ${courses.length} courses for teacher ID: ${teacherId}`);
+        console.log('[CourseController] Full courses data:', JSON.stringify(courses, null, 2));
 
         if (courses.length === 0) {
             console.warn(`[CourseController] No courses found for teacher ID: ${teacherId}. Check if the teacher is assigned to any courses.`);
