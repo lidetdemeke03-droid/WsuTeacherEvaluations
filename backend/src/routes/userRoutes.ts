@@ -22,17 +22,13 @@ router.post('/me/change-password', changePassword);
 // GET /api/users - Get all users (Admin, SuperAdmin)
 router.get('/', authorize(UserRole.Admin, UserRole.SuperAdmin), audit('USER_LIST'), getUsers);
 
+// GET /api/users/by-role-department - Get users by role and department (Admin, DepartmentHead)
+router.get('/by-role-department', authorize(UserRole.Admin, UserRole.DepartmentHead), getUsersByRoleAndDepartment);
+
 // GET /api/users/:id - Get a single user by ID (Admin, DepartmentHead)
 router.get('/:id', authorize(UserRole.Admin, UserRole.DepartmentHead), getUserById);
 
 // PUT /api/users/:id - Update a user (Admin only)
-router.put('/:id', authorize(UserRole.Admin, UserRole.SuperAdmin), audit('USER_UPDATE'), updateUser);
-
-// DELETE /api/users/:id - Delete a user (Admin only)
-router.delete('/:id', authorize(UserRole.Admin, UserRole.SuperAdmin), audit('USER_DELETE'), deleteUser);
-
-// GET /api/users/by-role-department - Get users by role and department (Admin, DepartmentHead)
-router.get('/by-role-department', authorize(UserRole.Admin, UserRole.DepartmentHead), getUsersByRoleAndDepartment);
 
 export default router;
 
