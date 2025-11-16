@@ -94,14 +94,14 @@ export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response
     });
 
     // Atomically find or create the StatsCache document and get the average student score
-    // Use the correct field name `targetTeacher` and safely compute the average
-    const studentEvals = await EvaluationResponse.find({ targetTeacher: teacherId, course: courseId, period });
+    // Use the correct field name `targetTeacher` and safely compute the average across all courses for the period
+    const studentEvals = await EvaluationResponse.find({ targetTeacher: teacherId, period, type: EvaluationType.Student });
     const avgStudentScore = studentEvals.length ? studentEvals.reduce((sum, ev) => sum + ev.totalScore, 0) / studentEvals.length : 0;
 
 
     // Update StatsCache and recalculate final score
     const stats = await StatsCache.findOneAndUpdate(
-        { teacher: teacherId, course: courseId, period },
+        { teacher: teacherId, period },
         { $set: { studentScore: avgStudentScore } },
         { upsert: true, new: true }
     );
