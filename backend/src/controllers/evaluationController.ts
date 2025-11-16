@@ -11,6 +11,7 @@ import { calculateNormalizedScore, recalculateFinalScore } from '../services/sco
 import { studentEvaluationQuestions, departmentHeadEvaluationQuestions, peerEvaluationQuestions } from '../constants/forms';
 import Course from '../models/Course';
 import mongoose from 'mongoose';
+import PeerAssignment from '../models/PeerAssignment';
 
 
 // @desc    Get assigned evaluation forms for a student
@@ -219,8 +220,10 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
             res.status(400);
             throw new Error('Window start and end dates are required for peer assignments.');
         }
-        const PeerAssignment = (await import('../models/PeerAssignment')).default;
-        const assignments = [];
+
+        const assignmentsToCreate = [];
+        let skippedCount = 0;
+
         for (const evaluatorId of evaluatorIds) {
             const existingAssignment = await PeerAssignment.findOne({
                 evaluator: evaluatorId,
@@ -230,11 +233,12 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
             });
 
             if (existingAssignment) {
+                skippedCount++;
                 console.warn(`Peer assignment already exists for evaluator ${evaluatorId}, teacher ${teacherId}, course ${courseId}, period ${periodId}. Skipping.`);
                 continue;
             }
 
-            assignments.push({
+            assignmentsToCreate.push({
                 evaluator: evaluatorId,
                 targetTeacher: teacherId,
                 course: courseId,
@@ -246,10 +250,26 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
                 },
             });
         }
-        if (assignments.length > 0) {
-            await PeerAssignment.insertMany(assignments);
+
+        let createdCount = 0;
+        if (assignmentsToCreate.length > 0) {
+            const createdDocs = await PeerAssignment.insertMany(assignmentsToCreate);
+            createdCount = createdDocs.length;
         }
-        res.status(201).json({ success: true, message: `${assignments.length} peer assignments created successfully.` });
+
+        const messageParts = [];
+        if (createdCount > 0) {
+            messageParts.push(`${createdCount} peer assignment${createdCount > 1 ? 's' : ''} created successfully`);
+        }
+        if (skippedCount > 0) {
+            messageParts.push(`${skippedCount} assignment${skippedCount > 1 ? 's' : ''} were skipped because they already existed`);
+        }
+
+        if (messageParts.length === 0) {
+            messageParts.push('No new assignments to create.');
+        }
+
+        res.status(201).json({ success: true, message: messageParts.join('. ') + '.' });
 
     } else if (evaluationType === EvaluationType.Student) {
         // Add students to the course
