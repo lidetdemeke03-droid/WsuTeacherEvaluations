@@ -178,11 +178,28 @@ export const apiGetUsersByRoleAndDepartment = (
   return apiRequest<User[]>(`/users/by-role-department?${params.toString()}`);
 };
 
-export const apiAssignEvaluation = (payload: AssignEvaluationPayload): Promise<any> => {
-    return apiRequest<any>('/evaluations/assign', {
+export const apiAssignEvaluation = async (payload: AssignEvaluationPayload): Promise<{ message: string }> => {
+    const token = sessionStorage.getItem('authToken');
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+    };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/evaluations/assign`, {
         method: 'POST',
+        headers,
         body: JSON.stringify(payload),
     });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || data.message || 'Failed to assign evaluators.');
+    }
+
+    return data;
 };
 
 // Reports

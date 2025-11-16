@@ -29,6 +29,10 @@ router.get('/by-role-department', authorize(UserRole.Admin, UserRole.DepartmentH
 router.get('/:id', authorize(UserRole.Admin, UserRole.DepartmentHead), getUserById);
 
 // PUT /api/users/:id - Update a user (Admin only)
+router.put('/:id', authorize(UserRole.Admin), audit('USER_UPDATE'), updateUser);
+
+// DELETE /api/users/:id - Delete a user (Admin only)
+router.delete('/:id', authorize(UserRole.Admin), audit('USER_DELETE'), deleteUser);
 
 export default router;
 
