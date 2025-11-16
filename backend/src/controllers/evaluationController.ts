@@ -10,6 +10,7 @@ import { EvaluationType } from '../types';
 import { calculateNormalizedScore, recalculateFinalScore } from '../services/scoreService';
 import { studentEvaluationQuestions, departmentHeadEvaluationQuestions, peerEvaluationQuestions } from '../constants/forms';
 import Course from '../models/Course';
+import mongoose from 'mongoose';
 
 
 // @desc    Get assigned evaluation forms for a student
@@ -210,6 +211,10 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
     }
 
     if (evaluationType === EvaluationType.Peer) {
+        if (!teacherId || !mongoose.Types.ObjectId.isValid(teacherId)) {
+            res.status(400);
+            throw new Error('A valid teacher ID is required for peer assignments.');
+        }
         if (!window || !window.start || !window.end) {
             res.status(400);
             throw new Error('Window start and end dates are required for peer assignments.');
