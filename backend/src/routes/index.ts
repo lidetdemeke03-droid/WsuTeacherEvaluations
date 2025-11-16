@@ -11,6 +11,7 @@ import adminRoutes from './adminRoutes';
 import evaluationRoutes from './evaluationRoutes';
 import studentRoutes from './studentRoutes';
 import reportRoutes from './reportRoutes';
+import peerRoutes from './peerRoutes';
 
 const router = Router();
 
@@ -26,7 +27,7 @@ router.use('/admin', adminRoutes);
 router.use('/evaluations', evaluationRoutes);
 router.use('/students', studentRoutes);
 // Peer routes are disabled per request (teacher peer reviews not needed)
-// router.use('/peers', peerRoutes);
+router.use('/peers', peerRoutes);
 router.use('/reports', reportRoutes);
 
 export default router;
