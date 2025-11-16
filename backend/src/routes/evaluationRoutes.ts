@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { submitEvaluation, getAssignedForms, createEvaluationAssignment, submitDepartmentEvaluation, submitPeerEvaluation, getDepartmentHeadEvaluations } from '../controllers/evaluationController';
+import { submitEvaluation, getAssignedForms, createEvaluationAssignment, submitDepartmentEvaluation, getDepartmentHeadEvaluations } from '../controllers/evaluationController';
 import { protect } from '../middleware/auth';
 import { audit } from '../middleware/audit';
 import { authorize } from '../middleware/role';
