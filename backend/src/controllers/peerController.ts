@@ -35,7 +35,7 @@ export const getPeerAssignmentDetails = asyncHandler(async (req: IRequest, res: 
         throw new Error('You are not authorized to view this assignment');
     }
 
-    res.json(assignment);
+    res.json({ success: true, data: assignment });
 });
 
 
