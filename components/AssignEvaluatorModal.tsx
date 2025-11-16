@@ -106,7 +106,7 @@ const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onC
           }
   
           try {
-              await apiAssignEvaluation({
+              const result = await apiAssignEvaluation({
                   evaluatorIds: selectedEvaluatorIds,
                   courseId: course._id,
                   teacherId: course.teacher ? course.teacher._id : '',
@@ -117,11 +117,34 @@ const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onC
                       end: period.endDate,
                   },
               });
-              toast.success('Evaluators assigned successfully!');
+
+              const peerMatch = result.message.match(/^(\d+) peer assignments created successfully\./);
+              const studentMatch = result.message.match(/^(\d+) students assigned and (\d+) evaluation assignments created\./);
+
+              let assignmentsCreated = -1; // Default to -1 to distinguish from 0
+              if (peerMatch) {
+                  assignmentsCreated = parseInt(peerMatch[1], 10);
+              } else if (studentMatch) {
+                  assignmentsCreated = parseInt(studentMatch[2], 10);
+              }
+
+              if (assignmentsCreated > 0) {
+                  toast.success(result.message);
+              } else if (assignmentsCreated === 0) {
+                  toast.info(result.message);
+              } else {
+                  // Fallback for unexpected messages
+                  toast.success(result.message);
+              }
+
               onClose();
               onAssignmentSuccess(); // Refresh courses in parent component
           } catch (error) {
-              toast.error('Failed to assign evaluators.');
+              if (error instanceof Error) {
+                  toast.error(error.message);
+              } else {
+                  toast.error('An unknown error occurred while assigning evaluators.');
+              }
               console.error('Error assigning evaluators:', error);
           }
       };

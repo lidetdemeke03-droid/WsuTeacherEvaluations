@@ -83,7 +83,7 @@ const ManageUsersPage: React.FC = () => {
         if (window.confirm('Are you sure you want to delete this user?')) {
             try {
                 await apiDeleteUser(userId);
-                setUsers(users.filter(u => u._id !== userId));
+                fetchUsers();
                 toast.success('User deleted successfully!');
             } catch (err) {
                 toast.error('Failed to delete user.');
