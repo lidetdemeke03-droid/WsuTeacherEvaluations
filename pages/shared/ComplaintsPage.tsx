@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Complaint, ComplaintStatus, UserRole } from '../../types';
 import { apiGetComplaints, apiUpdateComplaint, apiCreateComplaint, apiRespondComplaint } from '../../services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MessageSquare, X, Send, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 
 const ComplaintsPage: React.FC = () => {
     const { user } = useAuth();
@@ -21,7 +21,6 @@ const ComplaintsPage: React.FC = () => {
     });
 
     useEffect(() => {
-        // Admins/DeptHead fetch all complaints; students and teachers fetch their own
         if (user) {
             fetchComplaints();
         }
@@ -53,10 +52,8 @@ const ComplaintsPage: React.FC = () => {
             if (user?.role === UserRole.Student || user?.role === UserRole.Teacher) {
                 await apiCreateComplaint({ subject: formData.subject.trim(), message: formData.message.trim() });
                 toast.success('Complaint submitted successfully');
-                // after submit, refresh list (user will see own complaints)
                 fetchComplaints();
             } else if (currentComplaint) {
-                // Admin responding/updating
                 if ((user?.role === UserRole.Admin || user?.role === UserRole.DepartmentHead) && formData.responseText.trim()) {
                     await apiRespondComplaint(currentComplaint._id || (currentComplaint as any).id, { responseText: formData.responseText.trim(), status: formData.status });
                     toast.success('Response saved successfully');
@@ -64,7 +61,6 @@ const ComplaintsPage: React.FC = () => {
                     await apiUpdateComplaint(currentComplaint._id || (currentComplaint as any).id, { status: formData.status as ComplaintStatus });
                     toast.success('Complaint updated successfully');
                 }
-                // refresh for admin view
                 fetchComplaints();
             }
             closeModal();
@@ -99,101 +95,273 @@ const ComplaintsPage: React.FC = () => {
         setIsModalOpen(false);
     };
 
+    const getStatusIcon = (status: string) => {
+        switch (status) {
+            case ComplaintStatus.New:
+                return <AlertCircle className="w-4 h-4" />;
+            case ComplaintStatus.InProgress:
+                return <Clock className="w-4 h-4" />;
+            case ComplaintStatus.Resolved:
+                return <CheckCircle className="w-4 h-4" />;
+            default:
+                return null;
+        }
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case ComplaintStatus.New:
+                return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+            case ComplaintStatus.InProgress:
+                return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+            case ComplaintStatus.Resolved:
+                return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+            default:
+                return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+        }
+    };
+
     if (!user) return null;
 
     return (
-        <div>
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-bold">Complaints</h1>
-                {(user.role === UserRole.Teacher) && (
-                    <button onClick={() => openModal()} className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">
-                        Submit Complaint
-                    </button>
-                )}
-            </div>
-
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="bg-white p-6 rounded-md w-full max-w-2xl">
-                        <h2 className="text-xl font-bold mb-4">{currentComplaint ? 'Complaint' : 'Submit Complaint'}</h2>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Subject</label>
-                                <input type="text" name="subject" value={formData.subject} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" disabled={!!currentComplaint && !(user.role === UserRole.Student || user.role === UserRole.Teacher)} />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Message</label>
-                                <textarea name="message" value={formData.message} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" rows={4} disabled={!!currentComplaint && !(user.role === UserRole.Student || user.role === UserRole.Teacher)} />
-                            </div>
-
-                            {(user.role === UserRole.Admin) && (
-                                <>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Status</label>
-                                        <select name="status" value={formData.status} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                            {Object.values(ComplaintStatus).map(status => (
-                                                <option key={status} value={status}>{status}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700">Response</label>
-                                        <textarea name="responseText" value={formData.responseText} onChange={handleInputChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" rows={4} placeholder="Write a response to the complainant" />
-                                    </div>
-                                </>
-                            )}
-
-                            <div className="flex justify-end space-x-2">
-                                <button type="button" onClick={closeModal} className="px-4 py-2 rounded border">Cancel</button>
-                                <button type="submit" className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50" disabled={isSubmitting}>
-                                    {isSubmitting ? (currentComplaint ? 'Saving...' : 'Submitting...') : (currentComplaint ? 'Save' : 'Submit')}
-                                </button>
-                            </div>
-                        </form>
-                    </motion.div>
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-3 sm:p-6 lg:p-8">
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-7xl mx-auto"
+            >
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
+                    <motion.h1
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="text-3xl sm:text-4xl font-bold text-white flex items-center gap-3"
+                    >
+                        <MessageSquare className="w-8 h-8 sm:w-10 sm:h-10 text-blue-400" />
+                        Complaints
+                    </motion.h1>
+                    {(user.role === UserRole.Teacher) && (
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => openModal()}
+                            className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-blue-800 transition shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 font-medium"
+                        >
+                            <Send className="w-5 h-5" />
+                            Submit Complaint
+                        </motion.button>
+                    )}
                 </div>
-            )}
 
-            {(user.role === UserRole.Admin || user.role === UserRole.Teacher) && (
-                isLoading ? (
-                    <div className="space-y-2">
-                        <div className="h-6 bg-gray-200 rounded w-3/4 animate-pulse" />
-                        <div className="h-6 bg-gray-200 rounded w-1/2 animate-pulse" />
-                    </div>
-                ) : (
-                    <div className="bg-white shadow-md rounded-lg">
-                        <div className="divide-y">
+                <AnimatePresence>
+                    {isModalOpen && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+                            onClick={closeModal}
+                        >
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                onClick={(e) => e.stopPropagation()}
+                                className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 sm:p-8 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-blue-500/20 shadow-2xl"
+                            >
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                                        {currentComplaint ? 'View Complaint' : 'Submit New Complaint'}
+                                    </h2>
+                                    <motion.button
+                                        whileHover={{ scale: 1.1, rotate: 90 }}
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={closeModal}
+                                        className="text-gray-400 hover:text-white transition"
+                                    >
+                                        <X className="w-6 h-6" />
+                                    </motion.button>
+                                </div>
+                                <form onSubmit={handleSubmit} className="space-y-5">
+                                    <div>
+                                        <label className="block text-sm font-medium text-blue-200 mb-2">Subject</label>
+                                        <input
+                                            type="text"
+                                            name="subject"
+                                            value={formData.subject}
+                                            onChange={handleInputChange}
+                                            className="w-full rounded-xl border border-blue-500/30 bg-slate-800/50 text-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition placeholder-gray-500"
+                                            disabled={!!currentComplaint && !(user.role === UserRole.Student || user.role === UserRole.Teacher)}
+                                            placeholder="Brief description of the issue"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-blue-200 mb-2">Message</label>
+                                        <textarea
+                                            name="message"
+                                            value={formData.message}
+                                            onChange={handleInputChange}
+                                            className="w-full rounded-xl border border-blue-500/30 bg-slate-800/50 text-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition placeholder-gray-500 resize-none"
+                                            rows={4}
+                                            disabled={!!currentComplaint && !(user.role === UserRole.Student || user.role === UserRole.Teacher)}
+                                            placeholder="Detailed description of your complaint"
+                                        />
+                                    </div>
+
+                                    {(user.role === UserRole.Admin) && (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            className="space-y-5 border-t border-blue-500/20 pt-5"
+                                        >
+                                            <div>
+                                                <label className="block text-sm font-medium text-blue-200 mb-2">Status</label>
+                                                <select
+                                                    name="status"
+                                                    value={formData.status}
+                                                    onChange={handleInputChange}
+                                                    className="w-full rounded-xl border border-blue-500/30 bg-slate-800/50 text-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                                >
+                                                    {Object.values(ComplaintStatus).map(status => (
+                                                        <option key={status} value={status}>{status}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-blue-200 mb-2">Response</label>
+                                                <textarea
+                                                    name="responseText"
+                                                    value={formData.responseText}
+                                                    onChange={handleInputChange}
+                                                    className="w-full rounded-xl border border-blue-500/30 bg-slate-800/50 text-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition placeholder-gray-500 resize-none"
+                                                    rows={4}
+                                                    placeholder="Write your response to the complainant"
+                                                />
+                                            </div>
+                                        </motion.div>
+                                    )}
+
+                                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4">
+                                        <motion.button
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            type="button"
+                                            onClick={closeModal}
+                                            className="w-full sm:w-auto px-6 py-3 rounded-xl border border-blue-500/30 text-blue-200 hover:bg-blue-500/10 transition font-medium"
+                                        >
+                                            Cancel
+                                        </motion.button>
+                                        <motion.button
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            type="submit"
+                                            className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg shadow-blue-500/30 font-medium flex items-center justify-center gap-2"
+                                            disabled={isSubmitting}
+                                        >
+                                            <Send className="w-4 h-4" />
+                                            {isSubmitting ? (currentComplaint ? 'Saving...' : 'Submitting...') : (currentComplaint ? 'Save Changes' : 'Submit')}
+                                        </motion.button>
+                                    </div>
+                                </form>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {(user.role === UserRole.Admin || user.role === UserRole.Teacher) && (
+                    isLoading ? (
+                        <div className="space-y-4">
+                            {[1, 2, 3].map(i => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl p-6 border border-blue-500/20"
+                                >
+                                    <div className="space-y-3">
+                                        <div className="h-6 bg-blue-500/20 rounded-lg w-3/4 animate-pulse" />
+                                        <div className="h-4 bg-blue-500/10 rounded w-1/2 animate-pulse" />
+                                        <div className="h-20 bg-blue-500/10 rounded-lg animate-pulse" />
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
                             {complaints.length === 0 ? (
-                                <div className="p-6 text-center text-gray-500">No complaints yet.</div>
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl p-12 text-center border border-blue-500/20"
+                                >
+                                    <MessageSquare className="w-16 h-16 text-blue-400/50 mx-auto mb-4" />
+                                    <p className="text-gray-400 text-lg">No complaints yet.</p>
+                                </motion.div>
                             ) : (
-                                complaints.map((c: any) => (
-                                    <motion.div key={c._id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="p-4 hover:bg-gray-50">
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1">
-                                                <div className="font-medium text-lg">{c.subject}</div>
-                                                <div className="text-sm text-gray-500">{c.submitter ? `${c.submitter.firstName} ${c.submitter.lastName}` : 'System'} • {new Date(c.createdAt).toLocaleString()}</div>
-                                                <div className="mt-3 text-sm text-gray-700">{c.message}</div>
+                                complaints.map((c: any, index) => (
+                                    <motion.div
+                                        key={c._id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.05 }}
+                                        whileHover={{ scale: 1.01 }}
+                                        className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl p-4 sm:p-6 border border-blue-500/20 hover:border-blue-500/40 transition-all shadow-lg hover:shadow-blue-500/10"
+                                    >
+                                        <div className="flex flex-col lg:flex-row justify-between gap-4">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-start justify-between gap-3 mb-3">
+                                                    <h3 className="font-semibold text-lg sm:text-xl text-white flex-1 break-words">{c.subject}</h3>
+                                                    <div className="lg:hidden flex-shrink-0">
+                                                        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${getStatusColor(c.status)}`}>
+                                                            {getStatusIcon(c.status)}
+                                                            <span className="hidden sm:inline">{c.status}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-blue-200/70 mb-4">
+                                                    <span className="font-medium">{c.submitter ? `${c.submitter.firstName} ${c.submitter.lastName}` : 'System'}</span>
+                                                    <span className="text-blue-400">•</span>
+                                                    <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                                                    <span className="hidden sm:inline text-blue-400">•</span>
+                                                    <span className="hidden sm:inline">{new Date(c.createdAt).toLocaleTimeString()}</span>
+                                                </div>
+                                                <p className="text-sm sm:text-base text-gray-300 leading-relaxed break-words">{c.message}</p>
                                                 {c.response && (
-                                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3 p-3 bg-gray-50 rounded">
-                                                        <div className="text-sm font-medium">Response</div>
-                                                        <div className="text-sm">{c.response}</div>
+                                                    <motion.div
+                                                        initial={{ opacity: 0, height: 0 }}
+                                                        animate={{ opacity: 1, height: 'auto' }}
+                                                        className="mt-4 p-4 bg-blue-500/10 rounded-xl border border-blue-500/20"
+                                                    >
+                                                        <div className="text-xs sm:text-sm font-semibold text-blue-300 mb-2 flex items-center gap-2">
+                                                            <Send className="w-4 h-4" />
+                                                            Admin Response
+                                                        </div>
+                                                        <p className="text-sm text-gray-300 leading-relaxed break-words">{c.response}</p>
                                                     </motion.div>
                                                 )}
                                             </div>
-                                            <div className="ml-4 flex-shrink-0 text-right">
-                                                <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${c.status === ComplaintStatus.New ? 'bg-yellow-100 text-yellow-800' : c.status === ComplaintStatus.InProgress ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>{c.status}</div>
-                                                <div className="mt-4">
-                                                    <button onClick={() => openModal(c)} className="text-indigo-600 hover:text-indigo-900">View/Respond</button>
+                                            <div className="flex lg:flex-col items-center lg:items-end justify-between lg:justify-start gap-3 lg:gap-4 flex-shrink-0 lg:ml-4">
+                                                <div className={`hidden lg:inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${getStatusColor(c.status)}`}>
+                                                    {getStatusIcon(c.status)}
+                                                    {c.status}
                                                 </div>
+                                                <motion.button
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                    onClick={() => openModal(c)}
+                                                    className="w-full sm:w-auto px-4 py-2 rounded-xl bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 transition border border-blue-500/30 font-medium text-sm"
+                                                >
+                                                    View Details
+                                                </motion.button>
                                             </div>
                                         </div>
                                     </motion.div>
                                 ))
                             )}
                         </div>
-                    </div>
-                )
-            )}
+                    )
+                )}
+            </motion.div>
         </div>
     );
 };
