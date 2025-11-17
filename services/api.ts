@@ -111,7 +111,7 @@ export const apiBulkImportUsers = async (file: File): Promise<{ success: boolean
 export const apiGetStudentCourses = (studentId: string): Promise<Course[]> => apiRequest<Course[]>(`/students/${studentId}/courses`);
 export const apiGetStudentEvaluations = (studentId: string): Promise<Evaluation[]> => apiRequest<Evaluation[]>(`/evaluations/assigned?studentId=${studentId}`);
 export const apiSubmitEvaluation = (submission: EvaluationSubmission): Promise<any> => apiRequest<any>('/evaluations/student', { method: 'POST', body: JSON.stringify(submission) });
-export const apiSubmitPeerEvaluation = (submission: EvaluationSubmission): Promise<any> => apiRequest<any>('/peers/evaluations', { method: 'POST', body: JSON.stringify(submission) });
+export const apiSubmitPeerEvaluation = (submission: EvaluationSubmission): Promise<any> => apiRequest<any>('/evaluations/peer', { method: 'POST', body: JSON.stringify(submission) });
 export const apiGetDepartmentHeadEvaluations = (teacherId?: string): Promise<Evaluation[]> => {
     const url = teacherId ? `/evaluations/department-head-evaluations?teacherId=${teacherId}` : '/evaluations/department-head-evaluations';
     return apiRequest<Evaluation[]>(url);
