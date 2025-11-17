@@ -39,12 +39,12 @@ const _processSubmission = async (
     const totalRatingQuestions = questions.filter(q => q.type === 'rating').length;
     const normalizedScore = calculateNormalizedScore(answers, totalRatingQuestions);
 
-    // 2. Create new evaluation response document, using the active period
+    // 2. Create new evaluation response document, ensuring a unique token
     const response = await EvaluationResponse.create({
         type: evaluationType,
         evaluator: evaluatorId,
         targetTeacher: teacherId,
-        anonymousToken,
+        anonymousToken: anonymousToken || new mongoose.Types.ObjectId().toHexString(),
         course: courseId,
         period: activePeriodId, // Use the active period ID
         answers,
