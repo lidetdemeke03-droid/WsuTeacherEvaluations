@@ -235,7 +235,7 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
                 continue;
             }
 
-            assignments.push({
+            assignmentsToCreate.push({
                 evaluator: evaluatorId,
                 targetTeacher: teacherId,
                 course: courseId,
@@ -244,10 +244,26 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
                 window: { start: new Date(window.start), end: new Date(window.end) },
             });
         }
-        if (assignments.length > 0) {
-            await PeerAssignment.insertMany(assignments);
+
+        let createdCount = 0;
+        if (assignmentsToCreate.length > 0) {
+            const createdDocs = await PeerAssignment.insertMany(assignmentsToCreate);
+            createdCount = createdDocs.length;
         }
-        res.status(201).json({ success: true, message: `${assignments.length} peer assignments created successfully.` });
+
+        const messageParts = [];
+        if (createdCount > 0) {
+            messageParts.push(`${createdCount} peer assignment${createdCount > 1 ? 's' : ''} created successfully`);
+        }
+        if (skippedCount > 0) {
+            messageParts.push(`${skippedCount} assignment${skippedCount > 1 ? 's' : ''} were skipped because they already existed`);
+        }
+
+        if (messageParts.length === 0) {
+            messageParts.push('No new assignments to create.');
+        }
+
+        res.status(201).json({ success: true, message: messageParts.join('. ') + '.' });
 
     } else if (evaluationType === EvaluationType.Student) {
         await Course.updateOne({ _id: courseId }, { $addToSet: { students: { $each: evaluatorIds } } });
