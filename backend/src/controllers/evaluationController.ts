@@ -16,35 +16,42 @@ import PeerAssignment from '../models/PeerAssignment';
 /**
  * @private
  * Processes a generic evaluation submission, creates the response document,
- * and correctly updates the centralized StatsCache.
+ * and correctly updates the centralized StatsCache using the currently active period.
  */
 const _processSubmission = async (
     evaluatorId: string,
     teacherId: string,
     courseId: string,
-    periodId: string,
+    periodIdFromRequest: string, // The period tied to the assignment
     answers: any[],
     evaluationType: EvaluationType,
     questions: IEvaluationQuestion[],
     anonymousToken?: string
 ) => {
+    // Find the single currently active evaluation period.
+    const activePeriod = await (await import('../models/EvaluationPeriod')).default.findOne({ status: 'active' });
+    if (!activePeriod) {
+        throw new Error('No active evaluation period found. Cannot submit evaluation.');
+    }
+    const activePeriodId = activePeriod._id;
+
     // 1. Calculate normalized score
     const totalRatingQuestions = questions.filter(q => q.type === 'rating').length;
     const normalizedScore = calculateNormalizedScore(answers, totalRatingQuestions);
 
-    // 2. Create new evaluation response document
+    // 2. Create new evaluation response document, using the active period
     const response = await EvaluationResponse.create({
         type: evaluationType,
         evaluator: evaluatorId,
         targetTeacher: teacherId,
         anonymousToken,
         course: courseId,
-        period: periodId,
+        period: activePeriodId, // Use the active period ID
         answers,
         totalScore: normalizedScore,
     });
 
-    // 3. Correctly update the StatsCache
+    // 3. Correctly update the StatsCache using the active period
     const updateField =
         evaluationType === EvaluationType.Student ? 'studentScore' :
         evaluationType === EvaluationType.Peer ? 'peerScore' :
@@ -52,13 +59,11 @@ const _processSubmission = async (
 
     let newScoreValue = 0;
     if (evaluationType === EvaluationType.DepartmentHead) {
-        // Dept head score is a direct value, not an average
         newScoreValue = normalizedScore;
     } else {
-        // For student and peer, calculate the new average for the entire period
         const allEvaluations = await EvaluationResponse.find({
             targetTeacher: teacherId,
-            period: periodId,
+            period: activePeriodId, // Query by active period
             type: evaluationType,
         });
         newScoreValue = allEvaluations.length
@@ -66,9 +71,9 @@ const _processSubmission = async (
             : 0;
     }
 
-    // 4. Find and update the single StatsCache document for the teacher and period
+    // 4. Find and update the single StatsCache document for the teacher and active period
     const stats = await StatsCache.findOneAndUpdate(
-        { teacher: teacherId, period: periodId },
+        { teacher: teacherId, period: activePeriodId },
         { $set: { [updateField]: newScoreValue } },
         { upsert: true, new: true }
     );
