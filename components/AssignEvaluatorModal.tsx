@@ -131,7 +131,7 @@ const AssignEvaluatorModal: React.FC<AssignEvaluatorModalProps> = ({ isOpen, onC
               if (assignmentsCreated > 0) {
                   toast.success(result.message);
               } else if (assignmentsCreated === 0) {
-                  toast.info(result.message);
+                  toast.success(result.message); // Changed to success as info is not directly available
               } else {
                   // Fallback for unexpected messages
                   toast.success(result.message);
