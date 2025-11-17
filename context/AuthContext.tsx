@@ -6,7 +6,7 @@ import { apiLogin, apiGetMe, apiLogout } from '../services/api';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, pass: string) => Promise<void>;
+  login: (email: string, pass: string, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
 }
 
@@ -30,9 +30,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     checkLoggedIn();
   }, []);
 
-  const login = async (email: string, pass: string) => {
+  const login = async (email: string, pass: string, rememberMe = false) => {
     try {
-      const loggedInUser = await apiLogin(email, pass);
+      const { user: loggedInUser, accessToken } = await apiLogin(email, pass);
+      if (rememberMe) {
+        localStorage.setItem('authToken', accessToken);
+      } else {
+        sessionStorage.setItem('authToken', accessToken);
+      }
       setUser(loggedInUser);
     } catch (error) {
         console.error("Login failed:", error);
@@ -42,6 +47,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     await apiLogout();
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
     setUser(null);
   };
 

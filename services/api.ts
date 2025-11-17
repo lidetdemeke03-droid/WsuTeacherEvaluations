@@ -5,7 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000
 console.log('API_BASE_URL:', API_BASE_URL); // Debugging line
 
 const apiRequest = async <T,>(url: string, options: RequestInit = {}): Promise<T> => {
-    const token = sessionStorage.getItem('authToken');
+    const token = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -35,18 +35,18 @@ const apiRequest = async <T,>(url: string, options: RequestInit = {}): Promise<T
 };
 
 // Auth
-export const apiLogin = async (email: string, pass: string): Promise<User> => {
+export const apiLogin = async (email: string, pass: string): Promise<{ user: User, accessToken: string }> => {
     const { user, accessToken } = await apiRequest<{ user: User, accessToken: string }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password: pass }),
     });
-    sessionStorage.setItem('authToken', accessToken);
-    return user;
+    return { user, accessToken };
 };
 
 export const apiGetMe = (): Promise<User> => apiRequest<User>('/users/me');
 export const apiLogout = (): Promise<void> => {
     sessionStorage.removeItem('authToken');
+    localStorage.removeItem('authToken');
     return Promise.resolve();
 };
 
