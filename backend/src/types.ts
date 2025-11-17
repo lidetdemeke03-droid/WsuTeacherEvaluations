@@ -52,6 +52,12 @@ export enum EvaluationType {
   DepartmentHead = 'dept'
 }
 
+export interface IEvaluationQuestion {
+  code: string;
+  text: string;
+  type: 'rating' | 'text';
+}
+
 export interface IEvaluationResponse extends Document {
   type: EvaluationType;
   evaluator: Types.ObjectId; // User who submitted the evaluation

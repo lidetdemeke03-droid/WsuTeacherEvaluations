@@ -1,4 +1,6 @@
-export const studentEvaluationQuestions = [
+import { IEvaluationQuestion } from '../types';
+
+export const studentEvaluationQuestions: IEvaluationQuestion[] = [
     { code: 'STU_Q1', text: 'Gives course outline and references at beginning', type: 'rating' },
     { code: 'STU_Q2', text: 'Offers lab/practical sessions when applicable', type: 'rating' },
     { code: 'STU_Q3', text: 'Punctual for class', type: 'rating' },
@@ -22,7 +24,7 @@ export const studentEvaluationQuestions = [
     { code: 'STU_S2', text: 'Areas for improvement', type: 'text' },
 ];
 
-export const peerEvaluationQuestions = [
+export const peerEvaluationQuestions: IEvaluationQuestion[] = [
     { code: 'PEER_Q1', text: 'Prepares and updates teaching materials', type: 'rating' },
     { code: 'PEER_Q2', text: 'Updates subject matter continuously', type: 'rating' },
     { code: 'PEER_Q3', text: 'Demonstrates subject expertise', type: 'rating' },
@@ -41,7 +43,7 @@ export const peerEvaluationQuestions = [
     { code: 'PEER_S2', text: 'Areas for improvement', type: 'text' },
 ];
 
-export const departmentHeadEvaluationQuestions = [
+export const departmentHeadEvaluationQuestions: IEvaluationQuestion[] = [
     { code: 'DEPT_Q1', text: 'Course plan quality', type: 'rating' },
     { code: 'DEPT_Q2', text: 'Assessment strategy compliance', type: 'rating' },
     { code: 'DEPT_Q3', text: 'Documentation submission', type: 'rating' },

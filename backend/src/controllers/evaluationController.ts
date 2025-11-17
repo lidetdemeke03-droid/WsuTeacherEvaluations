@@ -2,11 +2,10 @@ import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import EvaluationResponse from '../models/EvaluationResponse';
 import { IRequest } from '../middleware/auth';
-import User from '../models/User';
 import Evaluation from '../models/evaluationModel';
 import { createHash } from 'crypto';
 import StatsCache from '../models/StatsCache';
-import { EvaluationType } from '../types';
+import { EvaluationType, IEvaluationQuestion, UserRole } from '../types';
 import { calculateNormalizedScore, recalculateFinalScore } from '../services/scoreService';
 import { studentEvaluationQuestions, departmentHeadEvaluationQuestions, peerEvaluationQuestions } from '../constants/forms';
 import Course from '../models/Course';
@@ -14,29 +13,94 @@ import mongoose from 'mongoose';
 import PeerAssignment from '../models/PeerAssignment';
 
 
-// @desc    Get assigned evaluation forms for a student
-// @route   GET /api/evaluations/assigned
-// @access  Private (Student)
-export const getAssignedForms = asyncHandler(async (req: Request, res: Response) => {
-    const studentId = req.query.studentId as string;
+/**
+ * @private
+ * Processes a generic evaluation submission, creates the response document,
+ * and correctly updates the centralized StatsCache.
+ */
+const _processSubmission = async (
+    evaluatorId: string,
+    teacherId: string,
+    courseId: string,
+    periodId: string,
+    answers: any[],
+    evaluationType: EvaluationType,
+    questions: IEvaluationQuestion[],
+    anonymousToken?: string
+) => {
+    // 1. Calculate normalized score
+    const totalRatingQuestions = questions.filter(q => q.type === 'rating').length;
+    const normalizedScore = calculateNormalizedScore(answers, totalRatingQuestions);
 
-    // Find all evaluations assigned to the student that are not yet completed
-    const assignedEvaluations = await Evaluation.find({
-        student: studentId,
-        status: 'Pending',
-    }).populate({
-        path: 'course',
-        model: 'Course',
-    }).populate({
-        path: 'teacher',
-        model: 'User',
-        select: 'firstName lastName',
-    }).populate('period');
-
-    res.json({
-        success: true,
-        data: assignedEvaluations,
+    // 2. Create new evaluation response document
+    const response = await EvaluationResponse.create({
+        type: evaluationType,
+        evaluator: evaluatorId,
+        targetTeacher: teacherId,
+        anonymousToken,
+        course: courseId,
+        period: periodId,
+        answers,
+        totalScore: normalizedScore,
     });
+
+    // 3. Correctly update the StatsCache
+    const updateField =
+        evaluationType === EvaluationType.Student ? 'studentScore' :
+        evaluationType === EvaluationType.Peer ? 'peerScore' :
+        'deptHeadScore';
+
+    let newScoreValue = 0;
+    if (evaluationType === EvaluationType.DepartmentHead) {
+        // Dept head score is a direct value, not an average
+        newScoreValue = normalizedScore;
+    } else {
+        // For student and peer, calculate the new average for the entire period
+        const allEvaluations = await EvaluationResponse.find({
+            targetTeacher: teacherId,
+            period: periodId,
+            type: evaluationType,
+        });
+        newScoreValue = allEvaluations.length
+            ? allEvaluations.reduce((sum, ev) => sum + ev.totalScore, 0) / allEvaluations.length
+            : 0;
+    }
+
+    // 4. Find and update the single StatsCache document for the teacher and period
+    const stats = await StatsCache.findOneAndUpdate(
+        { teacher: teacherId, period: periodId },
+        { $set: { [updateField]: newScoreValue } },
+        { upsert: true, new: true }
+    );
+
+    // 5. Recalculate the final weighted score
+    await recalculateFinalScore(stats._id);
+
+    return response;
+};
+
+
+// @desc    Get assigned evaluation forms for a student or teacher
+// @route   GET /api/evaluations/assigned
+// @access  Private (Student, Teacher)
+export const getAssignedForms = asyncHandler(async (req: IRequest, res: Response) => {
+    const userId = req.user!._id;
+    const userRole = req.user!.role;
+    let assignedEvaluations: any[] = [];
+
+    if (userRole === UserRole.Student) {
+        assignedEvaluations = await Evaluation.find({ student: userId, status: 'Pending' })
+            .populate('course', 'title code')
+            .populate('teacher', 'firstName lastName')
+            .populate('period', 'name startDate endDate');
+    } else if (userRole === UserRole.Teacher) {
+        assignedEvaluations = await PeerAssignment.find({ evaluator: userId, active: true })
+            .populate('targetTeacher', 'firstName lastName')
+            .populate('course', 'title code')
+            .populate('period', 'name startDate endDate');
+    }
+
+    res.json({ success: true, data: assignedEvaluations });
 });
 
 // @desc    Submit a student evaluation response
@@ -44,82 +108,98 @@ export const getAssignedForms = asyncHandler(async (req: Request, res: Response)
 // @access  Private (Student)
 export const submitEvaluation = asyncHandler(async (req: IRequest, res: Response) => {
     const { courseId, teacherId, period, answers } = req.body;
-    const studentObjectId = req.user!._id;
+    const studentId = req.user!._id;
 
-    // Generate anonymous token
-    const hash = createHash('sha256');
-    hash.update(`${courseId}:${teacherId}:${period}:${studentObjectId}`);
-    const anonymousToken = hash.digest('hex');
+    // 1. Create a unique, anonymous token for the student
+    const hash = createHash('sha256').update(`${courseId}:${teacherId}:${period}:${studentId}`).digest('hex');
 
-    // Check for duplicate submission
-    const existingResponse = await EvaluationResponse.findOne({ anonymousToken });
-    if (existingResponse) {
+    // 2. Check for duplicate submission using the anonymous token
+    if (await EvaluationResponse.findOne({ anonymousToken: hash })) {
         res.status(400);
         throw new Error('You have already submitted an evaluation for this course and period.');
     }
 
-    // Basic defensive check: ensure the payload looks like the student form
-    const providedCodes = (answers || []).map((a: any) => String(a.questionCode || '').toUpperCase());
-    const expectedStudentCodes = studentEvaluationQuestions.map(q => q.code.toUpperCase());
-    const looksLikePeer = providedCodes.some((c: string) => c.startsWith('PEER_'));
-    if (looksLikePeer) {
-        res.status(400);
-        throw new Error('It appears you submitted a peer evaluation to the student endpoint. Please submit using the correct peer evaluation form.');
-    }
-
-    // Validate that all rating questions have a score
-    const ratingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating');
-    for (const question of ratingQuestions) {
-        const answer = answers.find((a: any) => a.questionCode === question.code);
-        if (!answer || answer.score === undefined) {
-            res.status(400);
-            throw new Error(`Please provide a score or select 'NA' for the question: "${question.text}"`);
-        }
-    }
-
-    // Calculate normalized score
-    const totalRatingQuestions = studentEvaluationQuestions.filter(q => q.type === 'rating').length;
-    const normalizedScore = calculateNormalizedScore(answers, totalRatingQuestions);
-
-    // Create new evaluation response
-    const response = await EvaluationResponse.create({
-        type: EvaluationType.Student,
-        evaluator: studentObjectId,
-        targetTeacher: teacherId,
-        anonymousToken,
-        course: courseId,
+    // 3. Process the submission
+    const response = await _processSubmission(
+        studentId,
+        teacherId,
+        courseId,
         period,
         answers,
-        totalScore: normalizedScore,
-    });
-
-    // Atomically find or create the StatsCache document and get the average student score
-    // Use the correct field name `targetTeacher` and safely compute the average across all courses for the period
-    const studentEvals = await EvaluationResponse.find({ targetTeacher: teacherId, period, type: EvaluationType.Student });
-    const avgStudentScore = studentEvals.length ? studentEvals.reduce((sum, ev) => sum + ev.totalScore, 0) / studentEvals.length : 0;
-
-
-    // Update StatsCache and recalculate final score
-    const stats = await StatsCache.findOneAndUpdate(
-        { teacher: teacherId, period },
-        { $set: { studentScore: avgStudentScore } },
-        { upsert: true, new: true }
+        EvaluationType.Student,
+        studentEvaluationQuestions,
+        hash
     );
 
-    await recalculateFinalScore(stats._id);
-
-    // Mark the evaluation assignment as completed to prevent re-submission
-    try {
-        await Evaluation.findOneAndUpdate(
-            { student: studentObjectId, course: courseId, teacher: teacherId, period },
-            { $set: { status: 'Completed' } }
-        );
-    } catch (e) {
-        console.error('Failed to mark evaluation assignment as completed', e);
-    }
+    // 4. Mark the original assignment as completed
+    await Evaluation.findOneAndUpdate(
+        { student: studentId, course: courseId, teacher: teacherId, period },
+        { $set: { status: 'Completed' } }
+    );
 
     res.status(201).json({ success: true, data: response });
 });
+
+// @desc    Submit a peer (teacher) evaluation response
+// @route   POST /api/evaluations/peer
+// @access  Private (Teacher)
+export const submitPeerEvaluation = asyncHandler(async (req: IRequest, res: Response) => {
+    const { courseId, teacherId, period, answers } = req.body;
+    const evaluatorId = req.user!._id;
+
+    // 1. Check for duplicate submission
+    if (await EvaluationResponse.findOne({ evaluator: evaluatorId, targetTeacher: teacherId, period, type: EvaluationType.Peer })) {
+        res.status(400);
+        throw new Error('You have already submitted a peer evaluation for this teacher for this period.');
+    }
+
+    // 2. Process the submission
+    const response = await _processSubmission(
+        evaluatorId,
+        teacherId,
+        courseId,
+        period,
+        answers,
+        EvaluationType.Peer,
+        peerEvaluationQuestions
+    );
+
+    // 3. Mark the peer assignment as inactive (completed)
+    await PeerAssignment.findOneAndUpdate(
+        { evaluator: evaluatorId, targetTeacher: teacherId, course: courseId, period, active: true },
+        { $set: { active: false } }
+    );
+
+    res.status(201).json({ success: true, data: response });
+});
+
+// @desc    Submit a department head evaluation response
+// @route   POST /api/evaluations/department
+// @access  Private (DepartmentHead)
+export const submitDepartmentEvaluation = asyncHandler(async (req: IRequest, res: Response) => {
+    const { teacherId, period, answers, courseId } = req.body;
+    const evaluatorId = req.user!._id;
+
+    // 1. Check for duplicate submission
+    if (await EvaluationResponse.findOne({ evaluator: evaluatorId, targetTeacher: teacherId, period, type: EvaluationType.DepartmentHead })) {
+        res.status(400);
+        throw new Error('You have already submitted an evaluation for this teacher for this period.');
+    }
+
+    // 2. Process the submission
+    const response = await _processSubmission(
+        evaluatorId,
+        teacherId,
+        courseId,
+        period,
+        answers,
+        EvaluationType.DepartmentHead,
+        departmentHeadEvaluationQuestions
+    );
+
+    res.status(201).json({ success: true, data: response });
+});
+
 
 // @desc    Create evaluation assignments for multiple evaluators
 // @route   POST /api/evaluations/assign
@@ -141,10 +221,7 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
             res.status(400);
             throw new Error('Window start and end dates are required for peer assignments.');
         }
-
-        const assignmentsToCreate = [];
-        let skippedCount = 0;
-
+        const assignments = [];
         for (const evaluatorId of evaluatorIds) {
             const existingAssignment = await PeerAssignment.findOne({
                 evaluator: evaluatorId,
@@ -154,8 +231,7 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
             });
 
             if (existingAssignment) {
-                skippedCount++;
-                console.warn(`Peer assignment already exists for evaluator ${evaluatorId}, teacher ${teacherId}, course ${courseId}, period ${periodId}. Skipping.`);
+                console.warn(`Peer assignment already exists for evaluator ${evaluatorId}. Skipping.`);
                 continue;
             }
 
@@ -165,10 +241,7 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
                 course: courseId,
                 period: periodId,
                 active: true,
-                window: {
-                    start: new Date(window.start),
-                    end: new Date(window.end),
-                },
+                window: { start: new Date(window.start), end: new Date(window.end) },
             });
         }
 
@@ -193,11 +266,7 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
         res.status(201).json({ success: true, message: messageParts.join('. ') + '.' });
 
     } else if (evaluationType === EvaluationType.Student) {
-        // Add students to the course
-        await Course.updateOne(
-            { _id: courseId },
-            { $addToSet: { students: { $each: evaluatorIds } } }
-        );
+        await Course.updateOne({ _id: courseId }, { $addToSet: { students: { $each: evaluatorIds } } });
 
         const assignments = [];
         for (const evaluatorId of evaluatorIds) {
@@ -209,7 +278,7 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
             });
 
             if (existingAssignment) {
-                console.warn(`Student assignment already exists for student ${evaluatorId}, teacher ${teacherId}, course ${courseId}, period ${periodId}. Skipping.`);
+                console.warn(`Student assignment already exists for student ${evaluatorId}. Skipping.`);
                 continue;
             }
 
@@ -236,75 +305,16 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
 // @access  Private (DepartmentHead)
 export const getDepartmentHeadEvaluations = asyncHandler(async (req: IRequest, res: Response) => {
     const departmentHeadId = req.user!._id;
-    const { teacherId } = req.query; // Optional: filter by target teacher
+    const { teacherId } = req.query;
 
-    const filter: any = {
-        evaluator: departmentHeadId,
-        type: EvaluationType.DepartmentHead,
-    };
-
-    if (teacherId) {
-        filter.targetTeacher = teacherId;
-    }
+    const filter: any = { evaluator: departmentHeadId, type: EvaluationType.DepartmentHead };
+    if (teacherId) filter.targetTeacher = teacherId;
 
     const evaluations = await EvaluationResponse.find(filter)
         .populate('targetTeacher', 'firstName lastName')
         .populate('course', 'title code')
         .populate('period', 'name')
-        .sort({ submittedAt: -1 }); // Sort by most recent first
+        .sort({ submittedAt: -1 });
 
     res.status(200).json({ success: true, data: evaluations });
-});
-
-// @desc    Submit a department head evaluation response
-// @route   POST /api/evaluations/department
-// @access  Private (DepartmentHead)
-export const submitDepartmentEvaluation = asyncHandler(async (req: IRequest, res: Response) => {
-    const { teacherId, period, answers, courseId } = req.body;
-    const evaluatorId = req.user!._id;
-
-    // Check for duplicate submission
-    const existingResponse = await EvaluationResponse.findOne({
-        evaluator: evaluatorId,
-        targetTeacher: teacherId,
-        period,
-        type: EvaluationType.DepartmentHead,
-    });
-
-    if (existingResponse) {
-        res.status(400);
-        throw new Error('You have already submitted an evaluation for this teacher for this period.');
-    }
-
-    // Calculate normalized score
-    const totalRatingQuestions = departmentHeadEvaluationQuestions.filter(q => q.type === 'rating').length;
-    const normalizedScore = calculateNormalizedScore(answers, totalRatingQuestions);
-
-    // Generate a token for this evaluation (keeps unique index happy)
-    const hash = createHash('sha256');
-    hash.update(`${courseId}:${teacherId}:${period}:${evaluatorId}`);
-    const anonymousToken = hash.digest('hex');
-
-    // Create new evaluation response
-    const response = await EvaluationResponse.create({
-        type: EvaluationType.DepartmentHead,
-        evaluator: evaluatorId,
-        targetTeacher: teacherId,
-        anonymousToken,
-        course: courseId,
-        period,
-        answers,
-        totalScore: normalizedScore,
-    });
-
-    // Update StatsCache and recalculate final score
-    const stats = await StatsCache.findOneAndUpdate(
-        { teacher: teacherId, period, course: courseId },
-        { $set: { deptHeadScore: normalizedScore } },
-        { upsert: true, new: true }
-    );
-
-    await recalculateFinalScore(stats._id);
-
-    res.status(201).json({ success: true, data: response });
 });

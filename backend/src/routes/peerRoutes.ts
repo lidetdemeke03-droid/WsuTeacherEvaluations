@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getPeerAssignments, submitPeerEvaluation, getPeerAssignmentDetails } from '../controllers/peerController';
+import { getPeerAssignments, getPeerAssignmentDetails } from '../controllers/peerController';
 import { protect } from '../middleware/auth';
 import { authorize } from '../middleware/role';
 import { UserRole } from '../types';
@@ -12,6 +12,5 @@ router.use(authorize(UserRole.Teacher));
 
 router.get('/:teacherId/assignments', getPeerAssignments);
 router.get('/assignments/:assignmentId', getPeerAssignmentDetails);
-router.post('/evaluations', submitPeerEvaluation);
 
 export default router;
