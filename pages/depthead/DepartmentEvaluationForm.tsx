@@ -29,7 +29,7 @@ const DepartmentEvaluationForm: React.FC = () => {
   const [loadingDetails, setLoadingDetails] = useState(true);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // initialize and fetch details
+  // initialize and fetch details (logic preserved)
   useEffect(() => {
     const fetchDetails = async () => {
       if (!teacherId || !courseId || !periodId) {
@@ -82,7 +82,7 @@ const DepartmentEvaluationForm: React.FC = () => {
     fetchDetails();
   }, [teacherId, courseId, periodId, navigate]);
 
-  // Auto-save draft every 5s
+  // Auto-save draft every 5s (logic preserved)
   useEffect(() => {
     const draftKey = `dept_eval_draft_${teacherId}_${courseId}_${periodId}`;
     const save = () => {
@@ -117,7 +117,7 @@ const DepartmentEvaluationForm: React.FC = () => {
       return updated;
     });
 
-    // optimistic save once
+    // optimistic save once (logic preserved)
     try {
       const draftKey = `dept_eval_draft_${teacherId}_${courseId}_${periodId}`;
       const next = {
@@ -197,7 +197,7 @@ const DepartmentEvaluationForm: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 py-8 px-4 sm:px-6 lg:px-8">
-      {/* Animated Background Elements */}
+      {/* Animated Background Elements (PeerReviewForm style) */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-12 left-12 w-64 h-64 bg-blue-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse-slow" />
         <div className="absolute bottom-24 right-20 w-64 h-64 bg-indigo-600 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse-slower" />
@@ -318,58 +318,71 @@ const DepartmentEvaluationForm: React.FC = () => {
           ))}
         </div>
 
-        {/* Navigation */}
-        <div className="flex justify-between items-center mt-6 gap-3 sm:gap-4">
-          <button
-            onClick={() => navigate('/department/new-evaluation')}
-            className="flex items-center space-x-2 bg-blue-700/30 hover:bg-blue-700/50 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105"
-          >
-            <ArrowLeft size={18} />
-            <span>Back</span>
-          </button>
+        {/* Sticky Bottom Navigation — visual only change, logic preserved */}
+        <div
+          className="fixed bottom-4 left-0 right-0 flex justify-center pointer-events-none"
+          style={{ zIndex: 60 }}
+        >
+          <div className="w-full max-w-3xl px-4 pointer-events-auto">
+            <div className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-2xl p-4 flex justify-between items-center shadow-xl">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate('/department/new-evaluation')}
+                  className="flex items-center space-x-2 bg-blue-700/30 hover:bg-blue-700/50 text-white font-semibold py-3 px-4 rounded-2xl shadow transform transition-all duration-300 hover:scale-105"
+                >
+                  <ArrowLeft size={18} />
+                  <span>Back</span>
+                </button>
+              </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => paginate(-1)}
-              disabled={questionIndex === 0}
-              className="flex items-center space-x-2 bg-blue-700/50 hover:bg-blue-600/70 disabled:bg-blue-900/30 disabled:cursor-not-allowed text-white font-semibold py-3 px-5 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105 disabled:scale-100"
-            >
-              <ArrowLeft size={16} />
-              <span>Previous</span>
-            </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => paginate(-1)}
+                  disabled={questionIndex === 0}
+                  className="flex items-center space-x-2 bg-blue-700/50 hover:bg-blue-600/70 disabled:bg-blue-900/30 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105 disabled:scale-100"
+                >
+                  <ArrowLeft size={16} />
+                  <span>Previous</span>
+                </button>
 
-            {questionIndex < questions.length - 1 ? (
-              <button
-                onClick={() => paginate(1)}
-                className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-5 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105"
-              >
-                <span>Next</span>
-                <ArrowRight size={16} />
-              </button>
-            ) : (
-              <button
-                onClick={() => handleSubmit()}
-                disabled={submitting}
-                className="relative overflow-hidden group flex items-center space-x-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 px-5 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  {submitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Submitting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send size={16} />
-                      <span>Submit Evaluation</span>
-                    </>
-                  )}
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </button>
-            )}
+                {questionIndex < questions.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => paginate(1)}
+                    className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-5 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105"
+                  >
+                    <span>Next</span>
+                    <ArrowRight size={16} />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleSubmit()}
+                    disabled={submitting}
+                    className="relative overflow-hidden group flex items-center space-x-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 px-5 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
+                  >
+                    <span className="relative z-10 flex items-center gap-2">
+                      {submitting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Submitting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send size={16} />
+                          <span>Submit Evaluation</span>
+                        </>
+                      )}
+                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
+
       </div>
     </div>
   );
