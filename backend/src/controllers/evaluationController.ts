@@ -221,7 +221,10 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
             res.status(400);
             throw new Error('Window start and end dates are required for peer assignments.');
         }
-        const assignments = [];
+        
+        const assignmentsToCreate = [];
+        let skippedCount = 0;
+
         for (const evaluatorId of evaluatorIds) {
             const existingAssignment = await PeerAssignment.findOne({
                 evaluator: evaluatorId,
@@ -232,6 +235,7 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
 
             if (existingAssignment) {
                 console.warn(`Peer assignment already exists for evaluator ${evaluatorId}. Skipping.`);
+                skippedCount++;
                 continue;
             }
 
@@ -245,30 +249,21 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
             });
         }
 
-        let createdCount = 0;
         if (assignmentsToCreate.length > 0) {
-            const createdDocs = await PeerAssignment.insertMany(assignmentsToCreate);
-            createdCount = createdDocs.length;
+            await PeerAssignment.insertMany(assignmentsToCreate);
         }
-
-        const messageParts = [];
-        if (createdCount > 0) {
-            messageParts.push(`${createdCount} peer assignment${createdCount > 1 ? 's' : ''} created successfully`);
-        }
-        if (skippedCount > 0) {
-            messageParts.push(`${skippedCount} assignment${skippedCount > 1 ? 's' : ''} were skipped because they already existed`);
-        }
-
-        if (messageParts.length === 0) {
-            messageParts.push('No new assignments to create.');
-        }
-
-        res.status(201).json({ success: true, message: messageParts.join('. ') + '.' });
+        
+        res.status(201).json({ 
+            success: true, 
+            message: `${assignmentsToCreate.length} peer assignments created. ${skippedCount} skipped.` 
+        });
 
     } else if (evaluationType === EvaluationType.Student) {
         await Course.updateOne({ _id: courseId }, { $addToSet: { students: { $each: evaluatorIds } } });
 
-        const assignments = [];
+        const assignmentsToCreate = [];
+        let skippedCount = 0;
+
         for (const evaluatorId of evaluatorIds) {
             const existingAssignment = await Evaluation.findOne({
                 student: evaluatorId,
@@ -279,20 +274,26 @@ export const createEvaluationAssignment = asyncHandler(async (req: Request, res:
 
             if (existingAssignment) {
                 console.warn(`Student assignment already exists for student ${evaluatorId}. Skipping.`);
+                skippedCount++;
                 continue;
             }
 
-            assignments.push({
+            assignmentsToCreate.push({
                 student: evaluatorId,
                 course: courseId,
                 teacher: teacherId,
                 period: periodId,
             });
         }
-        if (assignments.length > 0) {
-            await Evaluation.insertMany(assignments);
+        
+        if (assignmentsToCreate.length > 0) {
+            await Evaluation.insertMany(assignmentsToCreate);
         }
-        res.status(201).json({ success: true, message: `${evaluatorIds.length} students assigned and ${assignments.length} evaluation assignments created.` });
+
+        res.status(201).json({ 
+            success: true, 
+            message: `${evaluatorIds.length} students assigned. ${assignmentsToCreate.length} assignments created. ${skippedCount} skipped.`
+        });
     } else {
         res.status(400);
         throw new Error('Invalid evaluation type provided.');
