@@ -113,15 +113,18 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
     });
     // optimistic save
     try {
-      localStorage.setItem(draftKey, JSON.stringify({
-        ...answers,
-        [questionCode]: {
-          ...(answers[questionCode] || { questionCode }),
-          questionCode,
-          ...(score !== undefined && { score }),
-          ...(response !== undefined && { response }),
-        },
-      }));
+      localStorage.setItem(
+        draftKey,
+        JSON.stringify({
+          ...answers,
+          [questionCode]: {
+            ...(answers[questionCode] || { questionCode }),
+            questionCode,
+            ...(score !== undefined && { score }),
+            ...(response !== undefined && { response }),
+          },
+        })
+      );
       setLastSaved(new Date());
     } catch {}
   };
@@ -243,151 +246,166 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
           </div>
         </div>
 
-        {/* Main Card / Question Area */}
-        <div className="relative">
-          <AnimatePresence initial={false} custom={direction}>
-            <motion.div
-              key={page}
-              custom={direction}
-              variants={slideVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{
-                x: { type: 'spring', stiffness: 300, damping: 30 },
-                opacity: { duration: 0.2 },
-              }}
-              className="absolute inset-0"
-            >
-              <div className="bg-blue-800/30 backdrop-blur-sm border border-blue-600/20 rounded-2xl p-6 shadow-xl transform transition-all duration-300 animate-fade-in-up max-h-[70vh] overflow-auto">
-                <p className="text-white text-lg sm:text-xl font-semibold mb-4 leading-snug">
-                  {questionIndex + 1}. {question.text}
-                </p>
+        <div className="relative pb-40"> {/* padding bottom equals approx sticky nav height */}
+          <div className="relative">
+            <AnimatePresence initial={false} custom={direction}>
+              <motion.div
+                key={page}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: 'spring', stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 },
+                }}
+                className="absolute inset-0"
+              >
+                {/* Centered, scrollable card */}
+                <div
+                  className="mx-auto bg-blue-800/30 backdrop-blur-sm border border-blue-600/20 rounded-2xl p-6 shadow-xl transform transition-all duration-300 animate-fade-in-up max-h-[60vh] overflow-auto"
+                  style={{ maxWidth: '100%' }}
+                >
+                  <p className="text-white text-lg sm:text-xl font-semibold mb-4 leading-snug">
+                    {questionIndex + 1}. {question.text}
+                  </p>
 
-                {/* Rating */}
-                {question.type === 'rating' && (
-                  <div className="flex flex-wrap gap-3 sm:gap-4 justify-center sm:justify-start">
-                    {[1, 2, 3, 4, 5].map((rating) => {
-                      const selected = answers[question.code]?.score === rating;
-                      return (
-                        <label
-                          key={rating}
-                          className="flex items-center cursor-pointer group transform transition-all duration-200 hover:scale-105"
-                        >
-                          <input
-                            type="radio"
-                            name={question.code}
-                            value={rating}
-                            checked={selected}
-                            onChange={() => handleAnswerChange(question.code, rating)}
-                            className="sr-only"
-                          />
-                          <div
-                            className={`w-12 h-12 sm:w-14 sm:h-14 border-2 rounded-xl flex items-center justify-center text-white font-semibold transition-all duration-200
-                            ${
-                              selected
-                                ? 'bg-gradient-to-br from-green-500 to-green-600 border-green-400 shadow-lg scale-105'
-                                : 'bg-blue-700/50 border-blue-500/30 group-hover:bg-blue-600/70 group-hover:border-blue-400'
-                            }`}
+                  {/* Rating */}
+                  {question.type === 'rating' && (
+                    <div className="flex flex-wrap gap-3 sm:gap-4 justify-center sm:justify-start">
+                      {[1, 2, 3, 4, 5].map((rating) => {
+                        const selected = answers[question.code]?.score === rating;
+                        return (
+                          <label
+                            key={rating}
+                            className="flex items-center cursor-pointer group transform transition-all duration-200 hover:scale-105"
                           >
-                            {selected ? (
-                              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                              </svg>
-                            ) : (
-                              rating
-                            )}
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Textarea */}
-                {question.type === 'text' && (
-                  <textarea
-                    placeholder="Your comments..."
-                    value={answers[question.code]?.response || ''}
-                    onChange={(e) => handleAnswerChange(question.code, undefined, e.target.value)}
-                    rows={5}
-                    className="w-full mt-4 p-4 bg-blue-900/40 border border-blue-600/30 rounded-xl text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-300 resize-none"
-                  />
-                )}
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* Question Indicators */}
-        <div className="flex justify-center mt-6 space-x-2 animate-fade-in-up">
-          {questionSet.map((_, idx) => (
-            <button
-              key={idx}
-              type="button"
-              onClick={() => setPage([idx, idx > page ? 1 : -1])}
-              className={`w-3 h-3 rounded-full transition-all duration-300
-                ${idx === page ? 'bg-gradient-to-r from-blue-400 to-purple-400 scale-125' : 'bg-blue-600/50 hover:bg-blue-500/70'}`}
-              aria-label={`Go to question ${idx + 1}`}
-            />
-          ))}
-        </div>
-
-        {/* Navigation Buttons */}
-        <div className="flex justify-between mt-6 gap-3 sm:gap-4">
-          <button
-            onClick={onBack}
-            className="flex items-center space-x-2 bg-blue-700/30 hover:bg-blue-700/50 text-white font-semibold py-3 px-6 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105"
-          >
-            <ArrowLeft size={18} />
-            <span>Back</span>
-          </button>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => paginate(-1)}
-              disabled={questionIndex === 0}
-              className="flex items-center space-x-2 bg-blue-700/50 hover:bg-blue-600/70 disabled:bg-blue-900/30 disabled:cursor-not-allowed text-white font-semibold py-3 px-5 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105 disabled:scale-100"
-            >
-              <ArrowLeft size={16} />
-              <span>Previous</span>
-            </button>
-
-            {questionIndex < questionSet.length - 1 ? (
-              <button
-                type="button"
-                onClick={() => paginate(1)}
-                className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-5 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105"
-              >
-                <span>Next</span>
-                <ArrowRight size={16} />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="relative overflow-hidden group flex items-center space-x-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 px-5 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  {submitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Submitting...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send size={16} />
-                      <span>Submit Evaluation</span>
-                    </>
+                            <input
+                              type="radio"
+                              name={question.code}
+                              value={rating}
+                              checked={selected}
+                              onChange={() => handleAnswerChange(question.code, rating)}
+                              className="sr-only"
+                            />
+                            <div
+                              className={`w-12 h-12 sm:w-14 sm:h-14 border-2 rounded-xl flex items-center justify-center text-white font-semibold transition-all duration-200
+                              ${
+                                selected
+                                  ? 'bg-gradient-to-br from-green-500 to-green-600 border-green-400 shadow-lg scale-105'
+                                  : 'bg-blue-700/50 border-blue-500/30 group-hover:bg-blue-600/70 group-hover:border-blue-400'
+                              }`}
+                            >
+                              {selected ? (
+                                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              ) : (
+                                rating
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
                   )}
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </button>
-            )}
+
+                  {/* Textarea */}
+                  {question.type === 'text' && (
+                    <textarea
+                      placeholder="Your comments..."
+                      value={answers[question.code]?.response || ''}
+                      onChange={(e) => handleAnswerChange(question.code, undefined, e.target.value)}
+                      rows={5}
+                      className="w-full mt-4 p-4 bg-blue-900/40 border border-blue-600/30 rounded-xl text-white placeholder-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-300 resize-none"
+                    />
+                  )}
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Question Indicators */}
+          <div className="flex justify-center mt-6 space-x-2 animate-fade-in-up">
+            {questionSet.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setPage([idx, idx > page ? 1 : -1])}
+                className={`w-3 h-3 rounded-full transition-all duration-300
+                  ${idx === page ? 'bg-gradient-to-r from-blue-400 to-purple-400 scale-125' : 'bg-blue-600/50 hover:bg-blue-500/70'}`}
+                aria-label={`Go to question ${idx + 1}`}
+              />
+            ))}
           </div>
         </div>
+
+        {/* Sticky Bottom Navigation — always visible */}
+        <div
+          className="fixed bottom-4 left-0 right-0 flex justify-center pointer-events-none"
+          style={{ zIndex: 60 }}
+        >
+          <div className="w-full max-w-4xl px-4 pointer-events-auto">
+            <div className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-2xl p-4 flex justify-between items-center shadow-xl">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={onBack}
+                  className="flex items-center space-x-2 bg-blue-700/30 hover:bg-blue-700/50 text-white font-semibold py-3 px-4 rounded-2xl shadow transform transition-all duration-300 hover:scale-105"
+                >
+                  <ArrowLeft size={18} />
+                  <span>Back</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => paginate(-1)}
+                  disabled={questionIndex === 0}
+                  className="flex items-center space-x-2 bg-blue-700/50 hover:bg-blue-600/70 disabled:bg-blue-900/30 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105 disabled:scale-100"
+                >
+                  <ArrowLeft size={16} />
+                  <span>Previous</span>
+                </button>
+
+                {questionIndex < questionSet.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => paginate(1)}
+                    className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-5 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105"
+                  >
+                    <span>Next</span>
+                    <ArrowRight size={16} />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    className="relative overflow-hidden group flex items-center space-x-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold py-3 px-5 rounded-2xl shadow-lg transform transition-all duration-300 hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
+                  >
+                    <span className="relative z-10 flex items-center gap-2">
+                      {submitting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>Submitting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send size={16} />
+                          <span>Submit Evaluation</span>
+                        </>
+                      )}
+                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-green-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
