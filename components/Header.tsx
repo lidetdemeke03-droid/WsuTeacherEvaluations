@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { User, Bell, LogOut, Menu } from 'lucide-react';
+import BackButton from './BackButton';
 import { motion } from 'framer-motion';
 import { apiGetNotifications, apiMarkNotificationRead } from '../services/api';
 
@@ -38,6 +39,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   return (
     <header className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
       <div className="flex items-center">
+        <BackButton />
         <button onClick={onToggleSidebar} className="mr-3 md:hidden p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Toggle sidebar">
           <Menu size={20} className="text-gray-700 dark:text-gray-200" />
         </button>
