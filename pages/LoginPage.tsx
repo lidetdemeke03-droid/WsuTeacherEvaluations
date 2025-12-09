@@ -150,12 +150,12 @@ const LoginPage: React.FC = () => {
                   className="w-full px-3 py-3 pr-10 rounded-lg border border-gray-300 dark:border-gray-600 placeholder-gray-500 text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
                   placeholder="Enter your password"
                 />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                <div className="absolute inset-y-0 right-0 flex items-center">
                   <button
                     type="button"
                     onClick={() => setShowPassword((s) => !s)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="text-gray-500 dark:text-gray-300 hover:text-blue-500"
+                    className="h-full px-3 flex items-center justify-center text-gray-500 dark:text-gray-300 hover:text-blue-500"
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
