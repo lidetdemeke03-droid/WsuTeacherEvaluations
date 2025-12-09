@@ -11,6 +11,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import WSU_LOGO_URL from './logo.png';
+import BackButton from '../components/BackButton';
 
 const HERO_BG_URL =
   'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop';
@@ -119,6 +120,7 @@ const HomePage: React.FC = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
           >
+            <BackButton />
             <img src={WSU_LOGO_URL} alt="WSU Logo" className="h-12" />
             <span className="text-xl font-bold text-gray-800 dark:text-white">
               Wolaita Sodo University

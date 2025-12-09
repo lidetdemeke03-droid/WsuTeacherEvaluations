@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiVerifyResetToken, apiResetPassword } from '../services/api';
 import { motion } from 'framer-motion';
+import BackButton from '../components/BackButton';
 import { Eye, EyeOff } from 'lucide-react';
 
 const ResetPasswordPage: React.FC = () => {
@@ -70,7 +71,10 @@ const ResetPasswordPage: React.FC = () => {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="relative flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="absolute top-4 left-4">
+        <BackButton />
+      </div>
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
