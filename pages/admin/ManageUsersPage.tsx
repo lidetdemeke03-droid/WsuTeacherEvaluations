@@ -195,31 +195,58 @@ const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onCr
     return (
         <AnimatePresence>
             {isOpen && (
-                <motion.div className="modal-backdrop">
-                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="modal-content max-w-sm sm:max-w-md">
-                        <div className="modal-header">
-                            <h2 className="text-xl font-semibold">Create New User</h2>
-                            <button onClick={onClose}><X size={22} /></button>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+                    <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }} transition={{ duration: 0.15 }} className="relative w-full max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl ring-1 ring-gray-100 dark:ring-gray-700 overflow-hidden">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+                            <div>
+                                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Create New User</h2>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Add a user and assign role and department</p>
+                            </div>
+                            <button onClick={onClose} className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Close dialog"><X size={20} /></button>
                         </div>
-                        <form onSubmit={handleSubmit} className="space-y-3">
-                            <input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="input" required />
-                            <input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="input" required />
-                            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required />
-                            <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="input" />
-                            <select value={role} onChange={e => setRole(e.target.value as UserRole)} className="input">
-                                {Object.values(UserRole)
-                                    .filter(r => !(currentUser && currentUser.role === UserRole.Admin && (r === UserRole.Admin || r === UserRole.SuperAdmin)))
-                                    .map(r => <option key={r} value={r}>{r}</option>)}
-                            </select>
 
-                            <select value={departmentId} onChange={e => setDepartmentId(e.target.value)} className="input">
-                                <option value="">-- Select Department (optional) --</option>
-                                {departments.map(d => <option key={d._id || d.id} value={d._id || d.id}>{d.name}</option>)}
-                            </select>
+                        <form onSubmit={handleSubmit} className="p-5 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="col-span-1">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First name</label>
+                                <input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                            </div>
 
-                            <div className="flex justify-end space-x-2">
-                                <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-                                <button type="submit" className="btn-primary">Create</button>
+                            <div className="col-span-1">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last name</label>
+                                <input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                            </div>
+
+                            <div className="col-span-1 md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                                <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                            </div>
+
+                            <div className="col-span-1">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password (optional)</label>
+                                <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            </div>
+
+                            <div className="col-span-1">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
+                                <select value={role} onChange={e => setRole(e.target.value as UserRole)} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    {Object.values(UserRole)
+                                        .filter(r => !(currentUser && currentUser.role === UserRole.Admin && (r === UserRole.Admin || r === UserRole.SuperAdmin)))
+                                        .map(r => <option key={r} value={r}>{r}</option>)}
+                                </select>
+                            </div>
+
+                            <div className="col-span-1 md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department (optional)</label>
+                                <select value={departmentId} onChange={e => setDepartmentId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">-- Select Department (optional) --</option>
+                                    {departments.map(d => <option key={d._id || d.id} value={d._id || d.id}>{d.name}</option>)}
+                                </select>
+                            </div>
+
+                            <div className="col-span-1 md:col-span-2 flex items-center justify-end space-x-2 mt-1">
+                                <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300">Cancel</button>
+                                <button type="submit" className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Create</button>
                             </div>
                         </form>
                     </motion.div>
