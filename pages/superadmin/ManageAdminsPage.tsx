@@ -191,7 +191,7 @@ const ManageAdminsPage: React.FC = () => {
                     </table>
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 };
 
