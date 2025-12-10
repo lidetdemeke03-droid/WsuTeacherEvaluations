@@ -128,6 +128,7 @@ const ManageAdminsPage: React.FC = () => {
                 <div className="mb-3 text-sm text-gray-700 dark:text-gray-300">
                     Use this panel to manage administrator accounts. You can add, update, or remove administrators and review recent audit events in the Audit Logs section.
                 </div>
+            </div>
 
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
