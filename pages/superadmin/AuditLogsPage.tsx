@@ -15,8 +15,27 @@ const AuditLogsPage: React.FC = () => {
     setLoading(true);
     try {
       const res = await apiGetAuditLogs(p, limit);
-      setLogs(res.data || res);
-      setTotal(res.pagination?.total || 0);
+
+      // apiRequest helper returns `data.data` in many responses.
+      // Backend sends { success: true, data: [...], pagination: {...} }
+      // Handle both shapes: either res is an array, or an object with .data and .pagination
+      let items: any[] = [];
+      let totalCount = 0;
+
+      if (Array.isArray(res)) {
+        items = res;
+      } else if (res && Array.isArray((res as any).data)) {
+        items = (res as any).data;
+        totalCount = (res as any).pagination?.total || items.length;
+      } else if (res && Array.isArray((res as any).logs)) {
+        items = (res as any).logs;
+        totalCount = (res as any).total || items.length;
+      } else if (res && (res as any).length) {
+        items = res as any;
+      }
+
+      setLogs(items);
+      setTotal(totalCount || items.length);
     } catch (err) {
       console.error('Failed to fetch audit logs', err);
     } finally {
