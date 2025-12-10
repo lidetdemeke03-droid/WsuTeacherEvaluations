@@ -99,7 +99,7 @@ export const deleteAdmin = asyncHandler(async (req: IRequest, res: Response) => 
 // @access  Private (SuperAdmin)
 export const getAuditLogs = asyncHandler(async (req: IRequest, res: Response) => {
     const page = parseInt((req.query.page as string) || '1');
-    const limit = parseInt((req.query.limit as string) || '100');
+    const limit = parseInt((req.query.limit as string) || '10');
     const skip = (page - 1) * limit;
 
     const logs = await AuditLog.find().sort({ createdAt: -1 }).skip(skip).limit(limit).populate('user', 'firstName lastName email');

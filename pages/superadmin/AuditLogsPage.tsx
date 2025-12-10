@@ -8,7 +8,7 @@ const AuditLogsPage: React.FC = () => {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [limit] = useState(50);
+  const [limit] = useState(10);
   const [total, setTotal] = useState(0);
 
   const fetchLogs = async (p = 1) => {
