@@ -86,7 +86,7 @@ export const apiCreateAdmin = (userData: { firstName: string, lastName: string, 
 export const apiUpdateAdmin = (userId: string, userData: Partial<User>): Promise<User> => apiRequest<User>(`/superadmin/admins/${userId}`, { method: 'PUT', body: JSON.stringify(userData) });
 export const apiDeleteAdmin = (userId: string): Promise<void> => apiRequest<void>(`/superadmin/admins/${userId}`, { method: 'DELETE' });
 // Audit logs (SuperAdmin)
-export const apiGetAuditLogs = (page = 1, limit = 100): Promise<any> => apiRequest<any>(`/superadmin/audit-logs?page=${page}&limit=${limit}`);
+export const apiGetAuditLogs = (page = 1, limit = 10): Promise<any> => apiRequest<any>(`/superadmin/audit-logs?page=${page}&limit=${limit}`);
 
 export const apiBulkImportUsers = async (file: File): Promise<{ success: boolean, message: string }> => {
     const token = sessionStorage.getItem('authToken');
