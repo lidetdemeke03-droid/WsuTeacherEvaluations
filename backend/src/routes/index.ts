@@ -17,7 +17,7 @@ const router = Router();
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
-router.use('/superadmin/admins', superadminRoutes);
+router.use('/superadmin', superadminRoutes);
 router.use('/courses', courseRoutes);
 router.use('/departments', departmentRoutes);
 router.use('/periods', evaluationPeriodRoutes);

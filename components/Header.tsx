@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+import './Header.css';
 import { useAuth } from '../context/AuthContext';
 import { User, Bell, LogOut, Menu } from 'lucide-react';
 import BackButton from './BackButton';
@@ -46,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         <h1 className="text-xl font-semibold text-gray-800 dark:text-white">WSU Evaluation System</h1>
       </div>
       <div className="flex items-center space-x-4">
-        <div className="relative md:hidden">
+        <div className="relative mobile-only-menu">
           <motion.button 
             onClick={() => setIsMobileMenuOpen(o => !o)} 
             whileHover={{ scale: 1.05 }} 
@@ -61,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               initial={{ opacity: 0, y: -10 }} 
               animate={{ opacity: 1, y: 0 }} 
               exit={{ opacity: 0, y: -10 }} 
-              className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border rounded shadow-lg z-50 md:hidden"
+              className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border rounded shadow-lg z-50"
             >
               <div className="p-2">
                 <div className="flex items-center space-x-2 mb-2">
@@ -105,7 +106,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             </motion.div>
           )}
         </div>
-        <div className="hidden md:flex items-center space-x-2">
+        <div className="large-screen-profile items-center space-x-2">
             <User size={24} className="text-gray-500 dark:text-gray-400"/>
             <span className="text-sm font-medium text-gray-800 dark:text-white">{user?.name} ({user?.role})</span>
         </div>
@@ -113,7 +114,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           onClick={logout} 
           whileHover={{ scale: 1.1 }} 
           whileTap={{ scale: 0.9 }}
-          className="hidden md:flex items-center space-x-2 px-3 py-2 text-sm font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 bg-red-100 dark:bg-red-900/50 rounded-lg"
+          className="large-screen-profile items-center space-x-2 px-3 py-2 text-sm font-medium text-red-500 hover:text-red-700 dark:hover:text-red-400 bg-red-100 dark:bg-red-900/50 rounded-lg"
         >
           <LogOut size={16} />
           <span>Logout</span>

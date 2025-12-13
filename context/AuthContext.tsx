@@ -22,6 +22,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const currentUser = await apiGetMe();
         setUser(currentUser);
       } catch (error) {
+        console.error("checkLoggedIn failed:", error);
         setUser(null);
       } finally {
         setLoading(false);
