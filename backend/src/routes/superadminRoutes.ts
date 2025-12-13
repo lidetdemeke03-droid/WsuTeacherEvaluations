@@ -9,11 +9,11 @@ const router = Router();
 // Apply protect and authorize middleware to all routes in this file
 router.use(protect, authorize(UserRole.SuperAdmin));
 
-router.route('/')
+router.route('/admins')
     .get(getAdmins)
     .post(createAdmin);
 
-router.route('/:id')
+router.route('/admins/:id')
     .put(updateAdmin)
     .delete(deleteAdmin);
 

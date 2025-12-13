@@ -1,0 +1,16 @@
+.large-screen-profile {
+  display: none;
+}
+
+.mobile-only-menu {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .large-screen-profile {
+    display: flex;
+  }
+  .mobile-only-menu {
+    display: none;
+  }
+}

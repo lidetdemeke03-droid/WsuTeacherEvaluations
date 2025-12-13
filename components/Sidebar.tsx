@@ -1,5 +1,6 @@
 
 import React from 'react';
+import './Sidebar.css';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
@@ -75,7 +76,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
         animate={{ x: 0 }} 
         exit={{ x: -250 }} 
         transition={{ duration: 0.3 }}
-        className="hidden md:flex w-64 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 flex flex-col"
+        className="large-screen-sidebar w-64 flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 flex-col"
       >
         <div className="flex items-center space-x-2 mb-8">
           <GraduationCap className="text-blue-600 dark:text-blue-400" size={32} />
