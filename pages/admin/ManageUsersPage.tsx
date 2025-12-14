@@ -3,9 +3,11 @@ import { apiGetUsers, apiCreateUser, apiBulkImportUsers, apiUpdateUser, apiDelet
 import { User, UserRole } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlusCircle, Upload, X, Edit, Trash2, Search } from 'lucide-react';
+import { PlusCircle, Upload, X, Edit, Trash2, Search, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import PasswordResetButton from '../../components/PasswordResetButton';
 import { toast } from 'react-hot-toast';
+
+const inputClass = "w-full px-3 py-2 text-gray-900 bg-gray-50 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:focus:ring-blue-500 dark:focus:border-blue-500 transition-shadow duration-150";
 
 const ManageUsersPage: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -57,15 +59,9 @@ const ManageUsersPage: React.FC = () => {
 
     const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
-    const handleCreateUser = async (userData: any) => {
-        try {
-            await apiCreateUser(userData);
-            fetchUsers();
-            setIsCreateModalOpen(false);
-            toast.success('User created successfully!');
-        } catch (err) {
-            toast.error('Failed to create user.');
-        }
+    const handleUserCreated = () => {
+        fetchUsers();
+        setIsCreateModalOpen(false);
     };
 
     const handleUpdateUser = async (userId: string, userData: Partial<User>) => {
@@ -165,89 +161,140 @@ const ManageUsersPage: React.FC = () => {
                 ))}
             </div>
 
-            <CreateUserModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onCreate={handleCreateUser} />
+            <CreateUserModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onUserCreated={handleUserCreated} />
             {selectedUser && <EditUserModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} user={selectedUser} onUpdate={handleUpdateUser} />}
         </motion.div>
     );
 };
 
 // --- Modal Components ---
-interface CreateUserModalProps { isOpen: boolean; onClose: () => void; onCreate: (userData: Partial<User>) => void; }
-const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onCreate }) => {
+interface CreateUserModalProps { isOpen: boolean; onClose: () => void; onUserCreated: () => void; }
+const CreateUserModal: React.FC<CreateUserModalProps> = ({ isOpen, onClose, onUserCreated }) => {
     const { user: currentUser } = useAuth();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [password, setPassword] = useState('p@ssword');
+    const [showPassword, setShowPassword] = useState(false);
     const [role, setRole] = useState<UserRole>(UserRole.Student);
     const [departmentId, setDepartmentId] = useState('');
     const [departments, setDepartments] = useState<any[]>([]);
+    
+    const [isLoading, setIsLoading] = useState(false);
+    const [modalError, setModalError] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        onCreate({ firstName, lastName, email, password, role, department: departmentId || undefined });
+    const resetForm = () => {
+        setFirstName('');
+        setLastName('');
+        setEmail('');
+        setPassword('p@ssword');
+        setShowPassword(false);
+        setRole(UserRole.Student);
+        setDepartmentId('');
+        setModalError('');
+        setIsLoading(false);
+    };
+
+    const handleClose = () => {
+        resetForm();
+        onClose();
     };
 
     useEffect(() => {
-        if (isOpen) apiGetDepartments().then(setDepartments).catch(() => setDepartments([]));
+        if (isOpen) {
+            apiGetDepartments().then(setDepartments).catch(() => setDepartments([]));
+        } else {
+            resetForm();
+        }
     }, [isOpen]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setModalError('');
+
+        try {
+            await apiCreateUser({ firstName, lastName, email, password, role, department: departmentId || undefined });
+            toast.success('User created successfully!');
+            onUserCreated();
+        } catch (err: any) {
+            setModalError(err.message || 'An unexpected error occurred. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <AnimatePresence>
             {isOpen && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center px-4">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={isLoading ? undefined : handleClose} />
                     <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }} transition={{ duration: 0.15 }} className="relative w-full max-w-2xl mx-auto bg-white dark:bg-gray-800 rounded-2xl shadow-2xl ring-1 ring-gray-100 dark:ring-gray-700 overflow-hidden">
                         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
                             <div>
                                 <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Create New User</h2>
                                 <p className="text-sm text-gray-500 dark:text-gray-400">Add a user and assign role and department</p>
                             </div>
-                            <button onClick={onClose} className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Close dialog"><X size={20} /></button>
+                            <button onClick={isLoading ? undefined : handleClose} disabled={isLoading} className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Close dialog"><X size={20} /></button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-5 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="col-span-1">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First name</label>
-                                <input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-                            </div>
+                        <form onSubmit={handleSubmit} className="p-5 sm:p-6">
+                            {modalError && (
+                                <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 flex items-center gap-3">
+                                    <AlertCircle size={20} />
+                                    <p className="text-sm">{modalError}</p>
+                                </div>
+                            )}
+                            <fieldset disabled={isLoading} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="col-span-1">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First name</label>
+                                    <input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className={inputClass} required />
+                                </div>
 
-                            <div className="col-span-1">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last name</label>
-                                <input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-                            </div>
+                                <div className="col-span-1">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last name</label>
+                                    <input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className={inputClass} required />
+                                </div>
 
-                            <div className="col-span-1 md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-                                <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" required />
-                            </div>
+                                <div className="col-span-1 md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                                    <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className={inputClass} required />
+                                </div>
 
-                            <div className="col-span-1">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password (optional)</label>
-                                <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                            </div>
+                                <div className="col-span-1">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
+                                    <div className="relative">
+                                        <input type={showPassword ? 'text' : 'password'} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className={`${inputClass} pr-10`} />
+                                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700">
+                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                        </button>
+                                    </div>
+                                </div>
 
-                            <div className="col-span-1">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
-                                <select value={role} onChange={e => setRole(e.target.value as UserRole)} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    {Object.values(UserRole)
-                                        .filter(r => !(currentUser && currentUser.role === UserRole.Admin && (r === UserRole.Admin || r === UserRole.SuperAdmin)))
-                                        .map(r => <option key={r} value={r}>{r}</option>)}
-                                </select>
-                            </div>
+                                <div className="col-span-1">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
+                                    <select value={role} onChange={e => setRole(e.target.value as UserRole)} className={inputClass}>
+                                        {Object.values(UserRole)
+                                            .filter(r => !(currentUser && currentUser.role === UserRole.Admin && (r === UserRole.Admin || r === UserRole.SuperAdmin)))
+                                            .map(r => <option key={r} value={r}>{r}</option>)}
+                                    </select>
+                                </div>
 
-                            <div className="col-span-1 md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department (optional)</label>
-                                <select value={departmentId} onChange={e => setDepartmentId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="">-- Select Department (optional) --</option>
-                                    {departments.map(d => <option key={d._id || d.id} value={d._id || d.id}>{d.name}</option>)}
-                                </select>
-                            </div>
+                                <div className="col-span-1 md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department (optional)</label>
+                                    <select value={departmentId} onChange={e => setDepartmentId(e.target.value)} className={inputClass}>
+                                        <option value="">-- Select Department (optional) --</option>
+                                        {departments.map(d => <option key={d._id || d.id} value={d._id || d.id}>{d.name}</option>)}
+                                    </select>
+                                </div>
 
-                            <div className="col-span-1 md:col-span-2 flex items-center justify-end space-x-2 mt-1">
-                                <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300">Cancel</button>
-                                <button type="submit" className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Create</button>
-                            </div>
+                                <div className="col-span-1 md:col-span-2 flex items-center justify-end space-x-2 mt-1">
+                                    <button type="button" onClick={handleClose} className="btn-secondary">Cancel</button>
+                                    <button type="submit" className="btn-primary w-24">
+                                        {isLoading ? <span className="loader-sm"></span> : 'Create'}
+                                    </button>
+                                </div>
+                            </fieldset>
                         </form>
                     </motion.div>
                 </motion.div>
@@ -283,15 +330,15 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
                             <button onClick={onClose}><X size={22} /></button>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-3">
-                            <input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className="input" required />
-                            <input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className="input" required />
-                            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="input" required />
-                            <select value={role} onChange={e => setRole(e.target.value as UserRole)} className="input">
+                            <input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} className={inputClass} required />
+                            <input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} className={inputClass} required />
+                            <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className={inputClass} required />
+                            <select value={role} onChange={e => setRole(e.target.value as UserRole)} className={inputClass}>
                                 {Object.values(UserRole)
                                     .filter(r => !(currentUser && currentUser.role === UserRole.Admin && (r === UserRole.Admin || r === UserRole.SuperAdmin)))
                                     .map(r => <option key={r} value={r}>{r}</option>)}
                             </select>
-                            <select value={departmentId || ''} onChange={e => setDepartmentId(e.target.value || undefined)} className="input">
+                            <select value={departmentId || ''} onChange={e => setDepartmentId(e.target.value || undefined)} className={inputClass}>
                                 <option value="">-- Select Department (optional) --</option>
                                 {departments.map(d => <option key={d._id || d.id} value={d._id || d.id}>{d.name}</option>)}
                             </select>
