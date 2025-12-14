@@ -17,7 +17,7 @@ import { addAggregationJob } from '../jobs/queue';
 // @route   POST /api/admin/users
 // @access  Admin, SuperAdmin
 export const createUser = async (req: IRequest, res: Response) => {
-  const { firstName, lastName, email, role, department, employeeId, studentId, isDeptHead } = req.body;
+  const { firstName, lastName, email, role, department, employeeId, studentId, isDeptHead, password } = req.body;
 
   // Prevent non-superadmins from creating Admin or SuperAdmin users via this endpoint
   if (role === UserRole.Admin || role === UserRole.SuperAdmin) {
@@ -38,6 +38,7 @@ export const createUser = async (req: IRequest, res: Response) => {
       firstName,
       lastName,
       email,
+      password, // Add password to user creation
       role,
       department,
       employeeId,
@@ -59,7 +60,8 @@ export const createUser = async (req: IRequest, res: Response) => {
 An account has been created for you on the Wolaita Sodo University Evaluation System.
 
 Role: ${role}
-Please set your password and complete your profile by clicking the link below. This link will expire in 48 hours.
+
+A default password has been set for you to use for your initial login. You can also use the link below to set a new password. This link will expire in 48 hours.
 
 Set password: ${setPasswordUrl}
 
