@@ -79,6 +79,22 @@ const PeerReviewForm: React.FC = () => {
     };
 
     const isQuestionAnswered = (questionCode: string) => {
+        const qIndex = peerEvaluationQuestions.findIndex(q => q.code === questionCode);
+        const qType = peerEvaluationQuestions[qIndex]?.type;
+
+        // Make the last two text questions optional
+        if (qType === 'text' && qIndex >= peerEvaluationQuestions.length - 2) {
+            return true;
+        }
+
+        if (qType === 'rating') {
+            return responses[questionCode] !== undefined && responses[questionCode] !== '';
+        }
+
+        if (qType === 'text') {
+            return responses[questionCode] !== undefined && String(responses[questionCode]).trim() !== '';
+        }
+
         return responses[questionCode] !== undefined && responses[questionCode] !== '';
     };
 
@@ -211,7 +227,7 @@ const PeerReviewForm: React.FC = () => {
                                 placeholder="Enter your feedback here..."
                                 onChange={(e) => handleInputChange(currentQuestion.code, e.target.value)}
                                 value={responses[currentQuestion.code] || ''}
-                                required
+                                
                             />
                         )}
                     </div>
