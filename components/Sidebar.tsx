@@ -36,11 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
         return [
           { to: "/dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
           { to: "/admin/users", icon: <Users size={20} />, label: "Manage Users" },
-          { to: "/admin/courses", icon: <GraduationCap size={20} />, label: "Manage Courses" },
           { to: "/admin/departments", icon: <Building size={20} />, label: "Manage Departments" },
-          { to: "/admin/periods", icon: <Calendar size={20} />, label: "Evaluation Periods" },
-          { to: "/complaints", icon: <MessageSquare size={20} />, label: "Complaints" },
-          { to: "/reports", icon: <FileDown size={20} />, label: "Reports" },
         ];
       case UserRole.DepartmentHead:
         return [
