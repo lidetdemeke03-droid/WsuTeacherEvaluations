@@ -94,10 +94,17 @@ export const getAssignedForms = asyncHandler(async (req: IRequest, res: Response
     let assignedEvaluations: any[] = [];
 
     if (userRole === UserRole.Student) {
-        assignedEvaluations = await Evaluation.find({ student: userId, status: 'Pending' })
+        // fetch all assignments for the student and mark completed if a response exists
+        const evals = await Evaluation.find({ student: userId })
             .populate('course', 'title code')
             .populate('teacher', 'firstName lastName')
             .populate('period', 'name startDate endDate');
+
+        assignedEvaluations = await Promise.all(evals.map(async (ev: any) => {
+            // check if a submission exists for this student/course/teacher/period
+            const exists = await EvaluationResponse.findOne({ evaluator: userId, course: ev.course._id || ev.course, targetTeacher: ev.teacher._id || ev.teacher, type: EvaluationType.Student, period: ev.period && ev.period._id ? ev.period._id : ev.period });
+            return { ...ev.toObject(), status: exists ? 'Completed' : (ev.status || 'Pending') };
+        }));
     } else if (userRole === UserRole.Teacher) {
         assignedEvaluations = await PeerAssignment.find({ evaluator: userId, active: true })
             .populate('targetTeacher', 'firstName lastName')

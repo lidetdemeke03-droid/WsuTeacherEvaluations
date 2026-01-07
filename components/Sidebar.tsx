@@ -47,6 +47,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
           { to: "/dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
           { to: "/instructor/results", icon: <BarChart3 size={20} />, label: "Instructors Result" },
           { to: "/evaluation/new", icon: <FilePlus2 size={20} />, label: "Make Evaluation" },
+          { to: "/admin/courses", icon: <GraduationCap size={20} />, label: "Manage Courses" },
+          { to: "/admin/periods", icon: <Calendar size={20} />, label: "Evaluation Periods" },
+          { to: "/complaints", icon: <MessageSquare size={20} />, label: "Complaints" },
+          { to: "/reports", icon: <FileDown size={20} />, label: "Reports" },
         ];
       case UserRole.Teacher:
         return [

@@ -21,7 +21,7 @@ router.post('/', authorize(UserRole.Teacher),
     validate,
     createComplaint
 );
-router.post('/:id/respond', authorize(UserRole.Admin), respondToComplaint);
-router.put('/:id', authorize(UserRole.Admin), updateComplaint);
+router.post('/:id/respond', authorize(UserRole.Admin, UserRole.DepartmentHead), respondToComplaint);
+router.put('/:id', authorize(UserRole.Admin, UserRole.DepartmentHead), updateComplaint);
 
 export default router;

@@ -19,13 +19,13 @@ router.get('/my-performance', authorize(UserRole.Teacher), getMyPerformance);
 router.get('/department', authorize(UserRole.DepartmentHead), getDepartmentReport);
 
 // Admin-only: generate reports for teachers
-router.post('/generate', authorize(UserRole.Admin), generateReports);
+router.post('/generate', authorize(UserRole.Admin, UserRole.DepartmentHead), generateReports);
 
-// Admin: list previous reports (optional filters)
-router.get('/', authorize(UserRole.Admin), listReports);
+// Admin/DepartmentHead: list previous reports (optional filters)
+router.get('/', authorize(UserRole.Admin, UserRole.DepartmentHead), listReports);
 
 // Download generated PDF
-router.get('/:id/download', authorize(UserRole.Admin), downloadReport);
+router.get('/:id/download', authorize(UserRole.Admin, UserRole.DepartmentHead), downloadReport);
 
 export default router;
 

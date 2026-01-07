@@ -15,7 +15,7 @@ const ManageEvaluationPeriodsPage: React.FC = () => {
         name: '',
         startDate: '',
         endDate: '',
-        status: 'Inactive'
+        status: 'active'
     });
 
     useEffect(() => {
@@ -84,12 +84,12 @@ const ManageEvaluationPeriodsPage: React.FC = () => {
                 name: period.name,
                 startDate: new Date(period.startDate).toISOString().split('T')[0],
                 endDate: new Date(period.endDate).toISOString().split('T')[0],
-                status: period.status,
+                status: (period.status || '').toString().toLowerCase(),
             });
         } else {
             setIsEditing(false);
             setCurrentPeriod(null);
-            setFormData({ name: '', startDate: '', endDate: '', status: 'Inactive' });
+            setFormData({ name: '', startDate: '', endDate: '', status: 'active' });
         }
         setIsModalOpen(true);
     };
@@ -179,7 +179,7 @@ const ManageEvaluationPeriodsPage: React.FC = () => {
                                     <td className="px-4 py-3">{new Date(period.startDate).toLocaleDateString()}</td>
                                     <td className="px-4 py-3">{new Date(period.endDate).toLocaleDateString()}</td>
                                     <td className="px-4 py-3">
-                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${period.status === 'Active' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${String(period.status).toLowerCase() === 'active' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
                                             {period.status}
                                         </span>
                                     </td>

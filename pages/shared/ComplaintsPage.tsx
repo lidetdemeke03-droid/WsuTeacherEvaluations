@@ -207,7 +207,7 @@ const ComplaintsPage: React.FC = () => {
                                         />
                                     </div>
 
-                                    {(user.role === UserRole.Admin) && (
+                                    {(user.role === UserRole.Admin || user.role === UserRole.DepartmentHead) && (
                                         <motion.div
                                             initial={{ opacity: 0, height: 0 }}
                                             animate={{ opacity: 1, height: 'auto' }}
@@ -267,7 +267,7 @@ const ComplaintsPage: React.FC = () => {
                     )}
                 </AnimatePresence>
 
-                {(user.role === UserRole.Admin || user.role === UserRole.Teacher) && (
+                {(user.role === UserRole.Admin || user.role === UserRole.Teacher || user.role === UserRole.DepartmentHead) && (
                     isLoading ? (
                         <div className="space-y-4">
                             {[1, 2, 3].map(i => (

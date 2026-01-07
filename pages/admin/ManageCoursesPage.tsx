@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { apiGetCourses, apiCreateCourse, apiGetUsers, apiGetDepartments, apiAssignEvaluation, apiGetEvaluationPeriods } from '../../services/api';
 import { Course, User, Department, UserRole, EvaluationPeriod } from '../../types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,6 +15,7 @@ interface CourseCreationData {
 }
 
 const ManageCoursesPage: React.FC = () => {
+  const { user } = useAuth();
   const [courses, setCourses] = useState<Course[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +37,12 @@ const ManageCoursesPage: React.FC = () => {
   const fetchDepartments = async () => {
     try {
       const data = await apiGetDepartments();
-      setDepartments(data);
+      // If DepartmentHead, restrict displayed departments to their department only
+      if (user && user.role === UserRole.DepartmentHead) {
+        setDepartments((data || []).filter((d: Department) => d._id === (user.department as any)));
+      } else {
+        setDepartments(data);
+      }
     } catch (error) {
       toast.error('Failed to fetch departments.');
     }
@@ -127,7 +134,7 @@ const ManageCoursesPage: React.FC = () => {
         ))}
       </div>
 
-      <CreateCourseModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onCreate={handleCreateCourse} />
+      <CreateCourseModal user={user} isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onCreate={handleCreateCourse} />
       {selectedCourse && (
         <AssignEvaluatorModal
           isOpen={isAssignModalOpen}
@@ -140,7 +147,7 @@ const ManageCoursesPage: React.FC = () => {
   );
 };
 
-const CreateCourseModal: React.FC<{ isOpen: boolean; onClose: () => void; onCreate: (courseData: CourseCreationData) => void }> = ({ isOpen, onClose, onCreate }) => {
+const CreateCourseModal: React.FC<{ user?: User | null; isOpen: boolean; onClose: () => void; onCreate: (courseData: CourseCreationData) => void }> = ({ user, isOpen, onClose, onCreate }) => {
   const [title, setTitle] = useState('');
   const [code, setCode] = useState('');
   const [teacherId, setTeacherId] = useState('');
@@ -148,10 +155,27 @@ const CreateCourseModal: React.FC<{ isOpen: boolean; onClose: () => void; onCrea
   const [teachers, setTeachers] = useState<User[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
 
+  const auth = useAuth();
+  const currentUser = typeof user !== 'undefined' ? user : auth.user;
+
   useEffect(() => {
     if (isOpen) {
-      apiGetUsers().then((users) => setTeachers(users.filter((u) => u.role === UserRole.Teacher)));
-      apiGetDepartments().then(setDepartments);
+      (async () => {
+        if (currentUser && currentUser.role === UserRole.DepartmentHead) {
+            try {
+              const t = await (await import('../../services/api')).apiGetUsersByRoleAndDepartment(UserRole.Teacher, String(currentUser.department));
+              setTeachers(t || []);
+              const deps = await apiGetDepartments();
+              setDepartments((deps || []).filter((d: Department) => d._id === (currentUser.department as any)));
+              setDepartmentId(String(currentUser.department));
+            } catch (e) {
+              console.error(e);
+            }
+        } else {
+          apiGetUsers().then((users) => setTeachers(users.filter((u) => u.role === UserRole.Teacher)));
+          apiGetDepartments().then(setDepartments);
+        }
+      })();
     }
   }, [isOpen]);
 
@@ -178,7 +202,7 @@ const CreateCourseModal: React.FC<{ isOpen: boolean; onClose: () => void; onCrea
                   <option key={t._id} value={t._id}>{`${t.firstName} ${t.lastName}`}</option>
                 ))}
               </select>
-              <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500">
+              <select value={departmentId} onChange={(e) => setDepartmentId(e.target.value)} disabled={currentUser && currentUser.role === UserRole.DepartmentHead} className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-blue-500">
                 <option value="">Select Department</option>
                 {departments.map((d) => (
                   <option key={d._id} value={d._id}>{d.name}</option>
