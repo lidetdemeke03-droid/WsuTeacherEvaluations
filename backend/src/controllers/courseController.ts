@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { UserRole } from '../types';
 import Course from '../models/Course';
 import asyncHandler from 'express-async-handler';
 
@@ -37,14 +38,22 @@ export const getCoursesByTeacher = asyncHandler(async (req: Request, res: Respon
 });
 
 
-export const getCourses = async (req: Request, res: Response) => {
+import { IRequest } from '../middleware/auth';
+
+export const getCourses = async (req: IRequest, res: Response) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
         const skip = (page - 1) * limit;
 
-        const courses = await Course.find().populate('department').populate('teacher').skip(skip).limit(limit);
-        const total = await Course.countDocuments();
+        const filter: any = {};
+        // If DepartmentHead, restrict to their department
+        if (req.user && req.user.role === UserRole.DepartmentHead) {
+            filter.department = req.user.department;
+        }
+
+        const courses = await Course.find(filter).populate('department').populate('teacher').skip(skip).limit(limit);
+        const total = await Course.countDocuments(filter);
 
         res.status(200).json({
             success: true,
@@ -75,6 +84,14 @@ export const getCourse = async (req: Request, res: Response) => {
 export const createCourse = async (req: Request, res: Response) => {
     try {
         const { title, code, department, teacher } = req.body;
+        // If request made by DepartmentHead, ensure department matches their department or set it
+        const reqUser: any = (req as any).user;
+        if (reqUser && reqUser.role === UserRole.DepartmentHead) {
+            const userDept = String(reqUser.department);
+            if (department && String(department) !== userDept) {
+                return res.status(403).json({ success: false, error: 'Department heads can only create courses in their own department.' });
+            }
+        }
         const course = new Course({ title, code, department, teacher });
         await course.save();
         await course.populate('teacher department');
@@ -87,6 +104,17 @@ export const createCourse = async (req: Request, res: Response) => {
 export const updateCourse = async (req: Request, res: Response) => {
     try {
         const { title, code, department, teacher } = req.body;
+        const reqUser: any = (req as any).user;
+        if (reqUser && reqUser.role === UserRole.DepartmentHead) {
+            const existing = await Course.findById(req.params.id).select('department');
+            if (!existing) return res.status(404).json({ success: false, error: 'Course not found' });
+            if (!existing.department || String(existing.department) !== String(reqUser.department)) {
+                return res.status(403).json({ success: false, error: 'Department heads can only update courses in their own department.' });
+            }
+            if (department && String(department) !== String(reqUser.department)) {
+                return res.status(403).json({ success: false, error: 'Cannot move course to another department.' });
+            }
+        }
         const course = await Course.findByIdAndUpdate(req.params.id, { title, code, department, teacher }, { new: true, runValidators: true });
         if (!course) {
             return res.status(404).json({ success: false, error: 'Course not found' });
@@ -100,6 +128,14 @@ export const updateCourse = async (req: Request, res: Response) => {
 
 export const deleteCourse = async (req: Request, res: Response) => {
     try {
+        const reqUser: any = (req as any).user;
+        if (reqUser && reqUser.role === UserRole.DepartmentHead) {
+            const existing = await Course.findById(req.params.id).select('department');
+            if (!existing) return res.status(404).json({ success: false, error: 'Course not found' });
+            if (!existing.department || String(existing.department) !== String(reqUser.department)) {
+                return res.status(403).json({ success: false, error: 'Department heads can only delete courses in their own department.' });
+            }
+        }
         const course = await Course.findByIdAndDelete(req.params.id);
         if (!course) {
             return res.status(404).json({ success: false, error: 'Course not found' });

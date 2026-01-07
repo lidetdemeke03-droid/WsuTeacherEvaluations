@@ -8,6 +8,7 @@ export interface IComplaint extends Document {
   status: ComplaintStatus;
   response?: string;
   attachments?: string[];
+  assignedTo?: any; // optional user ref for who the complaint is assigned to
 }
 
 const complaintSchema = new Schema<IComplaint>({
@@ -17,6 +18,7 @@ const complaintSchema = new Schema<IComplaint>({
   status: { type: String, enum: Object.values(ComplaintStatus), default: ComplaintStatus.New },
   response: { type: String },
   attachments: [{ type: String }],
+  assignedTo: { type: Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 
 const Complaint = model<IComplaint>('Complaint', complaintSchema);

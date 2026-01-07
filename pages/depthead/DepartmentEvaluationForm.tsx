@@ -71,13 +71,19 @@ const DepartmentEvaluationForm: React.FC = () => {
   const isQuestionAnswered = (questionCode: string) => {
     const answer = answers[questionCode];
     if (!answer) return false;
-    const questionType = questions.find(q => q.code === questionCode)?.type;
-    
+    const qIndex = questions.findIndex(q => q.code === questionCode);
+    const questionType = questions[qIndex]?.type;
+
+    // Make the last two text questions optional for department head form
+    if (questionType === 'text' && qIndex >= questions.length - 2) {
+      return true;
+    }
+
     if (questionType === 'rating') {
-        return answer.score !== undefined;
+      return answer.score !== undefined;
     }
     if (questionType === 'text') {
-        return answer.response !== undefined && answer.response.trim() !== '';
+      return answer.response !== undefined && answer.response.trim() !== '';
     }
     return false;
   };
@@ -269,7 +275,7 @@ const DepartmentEvaluationForm: React.FC = () => {
                             placeholder="Enter your feedback here..."
                             onChange={(e) => handleAnswerChange(question.code, e.target.value, 'text')}
                             value={answers[question.code]?.response || ''}
-                            required
+                            
                         />
                     )}
                 </div>

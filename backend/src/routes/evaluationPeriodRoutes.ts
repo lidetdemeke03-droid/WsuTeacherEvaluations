@@ -13,7 +13,7 @@ router.use(protect);
 router.get('/', getEvaluationPeriods);
 router.get('/active', getActiveEvaluationPeriods);
 router.get('/:id', getEvaluationPeriod);
-router.post('/', authorize(UserRole.Admin),
+router.post('/', authorize(UserRole.Admin, UserRole.DepartmentHead),
     [
         body('name').notEmpty().withMessage('Period name is required').trim().escape(),
         body('startDate').isISO8601().withMessage('Start date is required'),
@@ -23,7 +23,7 @@ router.post('/', authorize(UserRole.Admin),
     validate,
     createEvaluationPeriod
 );
-router.put('/:id', authorize(UserRole.Admin),
+router.put('/:id', authorize(UserRole.Admin, UserRole.DepartmentHead),
     [
         body('name').notEmpty().withMessage('Period name is required').trim().escape(),
         body('startDate').isISO8601().withMessage('Start date is required'),
@@ -33,6 +33,6 @@ router.put('/:id', authorize(UserRole.Admin),
     validate,
     updateEvaluationPeriod
 );
-router.delete('/:id', authorize(UserRole.Admin), deleteEvaluationPeriod);
+router.delete('/:id', authorize(UserRole.Admin, UserRole.DepartmentHead), deleteEvaluationPeriod);
 
 export default router;

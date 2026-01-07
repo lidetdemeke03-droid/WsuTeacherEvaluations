@@ -128,6 +128,13 @@ const NewEvaluation: React.FC = () => {
 
   const isEvaluationDisabled = !selectedTeacher || !selectedCourse || !selectedPeriod;
 
+  // Check if the department head has already submitted an evaluation for the selected tuple
+  const hasAlreadySubmitted = !!(selectedTeacher && selectedCourse && selectedPeriod && previousEvaluations && previousEvaluations.find(ev => (
+    String(ev.targetTeacher && (ev.targetTeacher._id || ev.targetTeacher)) === String(selectedTeacher._id) &&
+    String(ev.course && (ev.course._id || ev.course)) === String(selectedCourse._id) &&
+    String(ev.period && (ev.period._id || ev.period)) === String(selectedPeriod._id)
+  )));
+
   if (loading) return <div className="text-center py-8">Loading...</div>;
   if (error && !loading) return <div className="text-center py-8 text-red-500">Error: {error}</div>;
 
@@ -226,13 +233,13 @@ const NewEvaluation: React.FC = () => {
           <button
             onClick={handleStartEvaluation}
             className={`w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white transition-colors ${
-              isEvaluationDisabled
+              (isEvaluationDisabled || hasAlreadySubmitted)
                 ? 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed'
                 : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'
             }`}
-            disabled={isEvaluationDisabled}
+            disabled={isEvaluationDisabled || hasAlreadySubmitted}
           >
-            Start Evaluation
+            {hasAlreadySubmitted ? 'Already Submitted' : 'Start Evaluation'}
           </button>
         </motion.div>
       )}

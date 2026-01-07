@@ -86,6 +86,7 @@ export interface IEvaluationPeriod extends Document {
   startDate: Date;
   endDate: Date;
   status: 'active' | 'inactive' | 'archived';
+  department?: Types.ObjectId;
 }
 
 export interface IPeerAssignment extends Document {

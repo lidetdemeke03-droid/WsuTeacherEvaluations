@@ -71,12 +71,31 @@ export const getDepartmentReport = asyncHandler(async (req: IRequest, res: Respo
 // @access Admin
 export const generateReports = asyncHandler(async (req: IRequest, res: Response) => {
     const user = req.user!;
-    if (!user || user.role !== UserRole.Admin) {
+    if (!user || (user.role !== UserRole.Admin && user.role !== UserRole.DepartmentHead)) {
         res.status(403);
-        throw new Error('Only admins can generate reports.');
+        throw new Error('Only admins or department heads can generate reports.');
     }
 
     const { teacherIds, departmentId, period, type } = req.body as { teacherIds: string[]; departmentId?: string; period: string; type: 'print' | 'email' };
+
+    // If DepartmentHead, restrict generation to their own department
+    if (user.role === UserRole.DepartmentHead) {
+        const userDept = String(user.department);
+        if (departmentId && String(departmentId) !== userDept) {
+            res.status(403);
+            throw new Error('Department heads can only generate reports for their own department.');
+        }
+        // ensure teacherIds (if provided) belong to the department
+        if (teacherIds && Array.isArray(teacherIds) && teacherIds.length > 0) {
+            const teachersInDept = await User.find({ _id: { $in: teacherIds }, department: user.department }).select('_id').lean();
+            const validIds = teachersInDept.map(t => String(t._id));
+            const invalid = teacherIds.filter(id => !validIds.includes(String(id)));
+            if (invalid.length > 0) {
+                res.status(403);
+                throw new Error('One or more teachers are outside your department.');
+            }
+        }
+    }
 
     if (!teacherIds || !Array.isArray(teacherIds) || teacherIds.length === 0) {
         res.status(400);
@@ -237,6 +256,11 @@ export const listReports = asyncHandler(async (req: IRequest, res: Response) => 
     if (departmentId) filter.departmentId = departmentId;
     if (period) filter.period = period;
 
+    // Department heads can only list reports for their department
+    if (req.user && req.user.role === UserRole.DepartmentHead) {
+        filter.departmentId = String(req.user.department);
+    }
+
     const reports = await Report.find(filter).populate('teacherId', 'firstName lastName email').sort({ createdAt: -1 });
     res.json({ success: true, data: reports });
 });
@@ -253,7 +277,14 @@ export const downloadReport = asyncHandler(async (req: IRequest, res: Response) 
 
     // Only admins or the generating user can download
     const user = req.user!;
-    if (user.role !== UserRole.Admin && String(report.generatedBy) !== String(user._id)) {
+    // Allow Admins, the user who generated it, or DepartmentHead of that department
+    if (user.role === UserRole.Admin) {
+        // ok
+    } else if (String(report.generatedBy) === String(user._id)) {
+        // ok
+    } else if (user.role === UserRole.DepartmentHead && report.departmentId && String(report.departmentId) === String(user.department)) {
+        // ok
+    } else {
         res.status(403);
         throw new Error('Not authorized to download this report');
     }

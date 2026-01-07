@@ -40,8 +40,14 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
   const isQuestionAnswered = (questionCode: string) => {
     const answer = answers[questionCode];
     if (!answer) return false;
-    const questionType = questionSet.find(q => q.code === questionCode)?.type;
-    
+    const qIndex = questionSet.findIndex(q => q.code === questionCode);
+    const questionType = questionSet[qIndex]?.type;
+
+    // Make the last two text questions optional
+    if (questionType === 'text' && qIndex >= questionSet.length - 2) {
+        return true;
+    }
+
     if (questionType === 'rating') {
         return answer.score !== undefined;
     }
@@ -298,7 +304,6 @@ const EvaluationForm: React.FC<EvaluationFormProps> = ({ evaluation, onBack, onC
                             placeholder="Enter your feedback here..."
                             onChange={(e) => handleAnswerChange(question.code, undefined, e.target.value)}
                             value={answers[question.code]?.response || ''}
-                            required
                         />
                     )}
                 </div>

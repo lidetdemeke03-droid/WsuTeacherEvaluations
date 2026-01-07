@@ -7,8 +7,8 @@ import { Navigate } from 'react-router-dom';
 const ReportsPage: React.FC = () => {
     const { user } = useAuth();
 
-    // If admin, redirect to the admin reports page we implemented
-    if (user && user.role === UserRole.Admin) {
+    // If admin or department head, redirect to the admin reports page we implemented
+    if (user && (user.role === UserRole.Admin || user.role === UserRole.DepartmentHead)) {
         return <Navigate to="/admin/reports" replace />;
     }
 

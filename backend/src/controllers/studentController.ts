@@ -7,17 +7,24 @@ import User from '../models/User';
 // @route   GET /api/students/:id/courses
 // @access  Private (Student)
 export const getStudentCourses = asyncHandler(async (req: Request, res: Response) => {
-    const student = await User.findById(req.params.id).populate('courses');
+    const studentId = req.params.id;
 
-    if (student) {
-        res.json({
-            success: true,
-            data: student.courses,
-        });
-    } else {
+    // Ensure student exists
+    const student = await User.findById(studentId);
+    if (!student) {
         res.status(404);
         throw new Error('Student not found');
     }
+
+    // Fetch courses that include this student in their `students` array
+    const courses = await Course.find({ students: studentId })
+        .populate('teacher', 'firstName lastName')
+        .populate('department', 'name');
+
+    res.json({
+        success: true,
+        data: courses,
+    });
 });
 
 

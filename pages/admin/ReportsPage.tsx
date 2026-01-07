@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { UserRole } from '../../types';
 import { api } from '../../services/api';
 import { Printer, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 const ReportsPage: React.FC = () => {
+  const { user } = useAuth();
   const [departments, setDepartments] = useState<any[]>([]);
   const [periods, setPeriods] = useState<any[]>([]);
   const [selectedDept, setSelectedDept] = useState<string | null>(null);
@@ -18,7 +21,13 @@ const ReportsPage: React.FC = () => {
     (async () => {
       try {
         const d = await api.get<any[]>('/departments');
-        setDepartments(d || []);
+        // If DepartmentHead, only show their department and preselect it
+        if (user && user.role === UserRole.DepartmentHead) {
+          setDepartments((d || []).filter((dept: any) => dept._id === (user.department as any)));
+          setSelectedDept(String(user.department));
+        } else {
+          setDepartments(d || []);
+        }
         const p = await api.get<any[]>('/periods');
         const now = new Date();
         setPeriods((p || []).filter((pp: any) => new Date(pp.endDate) < now));
@@ -92,7 +101,7 @@ const ReportsPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div>
           <label className="block text-sm font-medium text-gray-700">Department</label>
-          <select className="mt-1 block w-full border rounded-lg p-2 shadow-sm focus:ring-blue-500 focus:border-blue-500" onChange={e => setSelectedDept(e.target.value)} value={selectedDept || ''}>
+          <select disabled={user && user.role === UserRole.DepartmentHead} className="mt-1 block w-full border rounded-lg p-2 shadow-sm focus:ring-blue-500 focus:border-blue-500" onChange={e => setSelectedDept(e.target.value)} value={selectedDept || ''}>
             <option value="">Select department</option>
             {departments.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
           </select>

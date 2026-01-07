@@ -86,10 +86,10 @@ const AppContent: React.FC = () => {
                 <Route path="/superadmin/audit-logs" element={<RoleProtectedRoute roles={[UserRole.SuperAdmin]}><AuditLogsPage /></RoleProtectedRoute>} />
 
                 <Route path="/admin/users" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageUsersPage /></RoleProtectedRoute>} />
-                <Route path="/admin/courses" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageCoursesPage /></RoleProtectedRoute>} />
+                <Route path="/admin/courses" element={<RoleProtectedRoute roles={[UserRole.Admin, UserRole.DepartmentHead]}><ManageCoursesPage /></RoleProtectedRoute>} />
                 <Route path="/admin/departments" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageDepartmentsPage /></RoleProtectedRoute>} />
-                <Route path="/admin/periods" element={<RoleProtectedRoute roles={[UserRole.Admin]}><ManageEvaluationPeriodsPage /></RoleProtectedRoute>} />
-                <Route path="/admin/reports" element={<RoleProtectedRoute roles={[UserRole.Admin]}><AdminReportsPage /></RoleProtectedRoute>} />
+                <Route path="/admin/periods" element={<RoleProtectedRoute roles={[UserRole.Admin, UserRole.DepartmentHead]}><ManageEvaluationPeriodsPage /></RoleProtectedRoute>} />
+                <Route path="/admin/reports" element={<RoleProtectedRoute roles={[UserRole.Admin, UserRole.DepartmentHead]}><AdminReportsPage /></RoleProtectedRoute>} />
                 
                 <Route path="/student/evaluations" element={<RoleProtectedRoute roles={[UserRole.Student]}><StudentEvaluationsPage /></RoleProtectedRoute>} />
 

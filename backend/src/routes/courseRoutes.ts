@@ -14,6 +14,6 @@ router.get('/by-teacher/:teacherId', authorize(UserRole.Admin, UserRole.Departme
 router.get('/:id', getCourse);
 router.post('/', authorize(UserRole.Admin, UserRole.DepartmentHead), courseValidation, validate, createCourse);
 router.put('/:id', authorize(UserRole.Admin, UserRole.DepartmentHead), courseValidation, validate, updateCourse);
-router.delete('/:id', authorize(UserRole.Admin), deleteCourse);
+router.delete('/:id', authorize(UserRole.Admin, UserRole.DepartmentHead), deleteCourse);
 
 export default router;

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import EvaluationResponse from '../models/EvaluationResponse';
 import { IRequest } from '../middleware/auth';
+import User from '../models/User';
 import Evaluation from '../models/evaluationModel';
 import { createHash } from 'crypto';
 import StatsCache from '../models/StatsCache';
@@ -94,10 +95,17 @@ export const getAssignedForms = asyncHandler(async (req: IRequest, res: Response
     let assignedEvaluations: any[] = [];
 
     if (userRole === UserRole.Student) {
-        assignedEvaluations = await Evaluation.find({ student: userId, status: 'Pending' })
+        // fetch all assignments for the student and mark completed if a response exists
+        const evals = await Evaluation.find({ student: userId })
             .populate('course', 'title code')
             .populate('teacher', 'firstName lastName')
             .populate('period', 'name startDate endDate');
+
+        assignedEvaluations = await Promise.all(evals.map(async (ev: any) => {
+            // check if a submission exists for this student/course/teacher/period
+            const exists = await EvaluationResponse.findOne({ evaluator: userId, course: ev.course._id || ev.course, targetTeacher: ev.teacher._id || ev.teacher, type: EvaluationType.Student, period: ev.period && ev.period._id ? ev.period._id : ev.period });
+            return { ...ev.toObject(), status: exists ? 'Completed' : (ev.status || 'Pending') };
+        }));
     } else if (userRole === UserRole.Teacher) {
         assignedEvaluations = await PeerAssignment.find({ evaluator: userId, active: true })
             .populate('targetTeacher', 'firstName lastName')
@@ -209,8 +217,45 @@ export const submitDepartmentEvaluation = asyncHandler(async (req: IRequest, res
 // @desc    Create evaluation assignments for multiple evaluators
 // @route   POST /api/evaluations/assign
 // @access  Private (Admin)
-export const createEvaluationAssignment = asyncHandler(async (req: Request, res: Response) => {
+export const createEvaluationAssignment = asyncHandler(async (req: IRequest, res: Response) => {
     const { evaluatorIds, courseId, teacherId, periodId, evaluationType, window } = req.body;
+
+    // If department head is creating assignments, enforce department scoping
+    if (req.user && req.user.role === UserRole.DepartmentHead) {
+        // For peer assignments ensure the target teacher belongs to the same department
+        if (evaluationType === EvaluationType.Peer) {
+            if (!teacherId || !mongoose.Types.ObjectId.isValid(teacherId)) {
+                res.status(400);
+                throw new Error('A valid teacher ID is required for peer assignments.');
+            }
+            const targetTeacher = await User.findById(teacherId);
+            if (!targetTeacher) {
+                res.status(404);
+                throw new Error('Target teacher not found.');
+            }
+            if (!targetTeacher.department || String(targetTeacher.department) !== String(req.user.department)) {
+                res.status(403);
+                throw new Error('DepartmentHead is not authorized to assign evaluations for this teacher.');
+            }
+        }
+
+        // For student assignments ensure the course belongs to the same department
+        if (evaluationType === EvaluationType.Student) {
+            if (!courseId || !mongoose.Types.ObjectId.isValid(courseId)) {
+                res.status(400);
+                throw new Error('A valid course ID is required for student assignments.');
+            }
+            const targetCourse = await Course.findById(courseId);
+            if (!targetCourse) {
+                res.status(404);
+                throw new Error('Target course not found.');
+            }
+            if (!targetCourse.department || String(targetCourse.department) !== String(req.user.department)) {
+                res.status(403);
+                throw new Error('DepartmentHead is not authorized to assign students for this course.');
+            }
+        }
+    }
 
     if (!Array.isArray(evaluatorIds) || evaluatorIds.length === 0) {
         res.status(400);
