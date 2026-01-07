@@ -33,6 +33,6 @@ router.post('/department', authorize(UserRole.DepartmentHead), submitDepartmentE
 router.get('/department-head-evaluations', authorize(UserRole.DepartmentHead), getDepartmentHeadEvaluations);
 
 // POST /api/evaluations/assign - Create an evaluation assignment
-router.post('/assign', authorize(UserRole.Admin), createEvaluationAssignment);
+router.post('/assign', authorize(UserRole.Admin, UserRole.DepartmentHead), createEvaluationAssignment);
 
 export default router;

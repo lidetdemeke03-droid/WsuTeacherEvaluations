@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import EvaluationResponse from '../models/EvaluationResponse';
 import { IRequest } from '../middleware/auth';
+import User from '../models/User';
 import Evaluation from '../models/evaluationModel';
 import { createHash } from 'crypto';
 import StatsCache from '../models/StatsCache';
@@ -216,8 +217,45 @@ export const submitDepartmentEvaluation = asyncHandler(async (req: IRequest, res
 // @desc    Create evaluation assignments for multiple evaluators
 // @route   POST /api/evaluations/assign
 // @access  Private (Admin)
-export const createEvaluationAssignment = asyncHandler(async (req: Request, res: Response) => {
+export const createEvaluationAssignment = asyncHandler(async (req: IRequest, res: Response) => {
     const { evaluatorIds, courseId, teacherId, periodId, evaluationType, window } = req.body;
+
+    // If department head is creating assignments, enforce department scoping
+    if (req.user && req.user.role === UserRole.DepartmentHead) {
+        // For peer assignments ensure the target teacher belongs to the same department
+        if (evaluationType === EvaluationType.Peer) {
+            if (!teacherId || !mongoose.Types.ObjectId.isValid(teacherId)) {
+                res.status(400);
+                throw new Error('A valid teacher ID is required for peer assignments.');
+            }
+            const targetTeacher = await User.findById(teacherId);
+            if (!targetTeacher) {
+                res.status(404);
+                throw new Error('Target teacher not found.');
+            }
+            if (!targetTeacher.department || String(targetTeacher.department) !== String(req.user.department)) {
+                res.status(403);
+                throw new Error('DepartmentHead is not authorized to assign evaluations for this teacher.');
+            }
+        }
+
+        // For student assignments ensure the course belongs to the same department
+        if (evaluationType === EvaluationType.Student) {
+            if (!courseId || !mongoose.Types.ObjectId.isValid(courseId)) {
+                res.status(400);
+                throw new Error('A valid course ID is required for student assignments.');
+            }
+            const targetCourse = await Course.findById(courseId);
+            if (!targetCourse) {
+                res.status(404);
+                throw new Error('Target course not found.');
+            }
+            if (!targetCourse.department || String(targetCourse.department) !== String(req.user.department)) {
+                res.status(403);
+                throw new Error('DepartmentHead is not authorized to assign students for this course.');
+            }
+        }
+    }
 
     if (!Array.isArray(evaluatorIds) || evaluatorIds.length === 0) {
         res.status(400);
