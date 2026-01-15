@@ -20,7 +20,7 @@ const port = process.env.PORT || 5000;
 
 // CORS Configuration
 const allowedOrigins = [
-    'https://teacher-evaluation-eta.vercel.app',
+    'https://wsu-teacher-evaluations.vercel.app',
     'http://localhost:3000', // for local frontend development
     'http://localhost:5173', // Vite's default port, just in case
 ];
