@@ -209,7 +209,7 @@ const CreateCourseModal: React.FC<{ user?: User | null; isOpen: boolean; onClose
                 ))}
               </select>
               <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
-                <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-xl hover:bg-gray-300">Cancel</button>
+                <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-xl hover:bg-red">Cancel</button>
                 <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700">Create</button>
               </div>
             </form>
